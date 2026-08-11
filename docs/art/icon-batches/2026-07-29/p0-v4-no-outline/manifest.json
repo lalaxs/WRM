@@ -1,0 +1,242 @@
+[
+  {
+    "itemId": "spiritEssence",
+    "name": "灵髓",
+    "sheet": "p0-sheet-01.png",
+    "asset100": "100/spiritEssence.png",
+    "asset50": "50/spiritEssence.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "bronzeBar",
+    "name": "灵铜锭",
+    "sheet": "p0-sheet-01.png",
+    "asset100": "100/bronzeBar.png",
+    "asset50": "50/bronzeBar.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "ironBar",
+    "name": "寒铁锭",
+    "sheet": "p0-sheet-01.png",
+    "asset100": "100/ironBar.png",
+    "asset50": "50/ironBar.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "bronzeDaggerBlank",
+    "name": "灵铜短刃胚",
+    "sheet": "p0-sheet-01.png",
+    "asset100": "100/bronzeDaggerBlank.png",
+    "asset50": "50/bronzeDaggerBlank.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "bronzeSwordBlank",
+    "name": "灵铜飞剑胚",
+    "sheet": "p0-sheet-01.png",
+    "asset100": "100/bronzeSwordBlank.png",
+    "asset50": "50/bronzeSwordBlank.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "bronzeHeavyBladeBlank",
+    "name": "灵铜重剑胚",
+    "sheet": "p0-sheet-01.png",
+    "asset100": "100/bronzeHeavyBladeBlank.png",
+    "asset50": "50/bronzeHeavyBladeBlank.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "bronzeBracerBlank",
+    "name": "灵铜护腕胚",
+    "sheet": "p0-sheet-01.png",
+    "asset100": "100/bronzeBracerBlank.png",
+    "asset50": "50/bronzeBracerBlank.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "bronzeCrownBlank",
+    "name": "灵铜法冠胚",
+    "sheet": "p0-sheet-01.png",
+    "asset100": "100/bronzeCrownBlank.png",
+    "asset50": "50/bronzeCrownBlank.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "bronzeBootBlank",
+    "name": "灵铜踏云履胚",
+    "sheet": "p0-sheet-02.png",
+    "asset100": "100/bronzeBootBlank.png",
+    "asset50": "50/bronzeBootBlank.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "bronzeShieldCore",
+    "name": "灵铜护符盾核",
+    "sheet": "p0-sheet-02.png",
+    "asset100": "100/bronzeShieldCore.png",
+    "asset50": "50/bronzeShieldCore.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "bronzeArmorPlate",
+    "name": "灵铜法甲片",
+    "sheet": "p0-sheet-02.png",
+    "asset100": "100/bronzeArmorPlate.png",
+    "asset50": "50/bronzeArmorPlate.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "ironDaggerBlank",
+    "name": "寒铁短刃胚",
+    "sheet": "p0-sheet-02.png",
+    "asset100": "100/ironDaggerBlank.png",
+    "asset50": "50/ironDaggerBlank.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "ironSwordBlank",
+    "name": "寒铁飞剑胚",
+    "sheet": "p0-sheet-02.png",
+    "asset100": "100/ironSwordBlank.png",
+    "asset50": "50/ironSwordBlank.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "ironHeavyBladeBlank",
+    "name": "寒铁重剑胚",
+    "sheet": "p0-sheet-02.png",
+    "asset100": "100/ironHeavyBladeBlank.png",
+    "asset50": "50/ironHeavyBladeBlank.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "ironBracerBlank",
+    "name": "寒铁护腕胚",
+    "sheet": "p0-sheet-02.png",
+    "asset100": "100/ironBracerBlank.png",
+    "asset50": "50/ironBracerBlank.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "ironCrownBlank",
+    "name": "寒铁法冠胚",
+    "sheet": "p0-sheet-02.png",
+    "asset100": "100/ironCrownBlank.png",
+    "asset50": "50/ironCrownBlank.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "ironBootBlank",
+    "name": "寒铁踏云履胚",
+    "sheet": "p0-sheet-03.png",
+    "asset100": "100/ironBootBlank.png",
+    "asset50": "50/ironBootBlank.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "ironShieldCore",
+    "name": "寒铁护符盾核",
+    "sheet": "p0-sheet-03.png",
+    "asset100": "100/ironShieldCore.png",
+    "asset50": "50/ironShieldCore.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "ironArmorPlate",
+    "name": "寒铁法甲片",
+    "sheet": "p0-sheet-03.png",
+    "asset100": "100/ironArmorPlate.png",
+    "asset50": "50/ironArmorPlate.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "spiritTopazRing",
+    "name": "黄玉灵戒",
+    "sheet": "p0-sheet-03.png",
+    "asset100": "100/spiritTopazRing.png",
+    "asset50": "50/spiritTopazRing.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "spiritTopazPendant",
+    "name": "黄玉法坠",
+    "sheet": "p0-sheet-03.png",
+    "asset100": "100/spiritTopazPendant.png",
+    "asset50": "50/spiritTopazPendant.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "spiritSapphireRing",
+    "name": "蓝玉灵戒",
+    "sheet": "p0-sheet-03.png",
+    "asset100": "100/spiritSapphireRing.png",
+    "asset50": "50/spiritSapphireRing.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "spiritSapphirePendant",
+    "name": "蓝玉法坠",
+    "sheet": "p0-sheet-03.png",
+    "asset100": "100/spiritSapphirePendant.png",
+    "asset50": "50/spiritSapphirePendant.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "garumSeed",
+    "name": "嘉露种子",
+    "sheet": "p0-sheet-03.png",
+    "asset100": "100/garumSeed.png",
+    "asset50": "50/garumSeed.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "garumHerb",
+    "name": "嘉露草",
+    "sheet": "p0-sheet-04.png",
+    "asset100": "100/garumHerb.png",
+    "asset50": "50/garumHerb.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "sourweedSeed",
+    "name": "酸藤种子",
+    "sheet": "p0-sheet-04.png",
+    "asset100": "100/sourweedSeed.png",
+    "asset50": "50/sourweedSeed.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "sourweedHerb",
+    "name": "酸藤草",
+    "sheet": "p0-sheet-04.png",
+    "asset100": "100/sourweedHerb.png",
+    "asset50": "50/sourweedHerb.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "brokenFang",
+    "name": "断裂兽牙",
+    "sheet": "p0-sheet-04.png",
+    "asset100": "100/brokenFang.png",
+    "asset50": "50/brokenFang.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "beastBone",
+    "name": "妖兽骨",
+    "sheet": "p0-sheet-04.png",
+    "asset100": "100/beastBone.png",
+    "asset50": "50/beastBone.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  },
+  {
+    "itemId": "spiritUrn",
+    "name": "聚灵瓶",
+    "sheet": "p0-sheet-04.png",
+    "asset100": "100/spiritUrn.png",
+    "asset50": "50/spiritUrn.png",
+    "style": "v4-no-outline-flat-vector-candidate"
+  }
+]

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stage 2 工程验收存档</title>
+  <style>
+    html, body {
+      min-height: 100%;
+      margin: 0;
+      background: #f6f0ff;
+      color: #382b4a;
+      font: 16px/1.6 system-ui, sans-serif;
+    }
+    main {
+      max-width: 32rem;
+      margin: 12vh auto;
+      padding: 1.5rem;
+      border: 1px solid #d8c5ee;
+      border-radius: 1rem;
+      background: #fff;
+      box-shadow: 0 1rem 3rem rgba(71, 43, 103, 0.12);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Stage 2 工程验收存档</h1>
+    <p>此入口仅用于自动写入确定性的 UI 验收存档。</p>
+    <p id="fixture-status" role="status">正在校验并写入存档……</p>
+  </main>
+
+  <script src="../content/herblore-parity.js"></script>
+  <script src="../content/materials.js"></script>
+  <script src="../content/items.js"></script>
+  <script src="../content/life-skills.js"></script>
+  <script src="../content/gathering.js"></script>
+  <script src="../content/recipes.js"></script>
+  <script src="../content/homestead.js"></script>
+  <script src="../core/stage2-state.js"></script>
+  <script src="../core/save-system.js"></script>
+  <script src="stage2-engineering-save.js"></script>
+</body>
+</html>

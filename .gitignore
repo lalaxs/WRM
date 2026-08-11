@@ -1,0 +1,16 @@
+.agents/
+.codex/
+.workbuddy/
+.superpowers/
+.worktrees/
+logs/
+node_modules/
+dist/
+tmp/
+__pycache__/
+*.pyc
+*.log
+*.tmp
+*.bak.*
+release/
+*.import

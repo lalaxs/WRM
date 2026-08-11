@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+  <title>我在修仙界万人迷</title>
+  <link rel="stylesheet" href="styles.css?v=20260729-farm-unselected">
+  <style>
+    html, body { margin: 0; padding: 0; overflow: hidden; background: linear-gradient(180deg,#FBF9FF,#E3D6F7); width: 100%; height: 100%; }
+    #game { display: block; width: 100%; height: 100%; touch-action: none; }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+  <!-- UI 浮层：菜单/按钮/弹窗用 HTML+CSS 实现（混合架构的 UI 层） -->
+  <div id="ui"></div>
+
+  <!-- TapTap 网页 SDK（登录 / 广告）：接入时按官方文档在此引入，再补 Platform.login / Platform.showAd -->
+
+  <!-- 素材清单（UMD：浏览器环境挂到 window.NIE_MANIFEST） -->
+  <script src="nie-manifest.js"></script>
+  <!-- 桥接层：标准 Web API 实现 canvas / touch / network / storage / login / ad -->
+  <script src="platform.js"></script>
+  <!-- 广告管理：只走 Platform 桥接（折中态：已建桥，未接入游戏内入口/奖励） -->
+  <script src="AdManager.js"></script>
+  <!-- Stage 2 内容表与规范化状态（内容先于依赖它们的纯领域模块） -->
+  <script src="content/herblore-parity.js"></script>
+  <script src="content/item-art.js"></script>
+  <script src="content/materials.js"></script>
+  <script src="content/combat-lexicon.js"></script>
+  <script src="content/equipment.js"></script>
+  <script src="content/items.js"></script>
+  <script src="content/life-skills.js"></script>
+  <script src="content/gathering.js"></script>
+  <script src="content/recipes.js"></script>
+  <script src="content/homestead.js"></script>
+  <!-- Stage 3 combat/technique/realm registries -->
+  <script src="content/combat.js"></script>
+  <script src="content/techniques.js"></script>
+  <script src="content/realms.js"></script>
+  <!-- Stage 4 world/person/social registries; core modules load later -->
+  <script src="content/regions.js"></script>
+  <script src="content/sects.js"></script>
+  <script src="content/npc-generation.js"></script>
+  <script src="content/social-interactions.js"></script>
+  <script src="content/event-templates.js"></script>
+  <script src="content/lifecycle.js"></script>
+  <!-- 装备实例与状态迁移共享同一条可持久化随机数链 -->
+  <script src="core/random.js"></script>
+  <script src="core/equipment.js"></script>
+  <script src="core/stage2-state.js"></script>
+  <script src="core/stage3-state.js"></script>
+  <!-- 永久人物生成只消费可持久化随机数，先于 v4→v5 迁移加载 -->
+  <script src="core/npc-generator.js"></script>
+  <script src="core/npc-roster.js"></script>
+  <script src="core/stage4-state.js"></script>
+  <script src="core/relationships.js"></script>
+  <script src="core/npc-combat-config.js"></script>
+  <script src="core/combat-party.js"></script>
+  <!-- 背包/技能与纯领域模块 -->
+  <script src="core/inventory.js"></script>
+  <script src="core/skill-progression.js"></script>
+  <script src="core/social.js"></script>
+  <script src="core/event-engine.js"></script>
+  <script src="core/npc-simulation.js"></script>
+  <script src="core/sect-simulation.js"></script>
+  <script src="core/gathering.js"></script>
+  <script src="core/production.js"></script>
+  <script src="core/farm.js"></script>
+  <script src="core/formations.js"></script>
+  <script src="core/spirit-beasts.js"></script>
+  <!-- Stage 3 pure combat domains, in dependency order -->
+  <script src="core/combat-loadouts.js"></script>
+  <script src="core/techniques.js"></script>
+  <script src="core/combat-stats.js"></script>
+  <script src="core/team-combat-snapshot.js"></script>
+  <script src="core/team-combat-engine.js"></script>
+  <script src="core/team-combat-consequences.js"></script>
+  <script src="core/combat-engine.js"></script>
+  <script src="core/combat-rewards.js"></script>
+  <script src="core/combat-progress.js"></script>
+  <script src="core/breakthrough.js"></script>
+  <!-- 版本化单快照、统一模拟与 Stage 2 规则适配 -->
+  <script src="core/save-system.js"></script>
+  <script src="core/simulation-report.js"></script>
+  <script src="core/state-model.js"></script>
+  <script src="core/simulation.js"></script>
+  <script src="core/game-rules.js"></script>
+  <script src="core/stage2-rules.js"></script>
+  <script src="core/stage3-rules.js"></script>
+  <script src="core/stage4-rules.js"></script>
+  <script src="core/lineage.js"></script>
+  <script src="core/inheritance-hall.js"></script>
+  <script src="core/legacy-transition.js"></script>
+  <script src="core/stage5-rules.js"></script>
+  <!-- 游戏逻辑：只调 Platform.*，禁止 tap.* / 沙箱 API；只画游戏世界，不画 UI -->
+  <script src="game.js"></script>
+  <!-- DOM UI 控制器：构建/显隐各界面、绑定按钮事件（角色创建页已迁此） -->
+  <script src="ui.js?v=20260729-farm-unselected"></script>
+</body>
+</html>

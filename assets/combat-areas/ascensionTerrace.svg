@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="120" viewBox="0 0 240 90" role="img" aria-label="飞升台">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F8F0D0"/><stop offset="100%" stop-color="#C8A858"/></linearGradient></defs>
+  <rect width="240" height="90" fill="url(#g)"/>
+  <rect width="240" height="90" fill="#C8A858" opacity=".12"/>
+  <path fill="#8A7030" opacity=".55" d="M0 88 L48 28 L96 88 Z"/><path fill="#F8F0D0" opacity=".7" d="M40 88 L110 36 L160 88 Z"/><path fill="#8A7030" opacity=".35" d="M120 88 L180 44 L240 88 Z"/>
+  <rect y="62" width="240" height="28" fill="#1A1520" opacity=".28"/>
+</svg>

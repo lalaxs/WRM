@@ -1,0 +1,9 @@
+{
+  "name": "xiuxian-idle-h5",
+  "private": true,
+  "scripts": {
+    "test": "node tests/selftest_all.js",
+    "sync-release": "node scripts/sync-release.js",
+    "package:h5": "node scripts/package-h5.js"
+  }
+}

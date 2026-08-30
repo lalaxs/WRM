@@ -21,9 +21,6 @@
   'use strict';
 
   const SCHEMA_VERSION = 5;
-  const STAGE3_SCHEMA_VERSION = 4;
-  const STAGE2_SCHEMA_VERSION = 3;
-  const STAGE1B_SCHEMA_VERSION = 2;
   const MODEL_VERSION = 1;
   const SNAPSHOT_KEY = 'cloud_save_v1';
   const BACKUP_KEY = 'cloud_save_v1_backup';
@@ -35,20 +32,15 @@
   const HAS_STAGE3_STATE = HAS_STAGE2_STATE &&
     !!Stage3State &&
     typeof Stage3State.normalize === 'function' &&
-    typeof Stage3State.migrateV3 === 'function' &&
     typeof Stage3State.normalizeActionKey === 'function';
   const HAS_STAGE4_STATE = HAS_STAGE3_STATE &&
     !!Stage4State &&
     Stage4State.VERSION === SCHEMA_VERSION &&
     typeof Stage4State.normalize === 'function' &&
-    typeof Stage4State.migrateV4 === 'function' &&
     typeof Stage4State.validate === 'function' &&
     typeof Stage4State.snapshotJsonData === 'function';
-  const ACTIVE_SCHEMA_VERSION = HAS_STAGE4_STATE
-    ? SCHEMA_VERSION
-    : HAS_STAGE3_STATE
-      ? STAGE3_SCHEMA_VERSION
-    : HAS_STAGE2_STATE ? STAGE2_SCHEMA_VERSION : STAGE1B_SCHEMA_VERSION;
+  // 未上线：只认当前 schema，不做跨版本迁移。
+  const ACTIVE_SCHEMA_VERSION = SCHEMA_VERSION;
 
   function own(value, key) {
     return Object.prototype.hasOwnProperty.call(value, key);
@@ -286,6 +278,10 @@
       result.world.backgroundAccumulator = world.backgroundAccumulator;
       result.world.sectAccumulator = world.sectAccumulator;
       result.world.eventAccumulator = world.eventAccumulator;
+      result.world.monthAccumulator = world.monthAccumulator;
+      result.world.nextWorldEventId = world.nextWorldEventId;
+      result.world.worldEvents = cloneArray(world.worldEvents);
+      result.world.calendar = cloneRecord(world.calendar);
       result.world.regions = cloneRecord(world.regions);
     }
     return result;
@@ -558,12 +554,11 @@
     return action;
   }
 
-  function createBaseSnapshot(input, now, schemaVersion) {
+  function createBaseSnapshot(input, now) {
     const source = snapshotRecord(input) || {};
     const savedAt = finiteNumber(now, Date.now(), 0);
-    const stage2 = schemaVersion >= STAGE2_SCHEMA_VERSION;
     return {
-      schemaVersion,
+      schemaVersion: SCHEMA_VERSION,
       savedAt,
       modelVersion: MODEL_VERSION,
       created: !!source.created,
@@ -582,62 +577,24 @@
       systems: normalizeSystems(
         source.systems,
         source,
-        schemaVersion >= STAGE2_SCHEMA_VERSION,
-        schemaVersion >= STAGE3_SCHEMA_VERSION,
-        schemaVersion >= SCHEMA_VERSION
+        true,
+        true,
+        true
       ),
-      pendingOfflineReport: stage2
-        ? normalizeStage2PendingEnvelope(source, savedAt)
-        : normalizePendingEnvelope(source),
-      reportArchive: stage2
-        ? normalizeStage2ReportList(source.reportArchive, savedAt)
-        : cloneArray(source.reportArchive),
-      processedThroughMs: finiteNumber(
-        source.processedThroughMs,
-        finiteNumber(source.savedAt, now, 0),
-        0
-      ),
+      pendingOfflineReport: normalizeStage2PendingEnvelope(source, savedAt),
+      reportArchive: normalizeStage2ReportList(source.reportArchive, savedAt),
+      // 水位线必须落在「有意义的时间」上：显式 0/缺失都回退到 savedAt，
+      // 避免启动离线结算从纪元初推进，把寿元一次耗尽。
+      processedThroughMs: (function () {
+        const fallback = finiteNumber(source.savedAt, savedAt, 0) || savedAt;
+        const raw = source.processedThroughMs;
+        if (raw == null) return fallback;
+        const number = Number(raw);
+        if (!Number.isFinite(number) || number <= 0) return fallback;
+        return number;
+      })(),
       lastActionStop: normalizeLastActionStop(source.lastActionStop)
     };
-  }
-
-  function createV2Snapshot(input, now) {
-    return createBaseSnapshot(input, now, STAGE1B_SCHEMA_VERSION);
-  }
-
-  function createV3Snapshot(input, now) {
-    const snapshot = createBaseSnapshot(input, now, STAGE2_SCHEMA_VERSION);
-    if (snapshot.current) {
-      const key = Stage2State.normalizeActionKey(snapshot.current.key);
-      if (key) {
-        snapshot.current.key = key;
-      } else {
-        const removedKey = snapshot.current.key;
-        snapshot.current = null;
-        discloseRemovedAction(snapshot, removedKey);
-      }
-    }
-    return Stage2State.normalize(snapshot);
-  }
-
-  function createV4Snapshot(input, now) {
-    const snapshot = createBaseSnapshot(
-      input,
-      now,
-      STAGE3_SCHEMA_VERSION
-    );
-    if (snapshot.current) {
-      const key = Stage2State.normalizeActionKey(snapshot.current.key) ||
-        Stage3State.normalizeActionKey(snapshot.current.key);
-      if (key) {
-        snapshot.current.key = key;
-      } else {
-        const removedKey = snapshot.current.key;
-        snapshot.current = null;
-        discloseRemovedAction(snapshot, removedKey);
-      }
-    }
-    return Stage3State.normalize(snapshot);
   }
 
   function removedActionReport(snapshot, actionKey) {
@@ -704,13 +661,16 @@
   }
 
   function createSnapshot(input, now) {
-    if (!HAS_STAGE2_STATE) return createV2Snapshot(input, now);
-    if (!HAS_STAGE3_STATE) return createV3Snapshot(input, now);
-    if (!HAS_STAGE4_STATE) return createV4Snapshot(input, now);
-    const snapshot = createBaseSnapshot(input, now, SCHEMA_VERSION);
+    if (!HAS_STAGE4_STATE) {
+      throw new Error('Stage4State is required');
+    }
+    let snapshot = createBaseSnapshot(input, now);
     if (snapshot.current) {
       const key = Stage2State.normalizeActionKey(snapshot.current.key) ||
-        Stage3State.normalizeActionKey(snapshot.current.key);
+        Stage3State.normalizeActionKey(snapshot.current.key) ||
+        (typeof Stage4State.normalizeActionKey === 'function'
+          ? Stage4State.normalizeActionKey(snapshot.current.key)
+          : null);
       if (key) {
         snapshot.current.key = key;
       } else {
@@ -718,6 +678,10 @@
         snapshot.current = null;
         discloseRemovedAction(snapshot, removedKey);
       }
+    }
+    // 新开档与空人物池：补齐首批永久人物，再单次 normalize。
+    if (typeof Stage4State.ensureWorldPopulation === 'function') {
+      snapshot = Stage4State.ensureWorldPopulation(snapshot);
     }
     return Stage4State.normalize(snapshot);
   }
@@ -763,28 +727,6 @@
       anchor >= 0 &&
       Number.isFinite(base) &&
       base >= 0
-    );
-  }
-
-  function validV1Snapshot(raw) {
-    return (
-      !!raw &&
-      typeof raw === 'object' &&
-      !Array.isArray(raw) &&
-      raw.schemaVersion === 1 &&
-      Number.isFinite(raw.savedAt) &&
-      raw.savedAt >= 0 &&
-      typeof raw.created === 'boolean' &&
-      recordOrNull(raw.player) &&
-      record(raw.appearance) &&
-      record(raw.appearance.parts) &&
-      (raw.current === null || validAction(raw.current)) &&
-      Number.isInteger(raw.rngState) &&
-      raw.rngState > 0 &&
-      raw.rngState <= 0xFFFFFFFF &&
-      Number.isFinite(raw.fishRecoverAcc) &&
-      raw.fishRecoverAcc >= 0 &&
-      recordOrNull(raw.pendingOfflineReport)
     );
   }
 
@@ -869,38 +811,6 @@
       raw.reason.length > 0 &&
       Number.isFinite(raw.atMs) &&
       raw.atMs >= 0
-    );
-  }
-
-  function validV2Snapshot(raw) {
-    return (
-      !!raw &&
-      typeof raw === 'object' &&
-      !Array.isArray(raw) &&
-      raw.schemaVersion === STAGE1B_SCHEMA_VERSION &&
-      raw.modelVersion === MODEL_VERSION &&
-      Number.isFinite(raw.savedAt) &&
-      raw.savedAt >= 0 &&
-      typeof raw.created === 'boolean' &&
-      recordOrNull(raw.player) &&
-      validPlayerTimeAnchors(raw.player) &&
-      record(raw.appearance) &&
-      record(raw.appearance.parts) &&
-      (raw.current === null || validAction(raw.current)) &&
-      Number.isInteger(raw.rngState) &&
-      raw.rngState > 0 &&
-      raw.rngState <= 0xFFFFFFFF &&
-      Number.isFinite(raw.offlineLimitSeconds) &&
-      raw.offlineLimitSeconds >= DEFAULT_OFFLINE_LIMIT_SECONDS &&
-      raw.offlineLimitSeconds <= MAX_OFFLINE_LIMIT_SECONDS &&
-      validSystems(raw.systems) &&
-      record(raw.pendingOfflineReport) &&
-      raw.pendingOfflineReport.version === 1 &&
-      Array.isArray(raw.pendingOfflineReport.reports) &&
-      Array.isArray(raw.reportArchive) &&
-      Number.isFinite(raw.processedThroughMs) &&
-      raw.processedThroughMs >= 0 &&
-      validLastActionStop(raw.lastActionStop)
     );
   }
 
@@ -1069,6 +979,11 @@
         delete comparablePlayer.regionId;
         delete comparablePlayer.flags;
         delete comparablePlayer.lifecycle;
+        delete comparablePlayer.spiritualRootId;
+        delete comparablePlayer.kin;
+        delete comparablePlayer.familyId;
+        delete comparablePlayer.parentIds;
+        delete comparablePlayer.metPlayer;
       }
       const normalizedPlayer = cloneJson(normalized.player, null);
       if (allowStage3 && record(normalizedPlayer)) {
@@ -1093,6 +1008,10 @@
           delete comparableSystems.world.backgroundAccumulator;
           delete comparableSystems.world.sectAccumulator;
           delete comparableSystems.world.eventAccumulator;
+          delete comparableSystems.world.monthAccumulator;
+          delete comparableSystems.world.nextWorldEventId;
+          delete comparableSystems.world.worldEvents;
+          delete comparableSystems.world.calendar;
           delete comparableSystems.world.regions;
         }
       }
@@ -1120,70 +1039,6 @@
     } catch (error) {
       return false;
     }
-  }
-
-  function validV3Snapshot(raw) {
-    return (
-      !!raw &&
-      typeof raw === 'object' &&
-      !Array.isArray(raw) &&
-      raw.schemaVersion === STAGE2_SCHEMA_VERSION &&
-      raw.modelVersion === MODEL_VERSION &&
-      Number.isFinite(raw.savedAt) &&
-      raw.savedAt >= 0 &&
-      typeof raw.created === 'boolean' &&
-      recordOrNull(raw.player) &&
-      validPlayerTimeAnchors(raw.player) &&
-      record(raw.appearance) &&
-      record(raw.appearance.parts) &&
-      (raw.current === null || validStage2Action(raw.current)) &&
-      Number.isInteger(raw.rngState) &&
-      raw.rngState > 0 &&
-      raw.rngState <= 0xFFFFFFFF &&
-      Number.isFinite(raw.offlineLimitSeconds) &&
-      raw.offlineLimitSeconds >= DEFAULT_OFFLINE_LIMIT_SECONDS &&
-      raw.offlineLimitSeconds <= MAX_OFFLINE_LIMIT_SECONDS &&
-      validSystems(raw.systems) &&
-      validPendingEnvelope(raw.pendingOfflineReport) &&
-      Array.isArray(raw.reportArchive) &&
-      raw.reportArchive.every(validSimulationReport) &&
-      Number.isFinite(raw.processedThroughMs) &&
-      raw.processedThroughMs >= 0 &&
-      validLastActionStop(raw.lastActionStop) &&
-      validStage2Branches(raw, false, false)
-    );
-  }
-
-  function validV4Snapshot(raw) {
-    return (
-      !!raw &&
-      typeof raw === 'object' &&
-      !Array.isArray(raw) &&
-      raw.schemaVersion === STAGE3_SCHEMA_VERSION &&
-      raw.modelVersion === MODEL_VERSION &&
-      Number.isFinite(raw.savedAt) &&
-      raw.savedAt >= 0 &&
-      typeof raw.created === 'boolean' &&
-      recordOrNull(raw.player) &&
-      validPlayerTimeAnchors(raw.player) &&
-      record(raw.appearance) &&
-      record(raw.appearance.parts) &&
-      (raw.current === null || validAction(raw.current)) &&
-      Number.isInteger(raw.rngState) &&
-      raw.rngState > 0 &&
-      raw.rngState <= 0xFFFFFFFF &&
-      Number.isFinite(raw.offlineLimitSeconds) &&
-      raw.offlineLimitSeconds >= DEFAULT_OFFLINE_LIMIT_SECONDS &&
-      raw.offlineLimitSeconds <= MAX_OFFLINE_LIMIT_SECONDS &&
-      validSystems(raw.systems) &&
-      validPendingEnvelope(raw.pendingOfflineReport) &&
-      Array.isArray(raw.reportArchive) &&
-      raw.reportArchive.every(validSimulationReport) &&
-      Number.isFinite(raw.processedThroughMs) &&
-      raw.processedThroughMs >= 0 &&
-      validLastActionStop(raw.lastActionStop) &&
-      validStage2Branches(raw, true, false)
-    );
   }
 
   function validV5Snapshot(raw) {
@@ -1222,198 +1077,17 @@
     return createSnapshot(raw, finiteNumber(raw.savedAt, now, 0));
   }
 
-  function migrateV1(raw, now) {
-    const source = cloneJson(raw, {});
-    source.schemaVersion = STAGE1B_SCHEMA_VERSION;
-    source.modelVersion = MODEL_VERSION;
-    source.processedThroughMs = finiteNumber(
-      source.processedThroughMs,
-      finiteNumber(source.savedAt, now, 0),
-      0
-    );
-    source.systems = normalizeSystems(source.systems, source);
-    source.reportArchive = Array.isArray(source.reportArchive)
-      ? source.reportArchive
-      : [];
-    return createV2Snapshot(
-      source,
-      finiteNumber(source.savedAt, now, 0)
-    );
-  }
-
-  function migrateV2(raw, now) {
-    const source = cloneJson(raw, {});
-    source.schemaVersion = STAGE2_SCHEMA_VERSION;
-    return createV3Snapshot(
-      source,
-      finiteNumber(source.savedAt, now, 0)
-    );
-  }
-
-  function migrateV3(raw, now) {
-    const source = cloneJson(raw, {});
-    const converted = Stage3State.migrateV3(source);
-    converted.schemaVersion = STAGE3_SCHEMA_VERSION;
-    return createV4Snapshot(
-      converted,
-      finiteNumber(source.savedAt, now, 0)
-    );
-  }
-
-  function migrateV4(raw, now) {
-    if (!HAS_STAGE4_STATE) return null;
-    const converted = Stage4State.migrateV4(raw);
-    converted.schemaVersion = SCHEMA_VERSION;
-    return createSnapshot(
-      converted,
-      finiteNumber(dataValue(raw, 'savedAt'), now, 0)
-    );
-  }
-
-  function migrateSnapshot(raw, now) {
+  function acceptSnapshot(raw, now) {
     raw = snapshotRecord(raw);
     if (!raw) return null;
-    if (!HAS_STAGE2_STATE) {
-      if (raw.schemaVersion === STAGE1B_SCHEMA_VERSION) {
-        if (!validV2Snapshot(raw)) return null;
-        return {
-          snapshot: createV2Snapshot(
-            raw,
-            finiteNumber(raw.savedAt, now, 0)
-          ),
-          migrated: false
-        };
-      }
-      if (raw.schemaVersion === 1) {
-        if (!validV1Snapshot(raw)) return null;
-        const snapshot = migrateV1(raw, now);
-        return validV2Snapshot(snapshot)
-          ? { snapshot, migrated: true }
-          : null;
-      }
-      return null;
-    }
-    if (!HAS_STAGE3_STATE) {
-      if (raw.schemaVersion === STAGE2_SCHEMA_VERSION) {
-        if (!validV3Snapshot(raw)) return null;
-        return {
-          snapshot: createV3Snapshot(
-            raw,
-            finiteNumber(raw.savedAt, now, 0)
-          ),
-          migrated: false
-        };
-      }
-      if (raw.schemaVersion === STAGE1B_SCHEMA_VERSION) {
-        if (!validV2Snapshot(raw)) return null;
-        const snapshot = migrateV2(raw, now);
-        return validV3Snapshot(snapshot)
-          ? { snapshot: snapshot, migrated: true }
-          : null;
-      }
-      if (raw.schemaVersion === 1) {
-        if (!validV1Snapshot(raw)) return null;
-        const v2 = migrateV1(raw, now);
-        if (!validV2Snapshot(v2)) return null;
-        const snapshot = migrateV2(v2, now);
-        return validV3Snapshot(snapshot)
-          ? { snapshot: snapshot, migrated: true }
-          : null;
-      }
-      return null;
-    }
-    if (!HAS_STAGE4_STATE) {
-      if (raw.schemaVersion === STAGE3_SCHEMA_VERSION) {
-        if (!validV4Snapshot(raw)) return null;
-        const snapshot = createV4Snapshot(
-          raw,
-          finiteNumber(raw.savedAt, now, 0)
-        );
-        const repaired = !sameJson(raw, snapshot);
-        return {
-          snapshot: snapshot,
-          migrated: repaired
-        };
-      }
-      if (raw.schemaVersion === STAGE2_SCHEMA_VERSION) {
-        if (!validV3Snapshot(raw)) return null;
-        const snapshot = migrateV3(raw, now);
-        return validV4Snapshot(snapshot)
-          ? { snapshot: snapshot, migrated: true }
-          : null;
-      }
-      if (raw.schemaVersion === STAGE1B_SCHEMA_VERSION) {
-        if (!validV2Snapshot(raw)) return null;
-        const v3 = migrateV2(raw, now);
-        if (!validV3Snapshot(v3)) return null;
-        const snapshot = migrateV3(v3, now);
-        return validV4Snapshot(snapshot)
-          ? { snapshot: snapshot, migrated: true }
-          : null;
-      }
-      if (raw.schemaVersion === 1) {
-        if (!validV1Snapshot(raw)) return null;
-        const v2 = migrateV1(raw, now);
-        if (!validV2Snapshot(v2)) return null;
-        const v3 = migrateV2(v2, now);
-        if (!validV3Snapshot(v3)) return null;
-        const snapshot = migrateV3(v3, now);
-        return validV4Snapshot(snapshot)
-          ? { snapshot: snapshot, migrated: true }
-          : null;
-      }
-      return null;
-    }
-    if (raw.schemaVersion === SCHEMA_VERSION) {
-      if (!validV5Snapshot(raw)) return null;
-      const snapshot = normalizeSnapshot(raw, now);
-      const repaired = !sameJson(raw, snapshot);
-      return {
-        snapshot: snapshot,
-        migrated: repaired
-      };
-    }
-    if (raw.schemaVersion === STAGE3_SCHEMA_VERSION) {
-      if (!validV4Snapshot(raw)) return null;
-      const snapshot = migrateV4(raw, now);
-      return validV5Snapshot(snapshot)
-        ? { snapshot: snapshot, migrated: true }
-        : null;
-    }
-    if (raw.schemaVersion === STAGE2_SCHEMA_VERSION) {
-      if (!validV3Snapshot(raw)) return null;
-      const v4 = migrateV3(raw, now);
-      if (!validV4Snapshot(v4)) return null;
-      const snapshot = migrateV4(v4, now);
-      return validV5Snapshot(snapshot)
-        ? { snapshot: snapshot, migrated: true }
-        : null;
-    }
-    if (raw.schemaVersion === STAGE1B_SCHEMA_VERSION) {
-      if (!validV2Snapshot(raw)) return null;
-      const v3 = migrateV2(raw, now);
-      if (!validV3Snapshot(v3)) return null;
-      const v4 = migrateV3(v3, now);
-      if (!validV4Snapshot(v4)) return null;
-      const snapshot = migrateV4(v4, now);
-      return validV5Snapshot(snapshot)
-        ? { snapshot: snapshot, migrated: true }
-        : null;
-    }
-    if (raw.schemaVersion === 1) {
-      if (!validV1Snapshot(raw)) return null;
-      const v2 = migrateV1(raw, now);
-      if (!validV2Snapshot(v2)) return null;
-      const v3 = migrateV2(v2, now);
-      if (!validV3Snapshot(v3)) return null;
-      const v4 = migrateV3(v3, now);
-      if (!validV4Snapshot(v4)) return null;
-      const snapshot = migrateV4(v4, now);
-      return validV5Snapshot(snapshot)
-        ? { snapshot: snapshot, migrated: true }
-        : null;
-    }
-    return null;
+    if (raw.schemaVersion !== SCHEMA_VERSION) return null;
+    if (!validV5Snapshot(raw)) return null;
+    const snapshot = normalizeSnapshot(raw, now);
+    const repaired = !sameJson(raw, snapshot);
+    return {
+      snapshot: snapshot,
+      repaired: repaired
+    };
   }
 
   function futureSchemaVersion(raw) {
@@ -1447,33 +1121,34 @@
     return snapshot;
   }
 
-  function loadLegacy(adapter, now) {
-    const created = safeLoad(adapter, 'cloud_created');
-    const appearance = safeLoad(adapter, 'cloud_nie');
-    const player = safeLoad(adapter, 'cloud_player');
-    const current = safeLoad(adapter, 'cloud_current');
-    const savedAt = safeLoad(adapter, 'cloud_lastsave');
-    if (created == null && appearance == null && player == null && current == null && savedAt == null) return null;
-    return createSnapshot({
-      created: created === '1' || created === 1 || created === true,
-      appearance: appearance || { parts: {} },
-      player,
-      current,
-      rngState: 0x6D2B79F5
-    }, finiteNumber(savedAt, now, 0));
+  function emptyLoadResult(now, extras) {
+    const result = {
+      source: 'empty',
+      snapshot: loadView(createSnapshot({}, now)),
+      migrated: false,
+      needsRepair: false,
+      future: false,
+      writeProtected: false
+    };
+    if (extras) {
+      Object.keys(extras).forEach(function (key) {
+        result[key] = extras[key];
+      });
+    }
+    return result;
   }
 
   function load(adapter, now) {
     const primary = safeLoad(adapter, SNAPSHOT_KEY);
     const backup = safeLoad(adapter, BACKUP_KEY);
     const futureVersion = highestFutureSchemaVersion(primary, backup);
-    const primaryResult = migrateSnapshot(primary, now);
+    const primaryResult = acceptSnapshot(primary, now);
     if (primaryResult) {
       const result = {
         source: 'snapshot',
         snapshot: loadView(primaryResult.snapshot),
-        migrated: primaryResult.migrated,
-        needsRepair: futureVersion == null && primaryResult.migrated,
+        migrated: primaryResult.repaired,
+        needsRepair: futureVersion == null && primaryResult.repaired,
         future: futureVersion != null,
         writeProtected: futureVersion != null
       };
@@ -1482,12 +1157,12 @@
       }
       return result;
     }
-    const backupResult = migrateSnapshot(backup, now);
+    const backupResult = acceptSnapshot(backup, now);
     if (backupResult) {
       return {
         source: 'backup',
         snapshot: loadView(backupResult.snapshot),
-        migrated: backupResult.migrated,
+        migrated: backupResult.repaired,
         needsRepair: futureVersion == null,
         future: futureVersion != null,
         futureSchemaVersion: futureVersion,
@@ -1495,35 +1170,13 @@
       };
     }
     if (futureVersion != null) {
-      return {
-        source: 'empty',
-        snapshot: loadView(createSnapshot({}, now)),
-        migrated: false,
-        needsRepair: false,
+      return emptyLoadResult(now, {
         future: true,
         futureSchemaVersion: futureVersion,
         writeProtected: true
-      };
+      });
     }
-    const legacy = loadLegacy(adapter, now);
-    if (legacy) {
-      return {
-        source: 'legacy',
-        snapshot: loadView(legacy),
-        migrated: true,
-        needsRepair: true,
-        future: false,
-        writeProtected: false
-      };
-    }
-    return {
-      source: 'empty',
-      snapshot: loadView(createSnapshot({}, now)),
-      migrated: false,
-      needsRepair: false,
-      future: false,
-      writeProtected: false
-    };
+    return emptyLoadResult(now);
   }
 
   function save(adapter, input, now) {
@@ -1534,7 +1187,7 @@
       return false;
     }
     const snapshot = createSnapshot(input, now);
-    const previousResult = migrateSnapshot(previous, now);
+    const previousResult = acceptSnapshot(previous, now);
     if (previousResult &&
         !safeSave(adapter, BACKUP_KEY, previousResult.snapshot)) {
       return false;
@@ -1547,8 +1200,6 @@
     SNAPSHOT_KEY,
     BACKUP_KEY,
     normalizeAction,
-    migrateV3,
-    migrateV4,
     createSnapshot,
     load,
     save

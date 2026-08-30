@@ -29,7 +29,9 @@ function npc(id, overrides) {
     status: 'living',
     personalityId: 'steady',
     sectId: 'baicao-valley',
-    romancePrincipleId: 'negotiable'
+    romancePrincipleId: 'negotiable',
+    regionId: 'qinglan-town',
+    activityStatus: 'normal'
   }, overrides || {});
 }
 
@@ -39,6 +41,7 @@ function fixture(charmLevel) {
     rngState: 123,
     current: null,
     player: {
+      regionId: 'qinglan-town',
       cultivation: 0,
       skills: {
         charm: { level: charmLevel || 1, xp: 0 },
@@ -100,9 +103,57 @@ ok(Social.isAvailable(
   'npc-1',
   'gift',
   'spiritPeach'
-).ok === true, '持有可用礼物时赠礼可开始');
+).code === 'affection_locked',
+'初始好感不足时赠礼不可开始');
 ok(Social.isAvailable(
   base,
+  'npc-1',
+  'accompany',
+  null
+).code === 'affection_locked',
+'初始好感不足时陪伴不可开始');
+ok(Social.query(base, 'npc-1').interactions.length === 1 &&
+  Social.query(base, 'npc-1').interactions[0].id === 'talk',
+'初始仅开放接近');
+
+const remote = fixture(1);
+remote.player.regionId = 'mirror-realm';
+ok(Social.isAvailable(remote, 'npc-1', 'talk', null).ok === false &&
+  Social.isAvailable(remote, 'npc-1', 'talk', null).code ===
+    'interaction_locked',
+'异地不可发起接近');
+ok(Social.isAvailable(
+  withPersonAffection(remote, 60),
+  'npc-1',
+  'gift',
+  'spiritPeach'
+).ok === true,
+'异地仍可寄礼');
+
+function withPersonAffection(model, amount) {
+  model.systems.relationships.edges['npc-1>player'] = {
+    affection: amount,
+    trust: 0,
+    romanticAttachment: 0,
+    desire: 0,
+    dependence: 0,
+    loyalty: 0,
+    jealousy: 0,
+    closeness: 0,
+    lastChangedAt: 0
+  };
+  return model;
+}
+
+const warmed = withPersonAffection(fixture(1), 60);
+ok(Social.isAvailable(
+  warmed,
+  'npc-1',
+  'gift',
+  'spiritPeach'
+).ok === true, '持有可用礼物且好感足够时赠礼可开始');
+ok(Social.isAvailable(
+  warmed,
   'npc-1',
   'gift',
   'missing'
@@ -172,14 +223,14 @@ ok(highCompleted.result.misunderstandingChance >= 0,
 const gift = Social.parseActionKey(
   'social:npc-1:gift:spiritPeach'
 );
-const giftDone = Social.complete(fixture(1), gift, {
+const giftDone = Social.complete(withPersonAffection(fixture(1), 60), gift, {
   nowSeconds: function () { return 60; },
   random: function () { return 0.99; }
 });
 ok(giftDone.ok === true &&
   giftDone.state.player.inventory.stacks.spiritPeach === 1,
 '赠礼消耗与社交奖励在同一结果中结算');
-const unavailableGift = fixture(1);
+const unavailableGift = withPersonAffection(fixture(1), 60);
 unavailableGift.player.inventory.stacks = {};
 const beforeUnavailable = JSON.stringify(unavailableGift);
 const rejectedGift = Social.complete(unavailableGift, gift, {
@@ -191,7 +242,7 @@ ok(rejectedGift.ok === false &&
 '赠礼材料不足时不提交任何关系或奖励变化');
 
 const cultivate = Social.query(
-  fixture(1),
+  withPersonAffection(fixture(1), 60),
   'npc-1'
 ).interactions.find(function (entry) {
   return entry.id === 'cultivateTogether';
@@ -199,9 +250,20 @@ const cultivate = Social.query(
 ok(cultivate && cultivate.label === '与沈青梧一起修炼' &&
   !cultivate.label.includes('双修'),
 '共同修炼使用审核安全且带人物名的文案');
-ok(SocialContent.SHARED_INTERACTIONS.length === 7 &&
-  Social.query(fixture(1), 'npc-1').interactions.length >= 7,
-'七个通用互动全部可供基础人物使用');
+ok(SocialContent.SHARED_INTERACTIONS.length === 10 &&
+  Social.query(withPersonAffection(fixture(1), 60), 'npc-1')
+    .interactions.filter(function (entry) {
+      return SocialContent.SHARED_INTERACTIONS.some(function (shared) {
+        return shared.id === entry.id;
+      });
+    }).length >= 7 &&
+  SocialContent.get('repayKindness') &&
+  SocialContent.get('confess') &&
+  SocialContent.get('formPartnership'),
+'共享互动池扩至 10（含报恩/表白/结契），好感足够时基础项仍可用');
+ok(SocialContent.get('talk').requiredAffection === 0 &&
+  SocialContent.get('gift').requiredAffection === 10,
+'通用互动声明好感解锁阈值');
 
 const fakeStage3 = {
   create: function () {
@@ -233,20 +295,39 @@ const started = runtime.rules.start(
   0
 );
 ok(started.ok === true &&
-  started.state.current.mode === 'finite' &&
-  started.state.current.count === 1,
-'主动社交以一次性主行动开始');
+  started.state.current == null &&
+  started.state.systems.parallel.jobs.length === 1 &&
+  started.state.systems.parallel.jobs[0].actionKey === 'social:npc-1:talk',
+'主动社交进入并行队列且不占用主行动');
+const keepMain = fixture(1);
+keepMain.current = {
+  key: 'unrelated-main-action',
+  mode: 'repeat',
+  count: 0,
+  done: 0,
+  elapsed: 0,
+  stalled: false
+};
+const startedWithMain = runtime.rules.start(
+  keepMain,
+  'social:npc-1:talk',
+  0
+);
+ok(startedWithMain.ok === true &&
+  startedWithMain.state.current &&
+  startedWithMain.state.current.key === 'unrelated-main-action' &&
+  startedWithMain.state.systems.parallel.jobs.length === 1,
+'主动社交不打断现有主行动');
 const socialAdvance = Simulation.advance(started.state, 120, {
   source: 'online',
   fromMs: 0,
   rules: runtime.rules,
   lanes: runtime.lanes
 });
-ok(socialAdvance.state.current === null &&
-  socialAdvance.report.action.completed === 1 &&
+ok(socialAdvance.state.systems.parallel.jobs.length === 0 &&
   socialAdvance.report.social.completed.length === 1 &&
   socialAdvance.state.player.flags.completedFirstAction === true,
-'社交到时结算并释放主行动槽');
+'并行社交到时结算并清空队列');
 const offlineStarted = runtime.rules.start(
   fixture(1),
   'social:npc-1:talk',
@@ -259,10 +340,10 @@ const cappedSocial = Simulation.advance(offlineStarted.state, 120, {
   rules: runtime.rules,
   lanes: runtime.lanes
 });
-ok(cappedSocial.state.current !== null &&
-  cappedSocial.state.current.elapsed === 60 &&
-  cappedSocial.report.social.completed.length === 0,
-'主动社交遵循主行动离线上限且未到时不会提前结算');
+ok(cappedSocial.state.systems.parallel.jobs.length === 0 &&
+  cappedSocial.report.social.completed.length === 1 &&
+  cappedSocial.state.current == null,
+'主动社交按完整离线时间推进，不受主行动十二小时上限影响');
 
 console.log('\nStage 4 基础社交自测：' + passed + ' 通过，' +
   failed + ' 失败');

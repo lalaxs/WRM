@@ -58,8 +58,12 @@ function generationWith(overrides) {
     VALUE_PROFILES: overrides.VALUE_PROFILES ||
       NpcGenerationContent.VALUE_PROFILES,
     TALENTS: overrides.TALENTS || NpcGenerationContent.TALENTS,
+    SPIRITUAL_ROOTS: overrides.SPIRITUAL_ROOTS ||
+      NpcGenerationContent.SPIRITUAL_ROOTS,
     ROMANCE_PRINCIPLES: overrides.ROMANCE_PRINCIPLES ||
-      NpcGenerationContent.ROMANCE_PRINCIPLES
+      NpcGenerationContent.ROMANCE_PRINCIPLES,
+    DAO_HEART_TRAITS: overrides.DAO_HEART_TRAITS ||
+      NpcGenerationContent.DAO_HEART_TRAITS
   };
 }
 
@@ -155,10 +159,17 @@ if (NpcGenerator) {
     'lifespanYears',
     'realmStage',
     'cultivation',
+    'cultivationEfficiency',
+    'level_l',
+    'level_s',
+    'exp1',
+    'history',
+    'spiritualRootId',
     'talentId',
     'personalityId',
     'valueProfileId',
     'romancePrincipleId',
+    'traits',
     'regionId',
     'sectId',
     'familyId',
@@ -169,6 +180,7 @@ if (NpcGenerator) {
     'biography',
     'keyEventIds',
     'status',
+    'kin',
     'lastDetailedAt',
     'lastBackgroundAt'
   ];
@@ -209,8 +221,8 @@ if (NpcGenerator) {
       record.biography[0].type === 'origin' &&
       record.biography[0].regionId === record.regionId &&
       typeof record.biography[0].text === 'string' &&
-      record.biography[0].text.length > 0;
-  }), '每个人物以一条确定性出身传记开始');
+      /^出生于.+\。$/.test(record.biography[0].text);
+  }), '每个人物开局经历仅保留出生地');
 
   const genders = new Set(records.map(function (record) {
     return record.identity.gender;
@@ -243,7 +255,12 @@ if (NpcGenerator) {
       !Object.prototype.hasOwnProperty.call(record, 'guardianIds') &&
       !Object.prototype.hasOwnProperty.call(record, 'lineage') &&
       !Object.prototype.hasOwnProperty.call(record, 'childrenIds');
-  }), 'Stage 4 家庭标识不伪造父母、监护或谱系');
+  }), '人物生成器本身不写父母/监护/谱系（结构关系由 relation-seed 另步播种）');
+  ok(records.every(function (record) {
+    return typeof record.spiritualRootId === 'string' &&
+      Number.isFinite(record.cultivationEfficiency) &&
+      record.cultivationEfficiency > 0;
+  }), '首批人口具备灵根与正修炼效率');
 
   const realmRows = NpcGenerationContent.REALM_WEIGHTS;
   const realmByStage = new Map(realmRows.map(function (row) {
@@ -422,6 +439,11 @@ if (NpcGenerator) {
   const talentIds = new Set(
     NpcGenerationContent.TALENTS.map(function (row) { return row.id; })
   );
+  const spiritualRootIds = new Set(
+    NpcGenerationContent.SPIRITUAL_ROOTS.map(function (row) {
+      return row.id;
+    })
+  );
   const personalityIds = new Set(
     NpcGenerationContent.PERSONALITY_PROFILES.map(function (row) {
       return row.id;
@@ -439,10 +461,11 @@ if (NpcGenerator) {
   );
   ok(records.every(function (record) {
     return talentIds.has(record.talentId) &&
+      spiritualRootIds.has(record.spiritualRootId) &&
       personalityIds.has(record.personalityId) &&
       valueIds.has(record.valueProfileId) &&
       principleIds.has(record.romancePrincipleId);
-  }), '天赋、性格、价值观与恋爱原则只引用冻结内容表');
+  }), '天赋、灵根、性格、价值观与恋爱原则只引用冻结内容表');
 
   function forceSecondWeight(rows, key) {
     return rows.map(function (row, index) {
@@ -472,8 +495,13 @@ if (NpcGenerator) {
     ),
     VALUE_PROFILES: NpcGenerationContent.VALUE_PROFILES,
     TALENTS: forceSecondWeight(NpcGenerationContent.TALENTS),
+    SPIRITUAL_ROOTS: forceSecondWeight(
+      NpcGenerationContent.SPIRITUAL_ROOTS
+    ),
     ROMANCE_PRINCIPLES:
-      NpcGenerationContent.ROMANCE_PRINCIPLES
+      NpcGenerationContent.ROMANCE_PRINCIPLES,
+    DAO_HEART_TRAITS:
+      NpcGenerationContent.DAO_HEART_TRAITS
   };
   const weighted = NpcGenerator.generateOne({
     nextId: 17,
@@ -491,8 +519,10 @@ if (NpcGenerator) {
      weighted.npc.personalityId ===
        NpcGenerationContent.PERSONALITY_PROFILES[1].id &&
      weighted.npc.talentId ===
-       NpcGenerationContent.TALENTS[1].id,
-  '境界、性格与天赋选择使用内容表权重');
+       NpcGenerationContent.TALENTS[1].id &&
+     weighted.npc.spiritualRootId ===
+       NpcGenerationContent.SPIRITUAL_ROOTS[1].id,
+  '境界、性格、天赋与灵根选择使用内容表权重');
 
   const beforeAppend = JSON.stringify(first.records);
   const appended = NpcGenerator.generateOne({
@@ -617,8 +647,10 @@ if (NpcGenerator) {
       [NpcGenerationContent.PERSONALITY_PROFILES[0]],
     VALUE_PROFILES: [NpcGenerationContent.VALUE_PROFILES[0]],
     TALENTS: [NpcGenerationContent.TALENTS[0]],
+    SPIRITUAL_ROOTS: [NpcGenerationContent.SPIRITUAL_ROOTS[0]],
     ROMANCE_PRINCIPLES:
-      [NpcGenerationContent.ROMANCE_PRINCIPLES[0]]
+      [NpcGenerationContent.ROMANCE_PRINCIPLES[0]],
+    DAO_HEART_TRAITS: [NpcGenerationContent.DAO_HEART_TRAITS[0]]
   };
   const minimalContent = {
     regions: { REGIONS: [RegionContent.REGIONS[0]] },
@@ -667,6 +699,7 @@ if (NpcGenerator) {
     Math: Math,
     Set: Set,
     GameRandom: GameRandom,
+    Dns: require('../core/dns.js'),
     EquipmentContent: require('../content/equipment.js'),
     Equipment: require('../core/equipment.js')
   };

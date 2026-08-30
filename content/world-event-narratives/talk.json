@@ -1,0 +1,1395 @@
+[
+  {
+    "id": "talk-chicheng-1",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}八卦对方近日与旁人走得近的传闻。{a}装作随口提起，声音却发紧。",
+    "personalityAny": [
+      "chicheng"
+    ]
+  },
+  {
+    "id": "talk-chicheng-2",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}邀{b}一起去一处险地。{b}本想拒绝，看{a}那认真样又改了口。",
+    "personalityAny": [
+      "chicheng"
+    ]
+  },
+  {
+    "id": "talk-qingleng-1",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}旁敲侧击，问{b}有没有人送过示好的礼物。{a}说得轻描淡写，{b}却忽然不说话了。",
+    "personalityAny": [
+      "qingleng"
+    ]
+  },
+  {
+    "id": "talk-qingleng-2",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}向{b}诉苦，说修为停滞背后那点不敢说的慌。{a}本想笑着带过，被{b}一眼看穿。",
+    "personalityAny": [
+      "qingleng"
+    ]
+  },
+  {
+    "id": "talk-rechen-1",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}抱怨门中有人当众驳了面子。{a}听完怒意先上来，被{b}按住袖口。",
+    "personalityAny": [
+      "rechen"
+    ]
+  },
+  {
+    "id": "talk-rechen-2",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}追问{b}一句从前随口答应却一直没做的事。{b}提及时笑得很淡，像不当真，又像等了很久。",
+    "personalityAny": [
+      "rechen"
+    ]
+  },
+  {
+    "id": "talk-shuaituo-1",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}被{b}打趣说走就走的坏习惯。{b}提起时语气随意，底下却有怨。",
+    "personalityAny": [
+      "shuaituo"
+    ]
+  },
+  {
+    "id": "talk-shuaituo-2",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}说自己可能要出远门。{b}听完先是一顿，随口说声保重，眼神却沉了下去。",
+    "personalityAny": [
+      "shuaituo"
+    ]
+  },
+  {
+    "id": "talk-zhizhuo-1",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}八卦对方近日与旁人走得近的传闻。{a}装作随口提起，声音却发紧。",
+    "personalityAny": [
+      "zhizhuo"
+    ]
+  },
+  {
+    "id": "talk-zhizhuo-2",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}邀{b}一起去一处险地。{b}本想拒绝，看{a}那认真样又改了口。",
+    "personalityAny": [
+      "zhizhuo"
+    ]
+  },
+  {
+    "id": "talk-renhou-1",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}关心地问起{b}旧伤复发后的痛处。{b}想瞒，话到嘴边还是说实话了。",
+    "personalityAny": [
+      "renhou"
+    ]
+  },
+  {
+    "id": "talk-renhou-2",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}抱怨门中有人当众驳了面子。{a}听完怒意先上来，被{b}按住袖口。",
+    "personalityAny": [
+      "renhou"
+    ]
+  },
+  {
+    "id": "talk-jiaojin-1",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}提起小时候差点一起离开的旧事。说到半截，两人都住了声。",
+    "personalityAny": [
+      "jiaojin"
+    ]
+  },
+  {
+    "id": "talk-jiaojin-2",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}吐槽一场必须应付的场面礼。{a}说得得体，{b}却听出对方其实很烦。",
+    "personalityAny": [
+      "jiaojin"
+    ]
+  },
+  {
+    "id": "talk-wenya-1",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}说自己可能要出远门。{b}听完先是一顿，随口说声保重，眼神却沉了下去。",
+    "personalityAny": [
+      "wenya"
+    ]
+  },
+  {
+    "id": "talk-wenya-2",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}八卦对方近日与旁人走得近的传闻。{a}装作随口提起，声音却发紧。",
+    "personalityAny": [
+      "wenya"
+    ]
+  },
+  {
+    "id": "rel-friend-1",
+    "weight": 14,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}提起小时候差点一起离开的旧事。说到半截，两人都住了声。",
+    "tagAny": [
+      "friend"
+    ]
+  },
+  {
+    "id": "rel-friend-2",
+    "weight": 14,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}说自己可能要出远门。{b}听完先是一顿，随口说声保重，眼神却沉了下去。",
+    "tagAny": [
+      "friend"
+    ]
+  },
+  {
+    "id": "rel-close-friend-1",
+    "weight": 14,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}邀{b}一起去一处险地。{b}本想拒绝，看{a}那认真样又改了口。",
+    "tagAny": [
+      "close-friend"
+    ]
+  },
+  {
+    "id": "rel-close-friend-2",
+    "weight": 14,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}关心地问起{b}旧伤复发后的痛处。{b}想瞒，话到嘴边还是说实话了。",
+    "tagAny": [
+      "close-friend"
+    ]
+  },
+  {
+    "id": "rel-lover-1",
+    "weight": 14,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}提起小时候差点一起离开的旧事。说到半截，两人都住了声。",
+    "tagAny": [
+      "lover"
+    ]
+  },
+  {
+    "id": "rel-lover-2",
+    "weight": 14,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}说自己可能要出远门。{b}听完先是一顿，随口说声保重，眼神却沉了下去。",
+    "tagAny": [
+      "lover"
+    ]
+  },
+  {
+    "id": "rel-partner-1",
+    "weight": 14,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}旁敲侧击，问{b}有没有人送过示好的礼物。{a}说得轻描淡写，{b}却忽然不说话了。",
+    "tagAny": [
+      "partner"
+    ]
+  },
+  {
+    "id": "rel-partner-2",
+    "weight": 14,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}向{b}诉苦，说修为停滞背后那点不敢说的慌。{a}本想笑着带过，被{b}一眼看穿。",
+    "tagAny": [
+      "partner"
+    ]
+  },
+  {
+    "id": "rel-dao-companion-1",
+    "weight": 14,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}向{b}诉苦，说修为停滞背后那点不敢说的慌。{a}本想笑着带过，被{b}一眼看穿。",
+    "tagAny": [
+      "dao-companion"
+    ]
+  },
+  {
+    "id": "rel-dao-companion-2",
+    "weight": 14,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}试探着跟{b}提起某桩会牵连对方的麻烦。{a}想独自扛下，话锋却漏了馅。",
+    "tagAny": [
+      "dao-companion"
+    ]
+  },
+  {
+    "id": "rel-mentor-1",
+    "weight": 14,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}说自己可能要出远门。{b}听完先是一顿，随口说声保重，眼神却沉了下去。",
+    "tagAny": [
+      "mentor"
+    ]
+  },
+  {
+    "id": "rel-mentor-2",
+    "weight": 14,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}八卦对方近日与旁人走得近的传闻。{a}装作随口提起，声音却发紧。",
+    "tagAny": [
+      "mentor"
+    ]
+  },
+  {
+    "id": "rel-blood-1",
+    "weight": 14,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}邀{b}一起去一处险地。{b}本想拒绝，看{a}那认真样又改了口。",
+    "tagAny": [
+      "blood"
+    ]
+  },
+  {
+    "id": "rel-blood-2",
+    "weight": 14,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}关心地问起{b}旧伤复发后的痛处。{b}想瞒，话到嘴边还是说实话了。",
+    "tagAny": [
+      "blood"
+    ]
+  },
+  {
+    "id": "sect-taixuan-sword-3",
+    "weight": 6,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}向{b}诉苦，说修为停滞背后那点不敢说的慌。{a}本想笑着带过，被{b}一眼看穿。",
+    "officeSlotAny": [
+      "honor"
+    ],
+    "sectAny": [
+      "taixuan-sword"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "sect-spirit-beast-mountain-1",
+    "weight": 12,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}试探{b}，问若有一日各奔东西该怎么办。话说出口两人都后悔，却谁也收不回去。",
+    "sectAny": [
+      "spirit-beast-mountain"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "sect-qingyin-palace-1",
+    "weight": 12,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}旁敲侧击，问{b}有没有人送过示好的礼物。{a}说得轻描淡写，{b}却忽然不说话了。",
+    "sectAny": [
+      "qingyin-palace"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "rogue-wandering-sword-1",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}讲述昨夜险些没能回来的经过。{b}越听越沉，追问时声音发颤。",
+    "rogueTitleAny": [
+      "wandering-sword"
+    ]
+  },
+  {
+    "id": "rogue-street-alchemist-1",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}邀{b}一起去一处险地。{b}本想拒绝，看{a}那认真样又改了口。",
+    "rogueTitleAny": [
+      "street-alchemist"
+    ]
+  },
+  {
+    "id": "rogue-herb-wanderer-1",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}抱怨门中有人当众驳了面子。{a}听完怒意先上来，被{b}按住袖口。",
+    "rogueTitleAny": [
+      "herb-wanderer"
+    ]
+  },
+  {
+    "id": "rogue-forge-guest-1",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}邀{b}一起去一处险地。{b}本想拒绝，看{a}那认真样又改了口。",
+    "rogueTitleAny": [
+      "forge-guest"
+    ],
+    "regionTypes": [
+      "market",
+      "town"
+    ]
+  },
+  {
+    "id": "rogue-beast-keeper-1",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}八卦对方近日与旁人走得近的传闻。{a}装作随口提起，声音却发紧。",
+    "rogueTitleAny": [
+      "beast-keeper"
+    ]
+  },
+  {
+    "id": "rogue-talisman-guest-1",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}讲述昨夜险些没能回来的经过。{b}越听越沉，追问时声音发颤。",
+    "rogueTitleAny": [
+      "talisman-guest"
+    ]
+  },
+  {
+    "id": "rogue-jianghu-xia-1",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}讲述昨夜险些没能回来的经过。{b}越听越沉，追问时声音发颤。",
+    "rogueTitleAny": [
+      "jianghu-xia"
+    ]
+  },
+  {
+    "id": "rogue-cloud-daoist-1",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}抱怨门中有人当众驳了面子。{a}听完怒意先上来，被{b}按住袖口。",
+    "rogueTitleAny": [
+      "cloud-daoist"
+    ]
+  },
+  {
+    "id": "rogue-lone-hermit-1",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}旁敲侧击，问{b}有没有人送过示好的礼物。{a}说得轻描淡写，{b}却忽然不说话了。",
+    "rogueTitleAny": [
+      "lone-hermit"
+    ]
+  },
+  {
+    "id": "rogue-wandering-rogue-1",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}旁敲侧击，问{b}有没有人送过示好的礼物。{a}说得轻描淡写，{b}却忽然不说话了。",
+    "rogueTitleAny": [
+      "wandering-rogue"
+    ]
+  },
+  {
+    "id": "rogue-market-cultivator-1",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}抱怨门中有人当众驳了面子。{a}听完怒意先上来，被{b}按住袖口。",
+    "rogueTitleAny": [
+      "market-cultivator"
+    ]
+  },
+  {
+    "id": "rogue-mortal-aspirant-1",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}追问{b}一句从前随口答应却一直没做的事。{b}提及时笑得很淡，像不当真，又像等了很久。",
+    "rogueTitleAny": [
+      "mortal-aspirant"
+    ]
+  },
+  {
+    "id": "same-sect-1",
+    "weight": 12,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}试探着跟{b}提起某桩会牵连对方的麻烦。{a}想独自扛下，话锋却漏了馅。",
+    "sameSect": true
+  },
+  {
+    "id": "same-sect-2",
+    "weight": 12,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}提起小时候差点一起离开的旧事。说到半截，两人都住了声。",
+    "sameSect": true
+  },
+  {
+    "id": "same-sect-3",
+    "weight": 12,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}说自己可能要出远门。{b}听完先是一顿，随口说声保重，眼神却沉了下去。",
+    "sameSect": true
+  },
+  {
+    "id": "same-sect-4",
+    "weight": 12,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}八卦对方近日与旁人走得近的传闻。{a}装作随口提起，声音却发紧。",
+    "sameSect": true
+  },
+  {
+    "id": "same-sect-5",
+    "weight": 12,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}邀{b}一起去一处险地。{b}本想拒绝，看{a}那认真样又改了口。",
+    "sameSect": true
+  },
+  {
+    "id": "pair-persona-1",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}八卦对方近日与旁人走得近的传闻。{a}装作随口提起，声音却发紧。",
+    "personalityA": [
+      "qingleng"
+    ],
+    "personalityB": [
+      "rechen"
+    ]
+  },
+  {
+    "id": "talk-0196",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}说自己可能要出远门。{b}听完先是一顿，随口说声保重，眼神却沉了下去。",
+    "officeRankA": [
+      "leader",
+      "elder"
+    ],
+    "officeRankB": [
+      "outer",
+      "inner"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "generic-talk-1",
+    "weight": 8,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}向{b}诉苦，说修为停滞背后那点不敢说的慌。{a}本想笑着带过，被{b}一眼看穿。"
+  },
+  {
+    "id": "generic-talk-2",
+    "weight": 8,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}试探着跟{b}提起某桩会牵连对方的麻烦。{a}想独自扛下，话锋却漏了馅。"
+  },
+  {
+    "id": "generic-talk-3",
+    "weight": 8,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}提起小时候差点一起离开的旧事。说到半截，两人都住了声。"
+  },
+  {
+    "id": "generic-talk-4",
+    "weight": 8,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}说自己可能要出远门。{b}听完先是一顿，随口说声保重，眼神却沉了下去。"
+  },
+  {
+    "id": "generic-talk-5",
+    "weight": 8,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}八卦对方近日与旁人走得近的传闻。{a}装作随口提起，声音却发紧。"
+  },
+  {
+    "id": "scene-talk-0-0",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}因办门务在{loc}山门跟{b}抱怨门中有人当众驳了面子。{a}听完怒意先上来，被{b}按住袖口。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-talk-0-1",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}因听同门议事在{loc}厢房廊下追问{b}一句从前随口答应却一直没做的事。{b}提及时笑得很淡，像不当真，又像等了很久。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-talk-0-2",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}因寻货在{loc}摊位旁试探{b}，问若有一日各奔东西该怎么办。话说出口两人都后悔，却谁也收不回去。",
+    "regionTypes": [
+      "market"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-talk-0-3",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}因采药在{loc}林径跟{b}讲述昨夜险些没能回来的经过。{b}越听越沉，追问时声音发颤。",
+    "regionTypes": [
+      "wilderness"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-talk-0-4",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}因候船在{loc}渡口旁敲侧击，问{b}有没有人送过示好的礼物。{a}说得轻描淡写，{b}却忽然不说话了。",
+    "regionTypes": [
+      "town"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-talk-0-5",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}因借火在{loc}丹房外向{b}诉苦，说修为停滞背后那点不敢说的慌。{a}本想笑着带过，被{b}一眼看穿。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-talk-0-6",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}因观剑在{loc}剑冢前试探着跟{b}提起某桩会牵连对方的麻烦。{a}想独自扛下，话锋却漏了馅。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-talk-0-7",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}因照看灵谷在{loc}灵田边跟{b}提起小时候差点一起离开的旧事。说到半截，两人都住了声。",
+    "regionTypes": [
+      "town",
+      "sectBase"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-talk-1-0",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}与{b}因办门务在{loc}山门停下，跟{b}八卦对方近日与旁人走得近的传闻。{a}装作随口提起，声音却发紧。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-talk-1-1",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}与{b}因听同门议事在{loc}厢房廊下停下，邀{b}一起去一处险地。{b}本想拒绝，看{a}那认真样又改了口。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-talk-1-2",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}与{b}因寻货在{loc}摊位旁停下，关心地问起{b}旧伤复发后的痛处。{b}想瞒，话到嘴边还是说实话了。",
+    "regionTypes": [
+      "market"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-talk-1-3",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}与{b}因采药在{loc}林径停下，跟{b}抱怨门中有人当众驳了面子。{a}听完怒意先上来，被{b}按住袖口。",
+    "regionTypes": [
+      "wilderness"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-talk-1-4",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}与{b}因候船在{loc}渡口停下，追问{b}一句从前随口答应却一直没做的事。{b}提及时笑得很淡，像不当真，又像等了很久。",
+    "regionTypes": [
+      "town"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-talk-1-5",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}与{b}因借火在{loc}丹房外停下，试探{b}，问若有一日各奔东西该怎么办。话说出口两人都后悔，却谁也收不回去。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-talk-1-6",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}与{b}因观剑在{loc}剑冢前停下，跟{b}讲述昨夜险些没能回来的经过。{b}越听越沉，追问时声音发颤。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-talk-1-7",
+    "weight": 9,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}与{b}因照看灵谷在{loc}灵田边停下，旁敲侧击问{b}有没有人送过示好的礼物。{a}说得轻描淡写，{b}却忽然不说话了。",
+    "regionTypes": [
+      "town",
+      "sectBase"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "persona-tag-chicheng-friend",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}提起小时候差点一起离开的旧事。说到半截，两人都住了声。",
+    "personalityAny": [
+      "chicheng"
+    ],
+    "tagAny": [
+      "friend"
+    ]
+  },
+  {
+    "id": "persona-tag-chicheng-mentor",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}追问{b}一句从前随口答应却一直没做的事。{b}提及时笑得很淡，像不当真，又像等了很久。",
+    "personalityAny": [
+      "chicheng"
+    ],
+    "tagAny": [
+      "mentor"
+    ]
+  },
+  {
+    "id": "persona-tag-qingleng-friend",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}关心地问起{b}旧伤复发后的痛处。{b}想瞒，话到嘴边还是说实话了。",
+    "personalityAny": [
+      "qingleng"
+    ],
+    "tagAny": [
+      "friend"
+    ]
+  },
+  {
+    "id": "persona-tag-qingleng-mentor",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}邀{b}一起去一处险地。{b}本想拒绝，看{a}那认真样又改了口。",
+    "personalityAny": [
+      "qingleng"
+    ],
+    "tagAny": [
+      "mentor"
+    ]
+  },
+  {
+    "id": "persona-tag-rechen-friend",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}抱怨门中有人当众驳了面子。{a}听完怒意先上来，被{b}按住袖口。",
+    "personalityAny": [
+      "rechen"
+    ],
+    "tagAny": [
+      "friend"
+    ]
+  },
+  {
+    "id": "persona-tag-rechen-mentor",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}八卦对方近日与旁人走得近的传闻。{a}装作随口提起，声音却发紧。",
+    "personalityAny": [
+      "rechen"
+    ],
+    "tagAny": [
+      "mentor"
+    ]
+  },
+  {
+    "id": "persona-tag-shuaituo-friend",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}关心地问起{b}旧伤复发后的痛处。{b}想瞒，话到嘴边还是说实话了。",
+    "personalityAny": [
+      "shuaituo"
+    ],
+    "tagAny": [
+      "friend"
+    ]
+  },
+  {
+    "id": "persona-tag-shuaituo-mentor",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}邀{b}一起去一处险地。{b}本想拒绝，看{a}那认真样又改了口。",
+    "personalityAny": [
+      "shuaituo"
+    ],
+    "tagAny": [
+      "mentor"
+    ]
+  },
+  {
+    "id": "persona-tag-zhizhuo-friend",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}试探{b}，问若有一日各奔东西该怎么办。话说出口两人都后悔，却谁也收不回去。",
+    "personalityAny": [
+      "zhizhuo"
+    ],
+    "tagAny": [
+      "friend"
+    ]
+  },
+  {
+    "id": "persona-tag-zhizhuo-mentor",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}关心地问起{b}旧伤复发后的痛处。{b}想瞒，话到嘴边还是说实话了。",
+    "personalityAny": [
+      "zhizhuo"
+    ],
+    "tagAny": [
+      "mentor"
+    ]
+  },
+  {
+    "id": "persona-tag-renhou-friend",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}关心地问起{b}旧伤复发后的痛处。{b}想瞒，话到嘴边还是说实话了。",
+    "personalityAny": [
+      "renhou"
+    ],
+    "tagAny": [
+      "friend"
+    ]
+  },
+  {
+    "id": "persona-tag-renhou-mentor",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}说自己可能要出远门。{b}听完先是一顿，随口说声保重，眼神却沉了下去。",
+    "personalityAny": [
+      "renhou"
+    ],
+    "tagAny": [
+      "mentor"
+    ]
+  },
+  {
+    "id": "persona-tag-jiaojin-friend",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}追问{b}一句从前随口答应却一直没做的事。{b}提及时笑得很淡，像不当真，又像等了很久。",
+    "personalityAny": [
+      "jiaojin"
+    ],
+    "tagAny": [
+      "friend"
+    ]
+  },
+  {
+    "id": "persona-tag-jiaojin-mentor",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}邀{b}一起去一处险地。{b}本想拒绝，看{a}那认真样又改了口。",
+    "personalityAny": [
+      "jiaojin"
+    ],
+    "tagAny": [
+      "mentor"
+    ]
+  },
+  {
+    "id": "persona-tag-wenya-friend",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}八卦对方近日与旁人走得近的传闻。{a}装作随口提起，声音却发紧。",
+    "personalityAny": [
+      "wenya"
+    ],
+    "tagAny": [
+      "friend"
+    ]
+  },
+  {
+    "id": "persona-tag-wenya-mentor",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}提起小时候差点一起离开的旧事。说到半截，两人都住了声。",
+    "personalityAny": [
+      "wenya"
+    ],
+    "tagAny": [
+      "mentor"
+    ]
+  },
+  {
+    "id": "sect-persona-taixuan-sword-chicheng",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}争执要不要替对方出头。{a}不服气，{b}却怕事情闹大。",
+    "personalityAny": [
+      "chicheng"
+    ],
+    "sectAny": [
+      "taixuan-sword"
+    ]
+  },
+  {
+    "id": "sect-persona-taixuan-sword-qingleng",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}邀{b}一起去一处险地。{b}本想拒绝，看{a}那认真样又改了口。",
+    "personalityAny": [
+      "qingleng"
+    ],
+    "sectAny": [
+      "taixuan-sword"
+    ]
+  },
+  {
+    "id": "sect-persona-baicao-valley-renhou",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}提起小时候差点一起离开的旧事。说到半截，两人都住了声。",
+    "personalityAny": [
+      "renhou"
+    ],
+    "sectAny": [
+      "baicao-valley"
+    ]
+  },
+  {
+    "id": "sect-persona-baicao-valley-wenya",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}把一首写到彼此却不敢寄出的句子念给{b}听。念到一半，{a}把纸折了回去。",
+    "personalityAny": [
+      "wenya"
+    ],
+    "sectAny": [
+      "baicao-valley"
+    ]
+  },
+  {
+    "id": "sect-persona-tiangong-pavilion-zhizhuo",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}提起小时候差点一起离开的旧事。说到半截，两人都住了声。",
+    "personalityAny": [
+      "zhizhuo"
+    ],
+    "sectAny": [
+      "tiangong-pavilion"
+    ]
+  },
+  {
+    "id": "sect-persona-tiangong-pavilion-jiaojin",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}关心地问起{b}旧伤复发后的痛处。{b}想瞒，话到嘴边还是说实话了。",
+    "personalityAny": [
+      "jiaojin"
+    ],
+    "sectAny": [
+      "tiangong-pavilion"
+    ]
+  },
+  {
+    "id": "sect-persona-spirit-beast-mountain-rechen",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}旁敲侧击，问{b}有没有人送过示好的礼物。{a}说得轻描淡写，{b}却忽然不说话了。",
+    "personalityAny": [
+      "rechen"
+    ],
+    "sectAny": [
+      "spirit-beast-mountain"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ]
+  },
+  {
+    "id": "sect-persona-spirit-beast-mountain-shuaituo",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}旁敲侧击，问{b}有没有人送过示好的礼物。{a}说得轻描淡写，{b}却忽然不说话了。",
+    "personalityAny": [
+      "shuaituo"
+    ],
+    "sectAny": [
+      "spirit-beast-mountain"
+    ]
+  },
+  {
+    "id": "sect-persona-qingyin-palace-wenya",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}向{b}诉苦，说修为停滞背后那点不敢说的慌。{a}本想笑着带过，被{b}一眼看穿。",
+    "personalityAny": [
+      "wenya"
+    ],
+    "sectAny": [
+      "qingyin-palace"
+    ]
+  },
+  {
+    "id": "sect-persona-qingyin-palace-qingleng",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}讲述昨夜险些没能回来的经过。{b}越听越沉，追问时声音发颤。",
+    "personalityAny": [
+      "qingleng"
+    ],
+    "sectAny": [
+      "qingyin-palace"
+    ]
+  },
+  {
+    "id": "talk-tension-1710",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}八卦对方近日与旁人走得近的传闻。{a}装作随口提起，声音却发紧。",
+    "tagNone": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "talk-tension-1711",
+    "weight": 12,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}邀{b}一起去一处险地。{b}本想拒绝，看{a}那认真样又改了口。",
+    "tagNone": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "talk-tension-1712",
+    "weight": 12,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}八卦对方近日与旁人走得近的传闻。{a}装作随口提起，声音却发紧。",
+    "personalityAny": [
+      "qingleng",
+      "wenya"
+    ],
+    "tagNone": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "talk-tension-1713",
+    "weight": 11,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}抱怨门中有人当众驳了面子。{a}听完怒意先上来，被{b}按住袖口。",
+    "tagAny": [
+      "friend",
+      "lover",
+      "impressed"
+    ]
+  },
+  {
+    "id": "talk-chicheng-cause-1",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}邀{b}一起去一处险地。{b}本想拒绝，看{a}那认真样又改了口。",
+    "personalityAny": [
+      "chicheng"
+    ]
+  },
+  {
+    "id": "talk-chicheng-cause-2",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}关心地问起{b}旧伤复发后的痛处。{b}想瞒，话到嘴边还是说实话了。",
+    "personalityAny": [
+      "chicheng"
+    ]
+  },
+  {
+    "id": "talk-qingleng-cause-1",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}旁敲侧击，问{b}有没有人送过示好的礼物。{a}说得轻描淡写，{b}却忽然不说话了。",
+    "personalityAny": [
+      "qingleng"
+    ]
+  },
+  {
+    "id": "talk-qingleng-cause-2",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}向{b}诉苦，说修为停滞背后那点不敢说的慌。{a}本想笑着带过，被{b}一眼看穿。",
+    "personalityAny": [
+      "qingleng"
+    ]
+  },
+  {
+    "id": "talk-rechen-cause-1",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}试探{b}，问若有一日各奔东西该怎么办。话说出口两人都后悔，却谁也收不回去。",
+    "personalityAny": [
+      "rechen"
+    ]
+  },
+  {
+    "id": "talk-rechen-cause-2",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}讲述昨夜险些没能回来的经过。{b}越听越沉，追问时声音发颤。",
+    "personalityAny": [
+      "rechen"
+    ]
+  },
+  {
+    "id": "talk-shuaituo-cause-1",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}向{b}诉苦，说修为停滞背后那点不敢说的慌。{a}本想笑着带过，被{b}一眼看穿。",
+    "personalityAny": [
+      "shuaituo"
+    ]
+  },
+  {
+    "id": "talk-shuaituo-cause-2",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}试探着跟{b}提起某桩会牵连对方的麻烦。{a}想独自扛下，话锋却漏了馅。",
+    "personalityAny": [
+      "shuaituo"
+    ]
+  },
+  {
+    "id": "talk-zhizhuo-cause-1",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}对账，追问一桩拖了很久没兑现的承诺。{a}把日期一项项对上，{b}渐渐听不下去。",
+    "personalityAny": [
+      "zhizhuo"
+    ]
+  },
+  {
+    "id": "talk-zhizhuo-cause-2",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}说自己可能要出远门。{b}听完先是一顿，随口说声保重，眼神却沉了下去。",
+    "personalityAny": [
+      "zhizhuo"
+    ]
+  },
+  {
+    "id": "talk-renhou-cause-1",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}试探{b}，问若有一日各奔东西该怎么办。话说出口两人都后悔，却谁也收不回去。",
+    "personalityAny": [
+      "renhou"
+    ]
+  },
+  {
+    "id": "talk-renhou-cause-2",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}讲述昨夜险些没能回来的经过。{b}越听越沉，追问时声音发颤。",
+    "personalityAny": [
+      "renhou"
+    ]
+  },
+  {
+    "id": "talk-jiaojin-cause-1",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}试探着跟{b}提起某桩会牵连对方的麻烦。{a}想独自扛下，话锋却漏了馅。",
+    "personalityAny": [
+      "jiaojin"
+    ]
+  },
+  {
+    "id": "talk-jiaojin-cause-2",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}提起小时候差点一起离开的旧事。说到半截，两人都住了声。",
+    "personalityAny": [
+      "jiaojin"
+    ]
+  },
+  {
+    "id": "talk-wenya-cause-1",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}邀{b}一起去一处险地。{b}本想拒绝，看{a}那认真样又改了口。",
+    "personalityAny": [
+      "wenya"
+    ]
+  },
+  {
+    "id": "talk-wenya-cause-2",
+    "weight": 13,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}关心地问起{b}旧伤复发后的痛处。{b}想瞒，话到嘴边还是说实话了。",
+    "personalityAny": [
+      "wenya"
+    ]
+  },
+  {
+    "id": "locale-realm-talk-1",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}提起小时候差点一起离开的旧事。说到半截，两人都住了声。",
+    "regionTypes": [
+      "specialRealm"
+    ]
+  },
+  {
+    "id": "locale-wild-talk-1",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}抱怨门中有人当众驳了面子。{a}听完怒意先上来，被{b}按住袖口。",
+    "regionTypes": [
+      "wilderness"
+    ]
+  },
+  {
+    "id": "locale-town-talk-1",
+    "weight": 10,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}讲述昨夜险些没能回来的经过。{b}越听越沉，追问时声音发颤。",
+    "regionTypes": [
+      "town"
+    ]
+  },
+  {
+    "id": "talk-fm-soft-1",
+    "weight": 12,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}说自己可能要出远门。{b}听完先是一顿，随口说声保重，眼神却沉了下去。",
+    "pairGenderAny": [
+      "fm"
+    ]
+  },
+  {
+    "id": "talk-spark-1",
+    "weight": 18,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}提起小时候差点一起离开的旧事。说到半截，两人都住了声。",
+    "arcAny": [
+      "spark"
+    ]
+  },
+  {
+    "id": "talk-spark-2",
+    "weight": 18,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}说自己可能要出远门。{b}听完先是一顿，随口说声保重，眼神却沉了下去。",
+    "arcAny": [
+      "spark"
+    ]
+  },
+  {
+    "id": "talk-spark-3",
+    "weight": 17,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}八卦对方近日与旁人走得近的传闻。{a}装作随口提起，声音却发紧。",
+    "arcAny": [
+      "spark"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "talk-warm-1",
+    "weight": 20,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}说自己可能要出远门。{b}听完先是一顿，随口说声保重，眼神却沉了下去。",
+    "arcAny": [
+      "warm",
+      "mend"
+    ]
+  },
+  {
+    "id": "talk-warm-2",
+    "weight": 20,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}跟{b}八卦对方近日与旁人走得近的传闻。{a}装作随口提起，声音却发紧。",
+    "arcAny": [
+      "warm",
+      "bond",
+      "mend"
+    ]
+  },
+  {
+    "id": "talk-bond-1",
+    "weight": 18,
+    "type": "talk",
+    "actors": "pair",
+    "template": "{a}在{loc}向{b}诉苦，说修为停滞背后那点不敢说的慌。{a}本想笑着带过，被{b}一眼看穿。",
+    "arcAny": [
+      "bond"
+    ]
+  }
+]

@@ -14,3 +14,14 @@ __pycache__/
 *.bak.*
 release/
 *.import
+
+# Local reverse-engineering dumps / toolchains (do not commit)
+tools/jadx.zip
+tools/Il2CppDumper.zip
+tools/Il2CppDumper/
+tools/il2cpp_input/
+tools/il2cpp_output/DummyDll/
+tools/il2cpp_output/script.json
+tools/il2cpp_output/stringliteral.json
+tools/il2cpp_output/il2cpp.h
+tools/il2cpp_output/dump.cs

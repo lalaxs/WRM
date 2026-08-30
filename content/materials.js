@@ -425,10 +425,20 @@
   addRecipe('forging', 'imbuedPlate', '淬灵片', 55, 30,
     { darkIronBar: 1, onyx: 1 });
 
-  if (HERBLORE_PARITY) {
-    HERBLORE_PARITY.ingredientRows().forEach(addItem);
-    HERBLORE_PARITY.potionRows().forEach(addItem);
-    HERBLORE_PARITY.recipeRows().forEach(function (recipe) {
+  let herbloreAbsorbed = false;
+
+  function herbloreParityReady(parity) {
+    if (!parity) return false;
+    if (typeof parity.isReady === 'function') return parity.isReady() === true;
+    return typeof parity.ingredientRows === 'function';
+  }
+
+  function mergeHerbloreParity(parity) {
+    if (!herbloreParityReady(parity)) return false;
+    if (herbloreAbsorbed) return false;
+    parity.ingredientRows().forEach(addItem);
+    parity.potionRows().forEach(addItem);
+    parity.recipeRows().forEach(function (recipe) {
       addRecipe(
         recipe.skillId,
         recipe.outputId,
@@ -439,7 +449,11 @@
         recipe.options
       );
     });
+    herbloreAbsorbed = true;
+    return true;
   }
+
+  mergeHerbloreParity(HERBLORE_PARITY);
 
   const GATHERING_EXTENSIONS = deepFreeze({
     mining: [
@@ -532,10 +546,12 @@
     fishing: []
   });
 
-  const ITEMS = deepFreeze(rows);
-  const RECIPE_ROWS = deepFreeze(recipes);
-  const ART_REQUIREMENTS = deepFreeze(rows.map(function (row) {
-    return {
+  function freezeRow(row) {
+    return deepFreeze(row);
+  }
+
+  function artRequirementFor(row) {
+    return freezeRow({
       id: row.id,
       itemId: row.id,
       name: row.name,
@@ -549,8 +565,16 @@
       priority: row.artPriority,
       sources: row.sourceTags,
       uses: row.useTags
-    };
-  }));
+    });
+  }
+
+  // Top-level arrays stay mutable so late herblore absorb can append;
+  // individual rows are frozen.
+  rows.forEach(freezeRow);
+  recipes.forEach(freezeRow);
+  const ITEMS = rows;
+  const RECIPE_ROWS = recipes;
+  const ART_REQUIREMENTS = rows.map(artRequirementFor);
 
   function cloneRows(value) {
     return Object.freeze(value.slice());
@@ -572,7 +596,51 @@
     return GATHERING_EXTENSIONS;
   }
 
-  return deepFreeze({
+  function absorbHerbloreParity(parity) {
+    const source = parity || HERBLORE_PARITY || loadHerbloreParityContent();
+    const beforeItems = ITEMS.length;
+    const beforeRecipes = RECIPE_ROWS.length;
+    if (!mergeHerbloreParity(source)) {
+      return { ok: herbloreAbsorbed, addedItems: 0, addedRecipes: 0 };
+    }
+    // Newly appended rows were not frozen / art-indexed yet.
+    for (let i = beforeItems; i < ITEMS.length; i++) {
+      freezeRow(ITEMS[i]);
+      ART_REQUIREMENTS.push(artRequirementFor(ITEMS[i]));
+    }
+    for (let i = beforeRecipes; i < RECIPE_ROWS.length; i++) {
+      freezeRow(RECIPE_ROWS[i]);
+    }
+    if (typeof ItemContent !== 'undefined' &&
+        ItemContent && typeof ItemContent.syncFromMaterials === 'function') {
+      ItemContent.syncFromMaterials();
+    } else if (typeof require === 'function') {
+      try {
+        const items = require('./items.js');
+        if (items && typeof items.syncFromMaterials === 'function') {
+          items.syncFromMaterials();
+        }
+      } catch (error) { /* optional */ }
+    }
+    if (typeof RecipeContent !== 'undefined' &&
+        RecipeContent && typeof RecipeContent.syncFromMaterials === 'function') {
+      RecipeContent.syncFromMaterials();
+    } else if (typeof require === 'function') {
+      try {
+        const recipesApi = require('./recipes.js');
+        if (recipesApi && typeof recipesApi.syncFromMaterials === 'function') {
+          recipesApi.syncFromMaterials();
+        }
+      } catch (error) { /* optional */ }
+    }
+    return {
+      ok: true,
+      addedItems: ITEMS.length - beforeItems,
+      addedRecipes: RECIPE_ROWS.length - beforeRecipes
+    };
+  }
+
+  return Object.freeze({
     ITEMS,
     GATHERING_EXTENSIONS,
     RECIPE_ROWS,
@@ -580,6 +648,7 @@
     itemRows,
     recipeRows,
     artRequirements,
-    gatheringExtensions
+    gatheringExtensions,
+    absorbHerbloreParity
   });
 });

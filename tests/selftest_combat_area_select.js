@@ -32,7 +32,7 @@ Object.values(Combat.ENEMIES).forEach(function (enemy) {
   assert(fs.existsSync(path.join(ROOT, enemy.portraitSrc)), enemy.portraitSrc + ' exists');
 });
 
-const uiSrc = fs.readFileSync(path.join(ROOT, 'ui.js'), 'utf8');
+const uiSrc = require('./ui_scripts').readUiSource();
 assert(uiSrc.includes('combat-entry-grid'), 'shared combat entry grid used');
 assert(uiSrc.includes('openRegionDetailModal'), 'region detail modal exists');
 assert(uiSrc.includes('openDungeonDetailModal'), 'dungeon detail modal exists');

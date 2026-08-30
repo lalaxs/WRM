@@ -51,6 +51,9 @@
             0,
             (Number(state.player.shouyuan) || 0) - amount
           );
+          // 外部改写寿元后清空锚点，交给 lifespan lane 按新值重挂，避免旧锚点把显示值瞬间拉崩。
+          state.player.lifespanAnchorMs = null;
+          state.player.lifespanBaseYears = null;
           losses.push({
             personId: 'player',
             sourceType: 'player',

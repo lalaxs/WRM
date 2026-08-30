@@ -1,0 +1,102 @@
+# 原版单人每日 Δexp1 钉死报告（DELTA=0x4000 RX）
+# 产出：tools/_pin_daily_exp1*.py / *_out.txt
+# 日期：2026-08-15
+
+## 0. ELF 映射
+- RX PT_LOAD：vaddr - file_offset = **0x4000**（旧 DELTA=0x400 的反汇编作废）
+- RO 常量区（如 0x72Axxx）：delta = **0**（file_offset == vaddr）
+- dump.cs Offset = RVA - 0x4000，与 RX 一致
+
+## 1. 每日 Δexp1 可执行公式（单人）
+
+### 日结入口
+- `root.addday` @ **0x13E9948** 对人物调用 `person.addday` @ **0x13CDA80**（唯一 xref：0x13EC35C）
+- 条件：`person.live`（`[this+0x21] != 0`）才进入修炼相关逻辑
+
+### 日增量（钉死）
+```
+// person.addday @ 0x13CDE38..0x13CDE48
+_exp1 := _exp1 + exps
+set_exp1(_exp1)   // 内夹逼到 exp1max
+```
+同日还会：
+```
+// 0x13CDCE4..0x13CDCF4
+_exp := _exp + exps
+set_exp(_exp)
+if _exp >= dns.exp[_level_l]: person.lvup()
+```
+
+**结论：单人每日 Δexp1 = `person.exps`（字段 0xD0，由 `getexps` 缓存）。**
+**不乘 `level_speed`。** `level_speed` 只进 `get_exp1s`（双修效率，次要）。
+
+当 `root.get_act() == person.id` 时，`person.addday` 会在写 exp1 前早退；
+`root.addday` 另有等价路径 `0x13EC77C..0x13EC7A8`：`_exp1 += exps`（仍是 exps，不是 get_exp1s）。
+
+### `exps = getexps()` 公式（0x13CB3FC）
+```
+base = expsx * (float)dns.lg_exp[linggen] / 100.0
+
+m = 1.0
+if tags.Contains(2):  m = 1.05          // rodata 0x72A5C8
+if tags.Contains(7):  m += 1.0
+if tags.Contains(16): m += 1.0         // 0x10
+if tags.Contains(22): m += 0.5         // 0x16
+if tags.Contains(23): m += 0.5         // 0x17
+if tags.Contains(25): m += 0.2         // 0x19, rodata 0x72A6BC
+
+rate = base * m
+if tags.Contains(15): rate *= 2.0      // 0x0F
+rate *= (1.0 + 0.2 * level_l)           // 0.2 @ 0x72A6BC
+exps = rate   // 写回 this+0xD0
+```
+
+字段：
+- `expsx` @ person+0x188；`set_expsx` @ 0x13CD91C 写入后立刻 `getexps`
+- 造人 `creatperson` @ 0x13F0A84：`expsx = Random.Range(0.9, 1.4)`（0x72A570 / 0x72A528）
+- `linggen` = `_lg` @ +0x60
+- `level_l` @ +0x98
+
+### 表（dns.init 写入钉死）
+| 字段 | static | meta | 值 |
+|------|--------|------|----|
+| `lg_exp` | +0x260 | 0x48B180（slot 0x2B207A0） | `[180,150,130,100,90,80,70,60]` |
+| `level_exp1max` | +0x160 | 0x48A9B8（slot 0x2B206A0） | `[10,21,81,126,252,648,1004,4320,14400,14400]` |
+| `dns.exp` | +0x230 | 0x48AB00（slot 0x2B206E0） | `[1000,2180,8100,12600,25200,64800,100400,432000,2000000,2000000]` |
+| `level_speed` | +0x120 | 0x48B5D8 | `[1.0,1.2,…,2.6,2.6]`（**不进单人日 Δexp1**）|
+
+## 2. 突破门槛用哪张表
+
+| 用途 | 表 | 证据 |
+|------|----|------|
+| **exp1 上限/夹逼** | **`level_exp1max[level_l]`** | `get_exp1max` 0x13CBA9C；`set_exp1` 0x13CBB28 夹逼 |
+| **境界突破判定进度** | **`dns.exp[level_l]` 对 `_exp`** | `person.addday` 0x13CDD14..0x13CDD44：`_exp >= dns.exp` → `lvup` |
+| 突破成功后 | `_exp=0`；`_exp1=level_exp1max[新level_l]` | `lvup` 0x13CF000 / 0x13CF038..0x13CF060 |
+
+**不要把 `level_exp1max` 当成突破所需修为总量。** 原版突破进度条是更大的 `dns.exp`。
+造人/开局也会 `set_exp1(get_exp1max())`，NPC 出生即满 exp1 条；之后单人日结对已满条基本是夹逼空操作，真正推进突破的是 `_exp`。
+
+## 3. 关键 RVA / 证据路径
+- `person.addday` 0x13CDA80；写 exp1：0x13CDE38
+- `getexps` 0x13CB3FC；`get_exp1` 0x13CBB20；`set_exp1` 0x13CBB28；`get_exp1max` 0x13CBA9C
+- `get_exp1s` 0x13CD924（双修；乘双方 `level_speed` 等）
+- `root.addday` 等价 `+=exps`：0x13EC794..0x13EC7A8
+- 脚本输出：`tools/_pin_daily_exp1_out.txt`、`_pin_daily_exp1_part2_out.txt`
+
+## 4. 仍不确定
+1. tag 2/7/15/16/22/23/25 的中文名/来源（只钉死数值效果）
+2. H5 `cultivation` 应对齐 `_exp1` 还是 `_exp`（玩法语义：满条展示 vs 突破进度）
+3. `get_exp1s` 双修完整因子（心法/契约索引 0x13BE1F4 返回值）未深挖
+4. `act==id` 早退与玩家本体日结的全部分支是否还有其它乘区
+5. `level_speed` BSS 旧笔记 0x2B1C7D0 vs 本次 init 使用 0x2B207D0（值表已由 meta 0x48B5D8 钉死）
+
+## 5. H5 映射建议（月≈天）
+- 时间：`1 游戏日 ≈ Dns.MONTH_REAL_SECONDS`（180s）
+- `advanceCultivation(seconds)`：
+  ```
+  days = seconds / MONTH_REAL_SECONDS
+  Δ = days * exps(person)   // 上式 getexps，不含 level_speed
+  ```
+- 若对标 **exp1 条**：`cultivation = min(cultivation+Δ, level_exp1max[level_l])`
+- 若对标 **原版突破**：另建/改用 `_exp` 进度，阈值 `dns.exp[level_l]`，成功后再 `lvup` 概率（`lvups`/`dns.lvup`）；不要只用 `level_exp1max` 当 need
+- 当前 H5 `cultivationPerSecond` 用「天数填满 need × level_speed」是**估算曲线**，与本钉死单人公式不一致；真对标应改成按日 `exps` 累加

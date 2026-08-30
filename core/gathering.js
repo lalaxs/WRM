@@ -483,6 +483,11 @@
     if (!Array.isArray(drops) || drops.length === 0) {
       throw new TypeError(label + '.drops must be a non-empty array');
     }
+    const spotId = requireString(raw, 'id', label + '.id');
+    const masteryId = requireString(raw, 'masteryId', label + '.masteryId');
+    if (masteryId !== FISHING_SKILL + ':' + spotId) {
+      throw new TypeError(label + '.masteryId is not canonical');
+    }
     const unlockFlag = ownDataValue(raw, 'unlockFlag');
     const fishChance = own(raw, 'fishChance')
       ? requireFinite(raw, 'fishChance', label + '.fishChance', 0)
@@ -494,7 +499,8 @@
       ? requireFinite(raw, 'specialChance', label + '.specialChance', 0)
       : 0;
     return {
-      id: requireString(raw, 'id', label + '.id'),
+      id: spotId,
+      masteryId: masteryId,
       unlockLevel: requireSafeInteger(
         raw,
         'unlockLevel',
@@ -590,14 +596,11 @@
       'GATHERING',
       'deps.GatheringContent.GATHERING'
     );
-    const qualities = requireRecord(
-      source,
-      'RESOURCE_QUALITIES',
-      'deps.GatheringContent.RESOURCE_QUALITIES'
-    );
     const copied = {
       families: {},
-      qualities: {},
+      spotCaps: [],
+      discoverGainMin: 10,
+      discoverGainMax: 20,
       fishing: {
         spots: [],
         species: {},
@@ -607,6 +610,38 @@
         junkSkillXp: JUNK_SKILL_XP
       }
     };
+
+    const rawCaps = ownDataValue(source, 'RESOURCE_SPOT_CAPS');
+    if (Array.isArray(rawCaps)) {
+      rawCaps.forEach(function (row) {
+        if (!isPlainRecord(row)) return;
+        const minLevel = ownDataValue(row, 'minLevel');
+        const maxCapacity = ownDataValue(row, 'maxCapacity');
+        if (!Number.isSafeInteger(minLevel) || minLevel < 1) return;
+        if (!Number.isSafeInteger(maxCapacity) || maxCapacity < 1) return;
+        copied.spotCaps.push({
+          minLevel: minLevel,
+          maxCapacity: maxCapacity
+        });
+      });
+    }
+    if (!copied.spotCaps.length) {
+      copied.spotCaps = [
+        { minLevel: 1, maxCapacity: 50 },
+        { minLevel: 25, maxCapacity: 60 },
+        { minLevel: 50, maxCapacity: 70 },
+        { minLevel: 75, maxCapacity: 80 },
+        { minLevel: 90, maxCapacity: 90 }
+      ];
+    }
+    const gainMin = ownDataValue(source, 'DISCOVER_GAIN_MIN');
+    const gainMax = ownDataValue(source, 'DISCOVER_GAIN_MAX');
+    if (Number.isSafeInteger(gainMin) && gainMin >= 1) {
+      copied.discoverGainMin = gainMin;
+    }
+    if (Number.isSafeInteger(gainMax) && gainMax >= copied.discoverGainMin) {
+      copied.discoverGainMax = gainMax;
+    }
 
     RESOURCE_SKILLS.forEach(function (skillId) {
       const family = requireRecord(
@@ -642,29 +677,6 @@
           'GATHERING.' + skillId + '.explore'
         ),
         entries
-      });
-    });
-
-    ['common', 'fine', 'rare'].forEach(function (qualityId) {
-      const quality = requireRecord(
-        qualities,
-        qualityId,
-        'RESOURCE_QUALITIES.' + qualityId
-      );
-      define(copied.qualities, qualityId, {
-        capacityMultiplier: requireFinite(
-          quality,
-          'capacityMultiplier',
-          'RESOURCE_QUALITIES.' + qualityId + '.capacityMultiplier',
-          Number.MIN_VALUE
-        ),
-        extraYieldChance: requireFinite(
-          quality,
-          'extraYieldChance',
-          'RESOURCE_QUALITIES.' + qualityId + '.extraYieldChance',
-          0,
-          1
-        )
       });
     });
 
@@ -758,6 +770,45 @@
 
   function isResourceSkill(skillId) {
     return RESOURCE_SKILLS.indexOf(skillId) >= 0;
+  }
+
+  function asSpotList(value) {
+    if (value == null) return [];
+    if (Array.isArray(value)) {
+      return value.filter(function (row) {
+        return isPlainRecord(row);
+      });
+    }
+    if (isPlainRecord(value)) return [value];
+    return [];
+  }
+
+  function maxSpotCapacityForLevel(content, skillLevel) {
+    const level = Number(skillLevel);
+    const safeLevel = Number.isFinite(level) && level > 0
+      ? Math.floor(level)
+      : 1;
+    const caps = Array.isArray(content.spotCaps) ? content.spotCaps : [];
+    let max = 50;
+    caps.forEach(function (row) {
+      if (safeLevel >= row.minLevel) max = row.maxCapacity;
+    });
+    return Math.max(1, max);
+  }
+
+  function discoverGainForRoll(content, rollValue) {
+    const minimum = Number.isSafeInteger(content.discoverGainMin)
+      ? content.discoverGainMin
+      : 10;
+    const maximum = Number.isSafeInteger(content.discoverGainMax) &&
+      content.discoverGainMax >= minimum
+      ? content.discoverGainMax
+      : Math.max(minimum, 20);
+    const unit = Number(rollValue);
+    const safeUnit = Number.isFinite(unit) && unit >= 0 && unit < 1
+      ? unit
+      : 0;
+    return minimum + Math.floor(safeUnit * (maximum - minimum + 1));
   }
 
   function validRngState(value) {
@@ -858,6 +909,9 @@
     const timePair = fishTimePair(gathering);
     const cultivation = ownDataValue(player, 'xiwei');
     const speciesIds = Object.keys(content.fishing.species);
+    const spotIds = content.fishing.spots.map(function (spot) {
+      return spot.id;
+    });
 
     if (!isPlainRecord(player) ||
         !isPlainRecord(systems) ||
@@ -872,7 +926,7 @@
         !timePair.ok ||
         (cultivation !== undefined && !isFiniteNonNegative(cultivation)) ||
         Object.keys(fishStocks).length !== speciesIds.length ||
-        Object.keys(skillMastery).length !== speciesIds.length) {
+        Object.keys(skillMastery).length !== spotIds.length) {
       return { ok: false, state };
     }
 
@@ -880,11 +934,17 @@
       const speciesId = speciesIds[index];
       const species = content.fishing.species[speciesId];
       const stock = ownDataValue(fishStocks, speciesId);
-      const progress = ownDataValue(skillMastery, speciesId);
       if (!Number.isSafeInteger(stock) ||
           stock < 0 ||
-          stock > species.maxStock ||
-          !isProgress(progress)) {
+          stock > species.maxStock) {
+        return { ok: false, state };
+      }
+    }
+
+    for (let index = 0; index < spotIds.length; index++) {
+      const spotId = spotIds[index];
+      const progress = ownDataValue(skillMastery, spotId);
+      if (!isProgress(progress)) {
         return { ok: false, state };
       }
     }
@@ -900,13 +960,12 @@
     };
   }
 
-  function pointMatches(point, skillId, entryId, qualities) {
+  function pointMatches(point, skillId, entryId) {
     if (point === null) return { ok: true, exists: false };
     if (!isPlainRecord(point) ||
         ownDataValue(point, 'skillId') !== skillId ||
         typeof ownDataValue(point, 'entryId') !== 'string' ||
         typeof ownDataValue(point, 'instanceId') !== 'string' ||
-        !own(qualities, ownDataValue(point, 'quality')) ||
         !Number.isSafeInteger(ownDataValue(point, 'capacity')) ||
         ownDataValue(point, 'capacity') <= 0 ||
         !Number.isSafeInteger(ownDataValue(point, 'remaining')) ||
@@ -915,11 +974,28 @@
           ownDataValue(point, 'capacity')) {
       return { ok: false, exists: false };
     }
+    const entryOk = entryId == null ||
+      ownDataValue(point, 'entryId') === entryId;
     return {
       ok: true,
-      exists: ownDataValue(point, 'entryId') === entryId &&
-        ownDataValue(point, 'remaining') > 0
+      exists: entryOk && ownDataValue(point, 'remaining') > 0
     };
+  }
+
+  function findSpotIndex(list, targetId) {
+    if (!Array.isArray(list) || typeof targetId !== 'string') return -1;
+    for (let index = 0; index < list.length; index++) {
+      if (ownDataValue(list[index], 'instanceId') === targetId) {
+        return index;
+      }
+    }
+    for (let index = 0; index < list.length; index++) {
+      if (ownDataValue(list[index], 'entryId') === targetId &&
+          ownDataValue(list[index], 'remaining') > 0) {
+        return index;
+      }
+    }
+    return -1;
   }
 
   function contentEntry(content, skillId, entryId) {
@@ -1215,56 +1291,87 @@
       if (pool.length === 0) {
         return failure('skill_locked', stateParts.state, rngState);
       }
+      const held = asSpotList(ownDataValue(stateParts.spots, skillId));
+      const capacityCap = maxSpotCapacityForLevel(content, level);
+      function remainingOf(entryId) {
+        for (let heldIndex = 0; heldIndex < held.length; heldIndex++) {
+          if (ownDataValue(held[heldIndex], 'entryId') === entryId) {
+            const value = Number(ownDataValue(held[heldIndex], 'remaining'));
+            return Number.isSafeInteger(value) && value > 0 ? value : 0;
+          }
+        }
+        return 0;
+      }
+      const openPool = pool.filter(function (entry) {
+        return remainingOf(entry.id) < capacityCap;
+      });
+      if (!openPool.length) {
+        return failure('spots_full', stateParts.state, rngState);
+      }
 
       const entryRoll = draw(rngState);
       if (!entryRoll.ok) {
         return failure('invalid_rng', stateParts.state, rngState);
       }
-      const qualityRoll = draw(entryRoll.rngState);
-      if (!qualityRoll.ok) {
+      const capacityRoll = draw(entryRoll.rngState);
+      if (!capacityRoll.ok) {
         return failure(
           'invalid_rng',
           stateParts.state,
           entryRoll.rngState
         );
       }
-      const capacityRoll = draw(qualityRoll.rngState);
-      if (!capacityRoll.ok) {
-        return failure(
-          'invalid_rng',
-          stateParts.state,
-          qualityRoll.rngState
-        );
-      }
 
       const entryIndex = Math.min(
-        pool.length - 1,
-        Math.floor(entryRoll.value * pool.length)
+        openPool.length - 1,
+        Math.floor(entryRoll.value * openPool.length)
       );
-      const entry = pool[entryIndex];
-      const qualityId = qualityRoll.value < 0.70
-        ? 'common'
-        : qualityRoll.value < 0.95
-          ? 'fine'
-          : 'rare';
-      const quality = content.qualities[qualityId];
-      const baseCapacity = entry.capMin + Math.floor(
-        capacityRoll.value * (entry.capMax - entry.capMin + 1)
+      const entry = openPool[entryIndex];
+      const gained = Math.max(
+        1,
+        Math.min(capacityCap, discoverGainForRoll(content, capacityRoll.value))
       );
-      const capacity = Math.ceil(
-        baseCapacity * quality.capacityMultiplier
-      );
-      const nextSpotId = stateParts.gathering.nextSpotId;
-      const spot = {
-        instanceId: 'spot-' + nextSpotId,
-        skillId,
-        entryId: entry.id,
-        quality: qualityId,
-        capacity,
-        remaining: capacity
-      };
-      define(stateParts.spots, skillId, spot);
-      stateParts.gathering.nextSpotId = nextSpotId + 1;
+
+      // 同名地点只保留一张卡：已有则累加储量，否则新增
+      let sameIndex = -1;
+      for (let index = 0; index < held.length; index++) {
+        if (ownDataValue(held[index], 'entryId') === entry.id) {
+          sameIndex = index;
+          break;
+        }
+      }
+
+      const nextHeld = held.slice();
+      let spot;
+      if (sameIndex >= 0) {
+        const previous = held[sameIndex];
+        const prevRemaining = Number(ownDataValue(previous, 'remaining'));
+        const safePrev = Number.isSafeInteger(prevRemaining) && prevRemaining > 0
+          ? prevRemaining
+          : 0;
+        const remaining = Math.min(capacityCap, safePrev + gained);
+        spot = {
+          instanceId: ownDataValue(previous, 'instanceId'),
+          skillId,
+          entryId: entry.id,
+          capacity: capacityCap,
+          remaining: remaining
+        };
+        nextHeld[sameIndex] = spot;
+      } else {
+        const nextSpotId = stateParts.gathering.nextSpotId;
+        const remaining = Math.min(capacityCap, gained);
+        spot = {
+          instanceId: 'spot-' + nextSpotId,
+          skillId,
+          entryId: entry.id,
+          capacity: capacityCap,
+          remaining: remaining
+        };
+        nextHeld.push(spot);
+        stateParts.gathering.nextSpotId = nextSpotId + 1;
+      }
+      define(stateParts.spots, skillId, nextHeld);
 
       if (!applyProgress(
         stateParts,
@@ -1279,13 +1386,30 @@
         return failure('invalid_model', safeFailureState(model), rngState);
       }
 
+      let saturatedAfter = true;
+      for (let poolIndex = 0; poolIndex < pool.length; poolIndex++) {
+        const entryId = pool[poolIndex].id;
+        let rem = 0;
+        for (let heldIndex = 0; heldIndex < nextHeld.length; heldIndex++) {
+          if (ownDataValue(nextHeld[heldIndex], 'entryId') === entryId) {
+            const value = Number(ownDataValue(nextHeld[heldIndex], 'remaining'));
+            rem = Number.isSafeInteger(value) && value > 0 ? value : 0;
+            break;
+          }
+        }
+        if (rem < capacityCap) {
+          saturatedAfter = false;
+          break;
+        }
+      }
+
       const skillGains = {};
       const masteryGains = {};
       define(skillGains, skillId, family.explore.skillXp);
       define(masteryGains, masteryId, family.explore.masteryXp);
       return {
         ok: true,
-        code: 'ok',
+        code: saturatedAfter ? 'spots_full_after_completion' : 'ok',
         state: stateParts.state,
         rngState: capacityRoll.rngState,
         result: { spot: cloneJson(spot).value },
@@ -1298,7 +1422,7 @@
       };
     }
 
-    function collect(model, skillId, entryId, rngState, bonuses) {
+    function collect(model, skillId, targetId, rngState, bonuses) {
       if (!isResourceSkill(skillId)) {
         return failure(
           'invalid_skill',
@@ -1306,10 +1430,7 @@
           rngState
         );
       }
-      const entry = typeof entryId === 'string'
-        ? contentEntry(content, skillId, entryId)
-        : null;
-      if (!entry) {
+      if (typeof targetId !== 'string' || !targetId) {
         return failure(
           'invalid_entry',
           safeFailureState(model),
@@ -1323,17 +1444,66 @@
           rngState
         );
       }
+      const preview = cloneJson(model);
+      if (!preview.ok || !isPlainRecord(preview.value)) {
+        return failure('invalid_model', safeFailureState(model), rngState);
+      }
+      const previewSystems = ownDataValue(preview.value, 'systems');
+      const previewGathering = ownDataValue(previewSystems, 'gathering');
+      const previewSpotsRoot = ownDataValue(previewGathering, 'spots');
+      if (!isPlainRecord(previewSystems) ||
+          !isPlainRecord(previewGathering) ||
+          !isPlainRecord(previewSpotsRoot)) {
+        return failure('invalid_model', safeFailureState(model), rngState);
+      }
+      const previewHeld = asSpotList(
+        ownDataValue(previewSpotsRoot, skillId)
+      );
+      const previewIndex = findSpotIndex(previewHeld, targetId);
+      if (previewIndex < 0) {
+        const maybeEntry = !/^spot-\d+$/.test(targetId)
+          ? contentEntry(content, skillId, targetId)
+          : null;
+        if (!maybeEntry && !/^spot-\d+$/.test(targetId)) {
+          return failure(
+            'invalid_entry',
+            safeFailureState(model),
+            rngState
+          );
+        }
+        return failure(
+          'resource_depleted',
+          safeFailureState(model),
+          rngState
+        );
+      }
+      const entry = contentEntry(
+        content,
+        skillId,
+        previewHeld[previewIndex].entryId
+      );
+      if (!entry) {
+        return failure(
+          'invalid_entry',
+          safeFailureState(model),
+          rngState
+        );
+      }
       const masteryId = storageMasteryId(skillId, entry.masteryId);
       const stateParts = checkedModel(model, skillId, masteryId);
       if (!stateParts.ok) {
         return failure('invalid_model', stateParts.state, rngState);
       }
-      const point = ownDataValue(stateParts.spots, skillId);
+      const held = asSpotList(ownDataValue(stateParts.spots, skillId));
+      const spotIndex = findSpotIndex(held, targetId);
+      if (spotIndex < 0) {
+        return failure('resource_depleted', stateParts.state, rngState);
+      }
+      const point = held[spotIndex];
       const checkedPoint = pointMatches(
         point,
         skillId,
-        entryId,
-        content.qualities
+        point.entryId
       );
       if (!checkedPoint.ok) {
         return failure('invalid_model', stateParts.state, rngState);
@@ -1381,12 +1551,9 @@
         masteryChance = 0;
       }
       if (!isFiniteNonNegative(masteryChance)) masteryChance = 0;
-      const pointQuality = content.qualities[point.quality];
       const extraChance = Math.min(
         0.75,
-        pointQuality.extraYieldChance +
-          masteryChance +
-          safeBonusChance(bonuses)
+        masteryChance + safeBonusChance(bonuses)
       );
       const quantity = drop.q * (extraRoll.value < extraChance ? 2 : 1);
       const itemDelta = {};
@@ -1440,7 +1607,9 @@
 
       point.remaining -= 1;
       const depleted = point.remaining === 0;
-      define(stateParts.spots, skillId, depleted ? null : point);
+      const nextHeld = held.slice();
+      nextHeld[spotIndex] = point;
+      define(stateParts.spots, skillId, nextHeld);
 
       const itemGains = {};
       const skillGains = {};
@@ -1458,7 +1627,7 @@
         result: {
           itemId: drop.itemId,
           quantity,
-          spot: depleted ? null : cloneJson(point).value
+          spot: cloneJson(point).value
         },
         gains: {
           items: itemGains,
@@ -1546,7 +1715,7 @@
       const intended = pickWeighted(available, speciesRoll.value);
       const speciesId = intended.itemId;
       const species = content.fishing.species[speciesId];
-      const masteryProgress = stateParts.skillMastery[speciesId];
+      const masteryProgress = stateParts.skillMastery[spot.id];
 
       let fishChance = spot.fishChance;
       let junkChance = spot.junkChance;
@@ -1702,7 +1871,7 @@
         if (!applyProgress(
           stateParts,
           FISHING_SKILL,
-          speciesId,
+          spot.id,
           skillXp,
           masteryXp,
           cultivation,
@@ -1715,7 +1884,7 @@
         if (!applyProgress(
           stateParts,
           FISHING_SKILL,
-          speciesId,
+          spot.id,
           skillXp,
           0,
           cultivation,
@@ -1738,7 +1907,7 @@
       define(itemGains, itemId, quantity);
       define(skillGains, FISHING_SKILL, skillXp);
       if (grantMastery && masteryXp > 0) {
-        define(masteryGains, species.masteryId, masteryXp);
+        define(masteryGains, spot.masteryId, masteryXp);
       }
 
       return {

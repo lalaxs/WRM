@@ -1,0 +1,118 @@
+[
+  {
+    "id": "rel-enemy-1",
+    "weight": 14,
+    "type": "rival",
+    "actors": "pair",
+    "template": "{a}在{loc}把搜罗多日的灵材分一半给好友{b}，对方愣了一下，还是收下了。",
+    "tagAny": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "rel-enemy-2",
+    "weight": 14,
+    "type": "rival",
+    "actors": "pair",
+    "template": "{a}在{loc}看见还有仇没了结的{b}，冷着脸走过去。",
+    "tagAny": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "rival-0076",
+    "weight": 2,
+    "type": "rival",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}争抢一缕灵雾，最终各自退让半分。"
+  },
+  {
+    "id": "rival-0077",
+    "weight": 2,
+    "type": "rival",
+    "actors": "pair",
+    "template": "{a}同{b}在{loc}比试谁先破阵，互不相让。"
+  },
+  {
+    "id": "rival-0078",
+    "weight": 2,
+    "type": "rival",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}抢同一件东西，约定三天后再比高下。"
+  },
+  {
+    "id": "generic-rival-1",
+    "weight": 8,
+    "type": "rival",
+    "actors": "pair",
+    "template": "{a}与{b}同时盯上{loc}一处灵眼，约定公平竞争。"
+  },
+  {
+    "id": "generic-rival-2",
+    "weight": 8,
+    "type": "rival",
+    "actors": "pair",
+    "template": "{a}在榜上见到{b}的名字压过自己，在{loc}沉默不语。"
+  },
+  {
+    "id": "rival-love-2201",
+    "weight": 14,
+    "type": "rival",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}针锋相对，争的不是机缘，是谁能先把一句话送到那人耳边。散场时两人都胸口发闷。",
+    "tagAny": [
+      "impressed",
+      "friend",
+      "lover"
+    ],
+    "tagNone": [
+      "partner"
+    ]
+  },
+  {
+    "id": "rival-love-2202",
+    "weight": 13,
+    "type": "rival",
+    "actors": "pair",
+    "template": "同在{loc}，{a}见{b}也带着礼物。两人目光一碰，笑意都很浅。礼未送出，火药味却先起来了。",
+    "tagNone": [
+      "enemy",
+      "partner"
+    ],
+    "affinityMin": 20
+  },
+  {
+    "id": "rival-love-2203",
+    "weight": 12,
+    "type": "rival",
+    "actors": "pair",
+    "template": "{a}与{b}为护同一人在{loc}起了争执。出手都重，收势却都虚。事后谁都不肯承认，那是妒意。",
+    "tagAny": [
+      "impressed",
+      "life-debt",
+      "friend"
+    ]
+  },
+  {
+    "id": "rival-love-2204",
+    "weight": 12,
+    "type": "rival",
+    "actors": "pair",
+    "template": "{b}被旁人搭话，{a}在{loc}忽然上前截住。语气礼貌，站位却像宣示。{b}看他一眼，没拆穿。",
+    "tagAny": [
+      "lover",
+      "friend"
+    ]
+  },
+  {
+    "id": "rival-love-2205",
+    "weight": 11,
+    "type": "rival",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}比试，没分出输赢，眼神却越来越沉。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 25
+  }
+]

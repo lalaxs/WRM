@@ -49,7 +49,8 @@
     'artifact'
   ]);
   const ACTIVE_SLOT_COUNT = 3;
-  const MAX_TECHNIQUE_LEVEL = 20;
+  const PASSIVE_SLOT_COUNT = 5;
+  const MAX_TECHNIQUE_LEVEL = 200;
   const STAT_KEYS = Object.freeze([
     'maxHp',
     'maxQi',
@@ -76,10 +77,13 @@
   const CONDITION_KEYS = Object.freeze({
     always: Object.freeze(['type']),
     selfHpBelow: Object.freeze(['type', 'threshold']),
+    selfQiBelow: Object.freeze(['type', 'threshold']),
     selfQiAbove: Object.freeze(['type', 'threshold']),
     enemyHpBelow: Object.freeze(['type', 'threshold']),
     enemyHasStatus: Object.freeze(['type', 'statusId']),
-    selfMissingBuff: Object.freeze(['type', 'buffId'])
+    enemyMissingStatus: Object.freeze(['type', 'statusId']),
+    selfMissingBuff: Object.freeze(['type', 'buffId']),
+    selfMissingShield: Object.freeze(['type'])
   });
 
   function own(value, key) {
@@ -464,7 +468,8 @@
     const passives = strictArrayValues(
       dataValue(loadout, 'passiveTechniques')
     );
-    if (!plainRecord(slots) || !passives || passives.length !== 3) {
+    if (!plainRecord(slots) || !passives ||
+        passives.length !== PASSIVE_SLOT_COUNT) {
       return null;
     }
     return {
@@ -526,7 +531,8 @@
           rules: [],
           resonance: { counts: {}, active: {} }
         },
-        intervalReduction: 0
+        intervalReduction: 0,
+        cooldownReduction: 0
       };
     }
     const byId = {};
@@ -550,12 +556,12 @@
     }
     const aggregate = Equipment.aggregate(equipped);
     Object.keys(aggregate.flat).forEach(function (key) {
-      if (key === 'actionIntervalTicks') return;
+      if (key === 'actionIntervalTicks' || key === 'cooldownReduction') return;
       if (!finite(stats[key])) stats[key] = 0;
       stats[key] += aggregate.flat[key];
     });
     Object.keys(aggregate.percent).forEach(function (key) {
-      if (key === 'actionIntervalTicks') return;
+      if (key === 'actionIntervalTicks' || key === 'cooldownReduction') return;
       if (!finite(stats[key])) stats[key] = 0;
       stats[key] *= 1 + aggregate.percent[key];
     });
@@ -563,7 +569,15 @@
       aggregate: aggregate,
       intervalReduction: finite(aggregate.percent.actionIntervalTicks)
         ? aggregate.percent.actionIntervalTicks
-        : 0
+        : 0,
+      cooldownReduction: (
+        (finite(aggregate.flat.cooldownReduction)
+          ? aggregate.flat.cooldownReduction
+          : 0) +
+        (finite(aggregate.percent.cooldownReduction)
+          ? aggregate.percent.cooldownReduction
+          : 0)
+      )
     };
   }
 
@@ -581,7 +595,9 @@
     Object.keys(aggregate.flat).concat(
       Object.keys(aggregate.percent)
     ).forEach(function (key) {
-      if (key === 'actionIntervalTicks' || own(legacyKeys, key)) return;
+      if (key === 'actionIntervalTicks' ||
+          key === 'cooldownReduction' ||
+          own(legacyKeys, key)) return;
       if (finite(stats[key])) {
         result[key] = roundTwelve(stats[key]);
       }
@@ -612,7 +628,39 @@
   }
 
   function scaledPassiveValue(base, level) {
-    return roundFour(base * (1 + 0.02 * (level - 1)));
+    return roundFour(base * (1 + 0.015 * (level - 1)));
+  }
+
+  function unlockedPassiveCount(realmIndex) {
+    if (RealmContent &&
+        typeof RealmContent.unlockedPassiveTechniqueSlots === 'function') {
+      try {
+        const count = RealmContent.unlockedPassiveTechniqueSlots(realmIndex);
+        if (Number.isSafeInteger(count) && count >= 1 &&
+            count <= PASSIVE_SLOT_COUNT) {
+          return count;
+        }
+      } catch (error) {
+        /* fall through */
+      }
+    }
+    return PASSIVE_SLOT_COUNT;
+  }
+
+  function unlockedActiveCount(realmIndex) {
+    if (RealmContent &&
+        typeof RealmContent.unlockedActiveTechniqueSlots === 'function') {
+      try {
+        const count = RealmContent.unlockedActiveTechniqueSlots(realmIndex);
+        if (Number.isSafeInteger(count) && count >= 1 &&
+            count <= ACTIVE_SLOT_COUNT) {
+          return count;
+        }
+      } catch (error) {
+        /* fall through */
+      }
+    }
+    return ACTIVE_SLOT_COUNT;
   }
 
   function applyPassives(stats, parts) {
@@ -625,9 +673,18 @@
       evasionPercent: 0,
       critChancePercent: 0,
       attackIntervalReduction: 0,
-      activeBeastEffectBonus: 0
+      activeBeastEffectBonus: 0,
+      incomingHealBonus: 0,
+      healPowerBonus: 0,
+      shieldPowerBonus: 0,
+      controlResistBonus: 0,
+      affinityTeamBonus: 0,
+      accuracyFlat: 0,
+      critChanceFlat: 0
     };
+    const unlocked = unlockedPassiveCount(parts.realmIndex);
     for (let index = 0; index < parts.passives.length; index++) {
+      if (index >= unlocked) break;
       const techniqueId = parts.passives[index];
       if (techniqueId === null) continue;
       if (typeof techniqueId !== 'string' ||
@@ -648,14 +705,31 @@
           totals[key] += scaledPassiveValue(base, level);
         }
       }
+      const critBonus = dataValue(effect, 'critChanceBonus');
+      if (finite(critBonus)) {
+        totals.critChanceFlat += scaledPassiveValue(critBonus, level);
+      }
+      const sharedHp = dataValue(effect, 'selfAndBeastMaxHpPercent');
+      if (finite(sharedHp)) {
+        totals.maxHpPercent += scaledPassiveValue(sharedHp, level);
+      }
     }
     Object.keys(PERCENT_EFFECTS).forEach(function (key) {
       const statKey = PERCENT_EFFECTS[key];
       stats[statKey] *= 1 + totals[key];
     });
+    if (totals.accuracyFlat) stats.accuracy += totals.accuracyFlat;
+    if (totals.critChanceFlat) {
+      stats.critChance = Math.min(0.75, stats.critChance + totals.critChanceFlat);
+    }
     return {
       intervalReduction: totals.attackIntervalReduction,
-      beastEffectMultiplier: 1 + totals.activeBeastEffectBonus
+      beastEffectMultiplier: 1 + totals.activeBeastEffectBonus,
+      incomingHealBonus: totals.incomingHealBonus,
+      healPowerBonus: totals.healPowerBonus,
+      shieldPowerBonus: totals.shieldPowerBonus,
+      controlResistBonus: totals.controlResistBonus,
+      affinityTeamBonus: totals.affinityTeamBonus
     };
   }
 
@@ -694,6 +768,11 @@
     });
     const reduction = dataValue(effect, 'attackIntervalReduction');
     if (finite(reduction)) intervalReduction = reduction * multiplier;
+    const cdr = dataValue(effect, 'cooldownReduction');
+    if (finite(cdr)) {
+      if (!finite(stats.cooldownReduction)) stats.cooldownReduction = 0;
+      stats.cooldownReduction += cdr * multiplier;
+    }
     return intervalReduction;
   }
 
@@ -732,6 +811,16 @@
       attackIntervalTicks: Math.max(2, interval)
     };
     if (equipmentResult) {
+      const cdr = finite(equipmentResult.cooldownReduction)
+        ? equipmentResult.cooldownReduction
+        : 0;
+      const fromStats = finite(stats.cooldownReduction)
+        ? stats.cooldownReduction
+        : 0;
+      const totalCdr = clamp(cdr + fromStats, 0, 0.5);
+      if (totalCdr > 0) {
+        result.cooldownReduction = roundTwelve(totalCdr);
+      }
       appendEquipmentFields(result, stats, equipmentResult);
     }
     return deepFreeze(result);
@@ -801,21 +890,28 @@
     const player = dataValue(battle, 'player');
     if (!plainRecord(player)) return false;
     if (type === 'always') return true;
-    if (type === 'selfHpBelow' || type === 'selfQiAbove') {
+    if (type === 'selfMissingShield') {
+      const shield = dataValue(player, 'shield');
+      return !finite(shield) || shield <= 0;
+    }
+    if (type === 'selfHpBelow' || type === 'selfQiAbove' ||
+        type === 'selfQiBelow') {
       const threshold = dataValue(condition, 'threshold');
       const currentKey = type === 'selfHpBelow' ? 'hp' : 'qi';
       const maximumKey = type === 'selfHpBelow' ? 'maxHp' : 'maxQi';
       const current = dataValue(player, currentKey);
       const maximum = dataValue(player, maximumKey);
       if (!validRatio(threshold, 1) || !finite(current) ||
-          (type === 'selfHpBelow' && threshold < 0.01) ||
+          ((type === 'selfHpBelow' || type === 'selfQiBelow') &&
+            threshold < 0.01) ||
           !finite(maximum) || maximum <= 0) {
         return false;
       }
       const ratio = current / maximum;
-      return type === 'selfHpBelow'
-        ? ratio < threshold
-        : ratio > threshold;
+      if (type === 'selfHpBelow' || type === 'selfQiBelow') {
+        return ratio < threshold;
+      }
+      return ratio > threshold;
     }
     if (type === 'enemyHpBelow') {
       const threshold = dataValue(condition, 'threshold');
@@ -828,20 +924,27 @@
         finite(hp) && finite(maxHp) && maxHp > 0 &&
         hp / maxHp < threshold;
     }
-    if (type === 'enemyHasStatus') {
+    if (type === 'enemyHasStatus' || type === 'enemyMissingStatus') {
       const enemy = dataValue(battle, 'enemy');
       if (!plainRecord(enemy)) return false;
-      return activeEntry(
+      const hasStatus = activeEntry(
         dataValue(enemy, 'statuses'),
         dataValue(condition, 'statusId')
-      ) === true;
+      );
+      if (hasStatus === null) return false;
+      return type === 'enemyHasStatus' ? hasStatus === true : hasStatus === false;
     }
     if (type === 'selfMissingBuff') {
-      const entry = activeEntry(
-        dataValue(player, 'buffs'),
-        dataValue(condition, 'buffId')
-      );
-      return entry === false;
+      const buffId = dataValue(condition, 'buffId');
+      if (buffId === 'shield') {
+        const shield = dataValue(player, 'shield');
+        return !finite(shield) || shield <= 0;
+      }
+      const buffEntry = activeEntry(dataValue(player, 'buffs'), buffId);
+      if (buffEntry === true) return false;
+      if (buffEntry === null) return false;
+      const statusEntry = activeEntry(dataValue(player, 'statuses'), buffId);
+      return statusEntry === false;
     }
     return false;
   }
@@ -891,6 +994,16 @@
     }
     for (let index = 0; index < ACTIVE_SLOT_COUNT; index++) {
       if (index >= slots.length) continue;
+      const unlockedSlots = Number.isSafeInteger(
+        dataValue(snapshot, 'unlockedActiveSlots')
+      )
+        ? dataValue(snapshot, 'unlockedActiveSlots')
+        : unlockedActiveCount(
+          Number.isSafeInteger(dataValue(snapshot, 'realmIndex'))
+            ? dataValue(snapshot, 'realmIndex')
+            : 0
+        );
+      if (index >= unlockedSlots) continue;
       const slot = slots[index];
       const techniqueId = dataValue(slot, 'techniqueId');
       if (techniqueId === null) continue;
@@ -907,9 +1020,7 @@
           cooldown > 0 || qi < techniques[techniqueId].qiCost) {
         continue;
       }
-      if (conditionMetSafe(dataValue(slot, 'condition'), safeBattle)) {
-        return action(techniqueId, index);
-      }
+      return action(techniqueId, index);
     }
     return NORMAL_ATTACK;
   }

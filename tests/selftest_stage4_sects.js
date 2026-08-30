@@ -1,8 +1,6 @@
 'use strict';
 
 const SectSimulation = require('../core/sect-simulation.js');
-const EventEngine = require('../core/event-engine.js');
-const EventContent = require('../content/event-templates.js');
 const SectContent = require('../content/sects.js');
 
 let passed = 0;
@@ -32,7 +30,18 @@ function fixture() {
   return {
     player: {
       flags: { completedFirstAction: false },
-      skills: { herb: { level: 3, xp: 2 } },
+      realmStage: 1,
+      spiritualRootId: 'single',
+      skills: {
+        herb: { level: 3, xp: 2 },
+        caiyao: { lv: 3, xp: 2 },
+        mining: { level: 2, xp: 0 },
+        caiju: { lv: 2, xp: 0 },
+        fishing: { level: 2, xp: 0 },
+        diaoyu: { lv: 2, xp: 0 },
+        fulu: { lv: 2, xp: 0 },
+        talisman: { level: 2, xp: 0 }
+      },
       techniques: { learned: { cloudPiercingSword: { level: 2, xp: 4 } } }
     },
     systems: {
@@ -92,75 +101,94 @@ const initial = fixture();
 ok(initial.systems.sects.player.sectId === null &&
   SectSimulation.queryAll(initial).player.displayName === '散修',
 '玩家开局保持散修身份');
-const beforeAction = SectSimulation.onFirstActionCompleted(
+ok(SectSimulation.choosePlayerSect(
   initial,
-  { nowSeconds: function () { return 0; } },
-  { templates: EventContent.TEMPLATES }
-);
-ok(beforeAction.ok === false && beforeAction.code === 'action_required',
-'首次主行动完成以前不提供宗门选择');
+  'taixuan-sword',
+  { nowSeconds: function () { return 10; } }
+).ok === true,
+'未完成首次主行动也可按门槛加入宗门');
 initial.player.flags.completedFirstAction = true;
 const offered = SectSimulation.onFirstActionCompleted(
   initial,
-  { nowSeconds: function () { return 100; } },
-  { templates: EventContent.TEMPLATES }
+  { nowSeconds: function () { return 100; } }
 );
 ok(offered.ok === true &&
-  offered.state.systems.events.pending.filter(function (event) {
-    return event.templateId === 'sect-first-choice';
-  }).length === 1,
-'首次完成主行动后恰好加入一条五宗门正式选择事件');
+  offered.state.systems.sects.player.choiceEventOffered === true &&
+  offered.state.systems.events.pending.length === 0,
+'首次完成主行动后仍会记录解锁标记，且不进入待决策');
 const offeredAgain = SectSimulation.onFirstActionCompleted(
   offered.state,
-  { nowSeconds: function () { return 101; } },
-  { templates: EventContent.TEMPLATES }
+  { nowSeconds: function () { return 101; } }
 );
 ok(offeredAgain.code === 'no_change' &&
-  offeredAgain.state.systems.events.pending.length === 1,
-'重复完成行动不会重复加入宗门选择');
+  offeredAgain.state.systems.events.pending.length === 0,
+'重复完成行动不会重复解锁或灌入待决策');
 
-const joined = EventEngine.resolve(
+const joined = SectSimulation.choosePlayerSect(
   offered.state,
-  offered.state.systems.events.pending[0].id,
-  'join-taixuan',
+  'taixuan-sword',
   { nowSeconds: function () { return 120; } }
 );
 ok(joined.ok === true &&
   joined.state.systems.sects.player.sectId === 'taixuan-sword',
-'玩家加入宗门只通过已处理的事件选项完成');
+'玩家在宗门页直接加入门派');
 ok(joined.state.player.skills.herb.level === 3 &&
   joined.state.player.techniques.learned.cloudPiercingSword.level === 2,
 '加入或更换宗门不会删除已学技能与功法');
 
-const wanderingEvent = SectSimulation.onFirstActionCompleted(
+const blocked = SectSimulation.choosePlayerSect(
+  Object.assign(JSON.parse(JSON.stringify(offered.state)), {
+    player: Object.assign(
+      JSON.parse(JSON.stringify(offered.state.player)),
+      { realmStage: 0, spiritualRootId: 'dual' }
+    )
+  }),
+  'taixuan-sword',
+  { nowSeconds: function () { return 130; } }
+);
+ok(blocked.ok === false && blocked.code === 'sect_requirement',
+'未满足加入要求时不可入门');
+
+const unlocked = SectSimulation.onFirstActionCompleted(
   Object.assign(fixture(), {
     player: Object.assign(fixture().player, {
       flags: { completedFirstAction: true }
     })
   }),
-  { nowSeconds: function () { return 100; } },
-  { templates: EventContent.TEMPLATES }
+  { nowSeconds: function () { return 100; } }
 );
-const wandering = EventEngine.resolve(
-  wanderingEvent.state,
-  wanderingEvent.state.systems.events.pending[0].id,
-  'remain-wandering',
+const wandering = SectSimulation.choosePlayerSect(
+  unlocked.state,
+  null,
   { nowSeconds: function () { return 120; } }
 );
-const tooEarly = SectSimulation.onFirstActionCompleted(
+ok(wandering.ok === true &&
+  wandering.state.systems.sects.player.sectId === null,
+'可继续以散修身份游历');
+const rejoinSoon = SectSimulation.choosePlayerSect(
   wandering.state,
-  { nowSeconds: function () { return 120 + 86399; } },
-  { templates: EventContent.TEMPLATES }
+  'baicao-valley',
+  { nowSeconds: function () { return 121; } }
 );
-const reoffered = SectSimulation.onFirstActionCompleted(
-  wandering.state,
-  { nowSeconds: function () { return 120 + 86400; } },
-  { templates: EventContent.TEMPLATES }
+ok(rejoinSoon.ok === true &&
+  rejoinSoon.state.systems.sects.player.sectId === 'baicao-valley',
+'退宗或确认散修后可立即再加入门派');
+
+const left = SectSimulation.choosePlayerSect(
+  rejoinSoon.state,
+  null,
+  { nowSeconds: function () { return 130; } }
 );
-ok(tooEarly.code === 'cooldown' &&
-  reoffered.ok === true &&
-  reoffered.state.systems.events.pending.length === 1,
-'继续散修后至少经过一个世界日才会再次收到选择');
+ok(left.ok === true && left.state.systems.sects.player.sectId === null,
+'已入门后可在宗门页直接离开');
+const rejoinAfterLeave = SectSimulation.choosePlayerSect(
+  left.state,
+  'taixuan-sword',
+  { nowSeconds: function () { return 131; } }
+);
+ok(rejoinAfterLeave.ok === true &&
+  rejoinAfterLeave.state.systems.sects.player.sectId === 'taixuan-sword',
+'退宗后可立即再加入其他门派');
 
 const evolved = SectSimulation.advanceDay(
   joined.state,
@@ -178,12 +206,20 @@ ok(evolved.ok === true &&
 '五个固定宗门每天演变且势力值不会低于一');
 ok(evolved.state.systems.sects.records['taixuan-sword'].leaderId ===
   'npc-1' &&
+  typeof evolved.state.systems.sects.records['taixuan-sword']
+    .roleByNpcId['npc-1'] === 'string' &&
+  typeof evolved.state.systems.npcs.records['npc-1'].officeSlotId ===
+    'string',
+'宗门领袖与职位槽按境界稳定确定');
+ok(evolved.state.systems.npcs.records['npc-2'].officeSlotId &&
   evolved.state.systems.sects.records['taixuan-sword']
-    .roleByNpcId['npc-2'] === '执事',
-'宗门领袖与基础职务按保存数据稳定确定');
-ok(Object.keys(evolved.state.systems.sects.pairStates).length === 10 &&
-  evolved.state.systems.events.evolution.length >= 5,
-'五宗两两关系及每日演变摘要完整保存');
+    .roleByNpcId['npc-2'],
+'次席弟子也会落入门派职位');
+ok(Object.keys(evolved.state.systems.sects.pairStates).length === 10,
+'五宗两两关系完整保存');
+ok(evolved.state.systems.events.evolution.every(function (entry) {
+  return !entry || String(entry.id || '').indexOf('sect-day-') !== 0;
+}), '每日门务不再写入大事记流水');
 ok(JSON.stringify(evolved.state).indexOf('breakthroughChance') < 0 &&
   JSON.stringify(evolved.state).indexOf('breakthroughProbability') < 0,
 '宗门演变不写入突破概率修正');

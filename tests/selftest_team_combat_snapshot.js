@@ -75,12 +75,12 @@ const model = Stage4State.normalize({
       edges: {
         'player>npc-1': {
           affection: 80, trust: 70, romanticAttachment: 10, desire: 0,
-          dependence: 0, loyalty: 10, jealousy: 0, resentment: 0,
+          dependence: 0, loyalty: 10, jealousy: 0, closeness: 0,
           lastChangedAt: 0
         },
         'npc-1>player': {
           affection: 70, trust: 65, romanticAttachment: 8, desire: 0,
-          dependence: 0, loyalty: 10, jealousy: 0, resentment: 0,
+          dependence: 0, loyalty: 10, jealousy: 0, closeness: 0,
           lastChangedAt: 0
         }
       },

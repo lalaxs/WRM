@@ -1,0 +1,44 @@
+[
+  {
+    "id": "seclusion_exit-0102",
+    "weight": 10,
+    "type": "seclusion_exit",
+    "actors": "solo",
+    "template": "{a}在{loc}破关而出，周身气息凝实几分。"
+  },
+  {
+    "id": "seclusion_exit-0103",
+    "weight": 10,
+    "type": "seclusion_exit",
+    "actors": "solo",
+    "template": "{a}推开{loc}洞府石门，闭关告一段落。"
+  },
+  {
+    "id": "seclusion_exit-0104",
+    "weight": 10,
+    "type": "seclusion_exit",
+    "actors": "solo",
+    "template": "{a}在{loc}出关，先去井边洗把脸，先缓了口气。"
+  },
+  {
+    "id": "solo-extra-3",
+    "weight": 8,
+    "type": "seclusion_exit",
+    "actors": "solo",
+    "template": "{a}出关后先在{loc}吃了一碗热面，才去见人。"
+  },
+  {
+    "id": "solo-extra-4",
+    "weight": 8,
+    "type": "seclusion_exit",
+    "actors": "solo",
+    "template": "{a}推门见到{loc}已换了季节，恍如隔世。"
+  },
+  {
+    "id": "seclusion-exit-solo-2520",
+    "weight": 12,
+    "type": "seclusion_exit",
+    "actors": "solo",
+    "template": "{a}在{loc}出关，先缓了口气，先辨认风向，又下意识看向常来的那条路。"
+  }
+]

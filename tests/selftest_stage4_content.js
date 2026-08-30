@@ -63,6 +63,7 @@ const Regions = load('../content/regions.js', 'RegionContent');
 const Sects = load('../content/sects.js', 'SectContent');
 const NpcGeneration =
   load('../content/npc-generation.js', 'NpcGenerationContent');
+const Dns = require('../core/dns.js');
 const Social =
   load('../content/social-interactions.js', 'SocialInteractionContent');
 const Skills = require('../content/life-skills.js');
@@ -109,10 +110,10 @@ if (Regions && Sects && NpcGeneration && Social) {
     'qingyinHeartMusic'
   ];
   const expectedPrincipleIds = [
-    'open',
-    'negotiable',
-    'monogamous',
-    'absolute-monogamy'
+    'exclusive',
+    'devoted',
+    'tolerant',
+    'casual'
   ];
 
   exact(Regions.REGIONS.map(function (region) { return region.id; }),
@@ -192,12 +193,14 @@ if (Regions && Sects && NpcGeneration && Social) {
     'NPC generation has at least forty-eight given-name components');
   ok(NpcGeneration.APPEARANCE_FEATURES.length >= 18,
     'NPC generation has at least eighteen appearance features');
-  ok(NpcGeneration.PERSONALITY_PROFILES.length >= 12,
-    'NPC generation has at least twelve personality profiles');
+  ok(NpcGeneration.PERSONALITY_PROFILES.length >= 8,
+    'NPC generation has at least eight personality profiles');
   ok(NpcGeneration.VALUE_PROFILES.length >= 8,
     'NPC generation has at least eight value profiles');
   ok(NpcGeneration.TALENTS.length >= 12,
     'NPC generation has at least twelve talents');
+  ok(NpcGeneration.SPIRITUAL_ROOTS.length >= 8,
+    'NPC generation has at least eight spiritual roots');
   ok(NpcGeneration.ROMANCE_PRINCIPLES.length === 4,
     'NPC generation has exactly four romance principles');
   exact(NpcGeneration.ROMANCE_PRINCIPLES.map(function (principle) {
@@ -239,6 +242,7 @@ if (Regions && Sects && NpcGeneration && Social) {
     ['personality', NpcGeneration.PERSONALITY_PROFILES],
     ['value profile', NpcGeneration.VALUE_PROFILES],
     ['talent', NpcGeneration.TALENTS],
+    ['spiritual root', NpcGeneration.SPIRITUAL_ROOTS],
     ['romance principle', NpcGeneration.ROMANCE_PRINCIPLES]
   ].forEach(function (row) {
     row[1].forEach(function (entry) {
@@ -246,6 +250,44 @@ if (Regions && Sects && NpcGeneration && Social) {
         row[0] + ' generation weight is a positive integer: ' + entry.id);
     });
   });
+
+  NpcGeneration.SPIRITUAL_ROOTS.forEach(function (root, index) {
+    ok(root.lgIndex === index && root.lgExp === Dns.lgExp[index],
+      '灵根与原版 lg 档一致: ' + root.name);
+  });
+  ok(NpcGeneration.SPIRITUAL_ROOTS.map(function (r) { return r.name; })
+    .join(',') ===
+    '变异天灵根,天灵根,变异灵根,单灵根,双灵根,三灵根,四灵根,杂灵根',
+    '灵根名称完全对齐原版 linggen0..7');
+  ok(typeof NpcGeneration.cultivationEfficiencyFor === 'function',
+    'NPC generation exposes cultivationEfficiencyFor');
+  ok(NpcGeneration.cultivationEfficiencyFor(0, 'single', 0.5) > 0,
+    'cultivationEfficiencyFor returns positive early-realm efficiency');
+  ok(Array.isArray(NpcGeneration.DAO_HEART_TRAITS) &&
+      NpcGeneration.DAO_HEART_TRAITS.length >= 8,
+    'NPC generation exposes at least eight dao-heart traits');
+  ok(typeof NpcGeneration.getDaoHeartTrait === 'function',
+    'NPC generation exposes getDaoHeartTrait');
+  ok(typeof NpcGeneration.daoHeartTraitNames === 'function',
+    'NPC generation exposes daoHeartTraitNames');
+  ok(typeof NpcGeneration.daoHeartTraitViews === 'function',
+    'NPC generation exposes daoHeartTraitViews');
+  NpcGeneration.DAO_HEART_TRAITS.forEach(function (trait) {
+    ok(trait && trait.id && trait.name, 'dao-heart trait has id + name: ' +
+      (trait && trait.id));
+    ok(trait && trait.effects && typeof trait.effects === 'object' &&
+        Object.keys(trait.effects).length > 0,
+      'dao-heart trait has mechanical effects: ' + (trait && trait.id));
+  });
+  ok(NpcGeneration.daoHeartTraitNames(['loyal', 'loyal', 'missing'])
+      .join(',') === '忠义',
+    'daoHeartTraitNames resolves and de-duplicates trait ids');
+  ok(Array.isArray(NpcGeneration.daoHeartTraitViews(['loyal'])) &&
+      NpcGeneration.daoHeartTraitViews(['loyal'])[0].name === '忠义' &&
+      NpcGeneration.daoHeartTraitViews(['loyal'])[0].effects,
+    'daoHeartTraitViews returns id/name/summary/effects views');
+  ok(NpcGeneration.getDaoHeartTrait('missing') === null,
+    'unknown dao-heart trait lookup fails closed');
 
   [
     ['surname', NpcGeneration.SURNAMES, function (entry) { return entry.id; }],
@@ -258,6 +300,8 @@ if (Regions && Sects && NpcGeneration && Social) {
     ['value profile', NpcGeneration.VALUE_PROFILES,
       function (entry) { return entry.id; }],
     ['talent', NpcGeneration.TALENTS, function (entry) { return entry.id; }],
+    ['spiritual root', NpcGeneration.SPIRITUAL_ROOTS,
+      function (entry) { return entry.id; }],
     ['romance principle', NpcGeneration.ROMANCE_PRINCIPLES,
       function (entry) { return entry.id; }]
   ].forEach(function (row) {
@@ -296,9 +340,9 @@ if (Regions && Sects && NpcGeneration && Social) {
           talent.id + '/' + affinity.targetId);
     });
   });
-  ok(NpcGeneration.getPersonality('steady') ===
+  ok(NpcGeneration.getPersonality('chicheng') ===
     NpcGeneration.PERSONALITY_PROFILES.find(function (entry) {
-      return entry.id === 'steady';
+      return entry.id === 'chicheng';
     }), 'personality lookup returns canonical record');
   ok(NpcGeneration.getValueProfile('benevolent') ===
     NpcGeneration.VALUE_PROFILES.find(function (entry) {
@@ -308,12 +352,20 @@ if (Regions && Sects && NpcGeneration && Social) {
     NpcGeneration.TALENTS.find(function (entry) {
       return entry.id === 'wood-spirit';
     }), 'talent lookup returns canonical record');
-  ok(NpcGeneration.getRomancePrinciple('negotiable') ===
+  ok(NpcGeneration.getSpiritualRoot('single') ===
+    NpcGeneration.SPIRITUAL_ROOTS.find(function (entry) {
+      return entry.id === 'single';
+    }), 'spiritual-root lookup returns canonical record');
+  ok(NpcGeneration.getSpiritualRoot('metal') &&
+    NpcGeneration.getSpiritualRoot('metal').id === 'single',
+    '旧档金灵根别名映射到单灵根');
+  ok(NpcGeneration.getRomancePrinciple('devoted') ===
     NpcGeneration.ROMANCE_PRINCIPLES[1],
   'romance-principle lookup returns canonical record');
   ok(NpcGeneration.getPersonality('missing') === null
     && NpcGeneration.getValueProfile('missing') === null
     && NpcGeneration.getTalent('missing') === null
+    && NpcGeneration.getSpiritualRoot('missing') === null
     && NpcGeneration.getRomancePrinciple('missing') === null,
   'unknown NPC-generation lookups fail closed');
 
@@ -371,9 +423,16 @@ if (Regions && Sects && NpcGeneration && Social) {
         && interaction.availability.sectIds.length === 0,
       'shared interaction has no sect lock: ' + interaction.id);
     }
+    ok(Number.isSafeInteger(interaction.requiredAffection)
+      && interaction.requiredAffection >= 0,
+    'interaction declares required affection unlock: ' + interaction.id);
     ok(Social.get(interaction.id) === interaction,
       'interaction lookup returns canonical record: ' + interaction.id);
   });
+  ok(Social.get('talk').requiredAffection === 0,
+    'talk is unlocked at affection 0');
+  ok(Social.get('gift').requiredAffection === 10,
+    'gift requires affection 10');
   expectedSectIds.forEach(function (sectId) {
     ok(Social.forSect(sectId).length === 9,
       'each sect sees seven shared plus two specific interactions: ' + sectId);

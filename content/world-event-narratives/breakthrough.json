@@ -1,0 +1,35 @@
+[
+  {
+    "id": "breakthrough-0108",
+    "weight": 8,
+    "type": "breakthrough",
+    "actors": "solo",
+    "template": "{a}在{loc}突破成功，周遭灵气为之一空。"
+  },
+  {
+    "id": "breakthrough-0109",
+    "weight": 9,
+    "type": "breakthrough",
+    "actors": "solo",
+    "template": "门中传讯：{a}在{loc}更进一步，同门纷纷道贺。",
+    "officeRankAny": [
+      "trueDisciple",
+      "hall",
+      "elder"
+    ]
+  },
+  {
+    "id": "solo-extra-11",
+    "weight": 8,
+    "type": "breakthrough",
+    "actors": "solo",
+    "template": "{a}在{loc}周天圆满，远处有人察觉气机波动。"
+  },
+  {
+    "id": "breakthrough-solo-2590",
+    "weight": 12,
+    "type": "breakthrough",
+    "actors": "solo",
+    "template": "{a}在{loc}突破有成，喜色未落，先悄悄握紧发抖的手，像怕喜极而散。"
+  }
+]

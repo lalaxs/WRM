@@ -53,7 +53,28 @@ const expectedScripts = [
   '../content/gathering.js',
   '../content/recipes.js',
   '../content/homestead.js',
+  '../content/combat.js',
+  '../content/techniques.js',
+  '../content/realms.js',
+  '../content/regions.js',
+  '../content/sects.js',
+  '../content/sect-offices.js',
+  '../content/sect-missions.js',
+  '../content/sect-pavilion.js',
+  '../content/npc-generation.js',
+  '../content/social-interactions.js',
+  '../content/world-event-narratives.js',
   '../core/stage2-state.js',
+  '../core/stage3-state.js',
+  '../core/random.js',
+  '../core/npc-generator.js',
+  '../core/npc-roster.js',
+  '../core/person-factory.js',
+  '../core/relation-seed.js',
+  '../core/sect-offices.js',
+  '../core/sect-missions.js',
+  '../core/sect-pavilion.js',
+  '../core/stage4-state.js',
   '../core/save-system.js',
   'stage2-engineering-save.js'
 ];
@@ -70,7 +91,16 @@ ok(
   'fixture uses no production debug query parameter'
 );
 
-const productionText = ['index.html', 'game.js', 'ui.js']
+const productionText = [
+  'index.html',
+  'game.js',
+  'game-queries.js',
+  'game-queries-social.js',
+  'game-queries-combat.js',
+  'game-commands.js',
+  'game-api.js',
+  ...require('./ui_scripts').UI_SCRIPT_FILES
+]
   .map((relativePath) =>
     fs.readFileSync(path.join(root, relativePath), 'utf8')
   )
@@ -156,13 +186,16 @@ ok(
   loaded.source === 'snapshot' &&
     loaded.migrated === false &&
     loaded.needsRepair === false &&
-    snapshot.schemaVersion === 3 &&
+    snapshot.schemaVersion === 5 &&
     snapshot.created === true,
-  'fixture persists and reloads as a canonical Stage 2 v3 snapshot'
+  'fixture persists and reloads as a canonical Stage 4 v5 snapshot'
 );
 ok(
   snapshot.player.name === '工程验收' &&
-    snapshot.player.inventory.stacks.gatheringFormation === 1 &&
+    (snapshot.player.inventory.stacks.gatheringFormation === 1 ||
+      snapshot.systems.homestead.formations.owned.includes(
+        'gatheringFormation'
+      )) &&
     !snapshot.player.inventory.bindings.gatheringFormation,
   'fixture exposes one unbound formation item ready for UI equip'
 );
@@ -179,12 +212,16 @@ ok(
     snapshot.systems.homestead.beasts.roster[0].id === 'beast-1',
   'fixture exposes one unselected assistant beast'
 );
+const fixtureHerbSpot = Array.isArray(snapshot.systems.gathering.spots.herb)
+  ? snapshot.systems.gathering.spots.herb[0]
+  : snapshot.systems.gathering.spots.herb;
 ok(
   snapshot.current &&
     snapshot.current.key ===
       'gather:collect:herb:parityHerb1' &&
     snapshot.current.mode === 'repeat' &&
-    snapshot.systems.gathering.spots.herb.remaining === 25,
+    fixtureHerbSpot &&
+    fixtureHerbSpot.remaining === 25,
   'fixture loads with a durable canonical main action in progress'
 );
 ok(

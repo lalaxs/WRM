@@ -224,18 +224,14 @@
   rows.push(define('cooking', 'shrimpSoup', '灵虾汤', 5, 8,
     { spiritShrimp: 2, spiritMushroom: 1 }));
 
+  const RECIPES = {};
   rows.forEach(function (recipe) {
     if (LEGACY_PROTOTYPE_RECIPE_ID_SET.has(recipe.id)) {
       recipe.legacyDesign = true;
       recipe.designStatus = 'legacy_prototype';
     }
+    RECIPES[recipe.id] = deepFreeze(recipe);
   });
-
-  const records = {};
-  rows.forEach(function (recipe) {
-    records[recipe.id] = recipe;
-  });
-  const RECIPES = deepFreeze(records);
 
   function get(recipeId) {
     return RECIPES[recipeId] || null;
@@ -262,11 +258,44 @@
     list(null, options).forEach(visitor);
   }
 
+  function syncFromMaterials() {
+    const materialApi = (typeof globalThis !== 'undefined' && globalThis.MaterialContent)
+      ? globalThis.MaterialContent
+      : MATERIAL_CONTENT;
+    if (!materialApi || typeof materialApi.recipeRows !== 'function') {
+      return { ok: false, added: 0 };
+    }
+    let added = 0;
+    materialApi.recipeRows().forEach(function (recipe) {
+      if (!recipe || !recipe.skillId || !recipe.outputId) return;
+      const id = recipe.skillId + ':' + recipe.outputId;
+      if (RECIPES[id]) return;
+      const built = define(
+        recipe.skillId,
+        recipe.outputId,
+        recipe.name,
+        recipe.unlockLevel,
+        recipe.baseSeconds,
+        recipe.ingredients,
+        recipe.options
+      );
+      if (LEGACY_PROTOTYPE_RECIPE_ID_SET.has(built.id)) {
+        built.legacyDesign = true;
+        built.designStatus = 'legacy_prototype';
+      }
+      RECIPES[built.id] = deepFreeze(built);
+      added += 1;
+    });
+    return { ok: true, added: added };
+  }
+
   return Object.freeze({
     RECIPES: RECIPES,
     LEGACY_PROTOTYPE_RECIPE_IDS: LEGACY_PROTOTYPE_RECIPE_IDS,
     get: get,
     list: list,
-    eachRecipe: eachRecipe
+    eachRecipe: eachRecipe,
+    syncFromMaterials: syncFromMaterials,
+    absorbHerbloreParity: syncFromMaterials
   });
 });

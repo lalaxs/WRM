@@ -2,7 +2,7 @@
 const fs = require('fs');
 const vm = require('vm');
 
-let code = fs.readFileSync('game.js', 'utf8');
+const gameRuntimeFiles = ['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'];
 
 // ── 桩：Canvas 2D 上下文（所有方法 no-op）──
 function stubCtx() {
@@ -52,17 +52,74 @@ const sandbox = {
   document: { addEventListener() {}, hidden: false },
   console,
   Math, Date, isFinite, isNaN, parseInt, parseFloat,
-  requestAnimationFrame() {}, setTimeout() {}, Proxy, RegExp, Error
+  requestAnimationFrame() {}, setTimeout() {}, Proxy, RegExp, Error, Set,
+  structuredClone
 };
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
-vm.runInContext(fs.readFileSync('core/random.js', 'utf8'), sandbox, { filename: 'core/random.js' });
-vm.runInContext(fs.readFileSync('core/save-system.js', 'utf8'), sandbox, { filename: 'core/save-system.js' });
+[
+  'core/random.js',
+  'content/herblore-parity.js',
+  'content/materials.js',
+  'content/items.js',
+  'content/life-skills.js',
+  'content/gathering.js',
+  'content/recipes.js',
+  'content/homestead.js',
+  'core/stage2-state.js',
+  'core/inventory.js',
+  'core/skill-progression.js',
+  'core/gathering.js',
+  'core/production.js',
+  'core/farm.js',
+  'core/formations.js',
+  'core/spirit-beasts.js',
+  'core/stage2-rules.js'
+].forEach(function (file) {
+  vm.runInContext(
+    fs.readFileSync(file, 'utf8'),
+    sandbox,
+    { filename: file }
+  );
+});
+// SaveSystem 需要 Stage3/4，但勿把 Stage3State 挂到 game 沙箱（会触发 Stage3 完整性检查）。
+const saveSandbox = {
+  Stage2State: sandbox.Stage2State,
+  Stage3State: require('../core/stage3-state.js'),
+  Stage4State: require('../core/stage4-state.js'),
+  console: sandbox.console,
+  Math: sandbox.Math,
+  Date: sandbox.Date,
+  JSON: JSON,
+  Object: Object,
+  Array: Array,
+  Number: Number,
+  String: String,
+  Boolean: Boolean,
+  Error: Error,
+  Set: Set,
+  Infinity: Infinity,
+  NaN: NaN,
+  isFinite: isFinite,
+  isNaN: isNaN,
+  parseInt: parseInt,
+  parseFloat: parseFloat
+};
+saveSandbox.globalThis = saveSandbox;
+vm.createContext(saveSandbox);
+vm.runInContext(
+  fs.readFileSync('core/save-system.js', 'utf8'),
+  saveSandbox,
+  { filename: 'core/save-system.js' }
+);
+sandbox.SaveSystem = saveSandbox.SaveSystem;
 vm.runInContext(fs.readFileSync('core/simulation-report.js', 'utf8'), sandbox, { filename: 'core/simulation-report.js' });
 vm.runInContext(fs.readFileSync('core/state-model.js', 'utf8'), sandbox, { filename: 'core/state-model.js' });
 vm.runInContext(fs.readFileSync('core/simulation.js', 'utf8'), sandbox, { filename: 'core/simulation.js' });
 vm.runInContext(fs.readFileSync('core/game-rules.js', 'utf8'), sandbox, { filename: 'core/game-rules.js' });
-vm.runInContext(code, sandbox);
+gameRuntimeFiles.forEach((file) => {
+  vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
+});
 
 if (!sandbox.__GameTestHarness) {
   console.error('  ✗ FAIL: explicit Node-only game harness is unavailable');
@@ -166,7 +223,7 @@ let guard = 0;
 while (G.state.player.skills.caiyao.lv < 20 && guard < 5000) { G.addSkillXp(G.state.player, 'caiyao', 100); guard++; }
 ok(G.state.player.skills.caiyao.lv >= 20, 'caiyao 已升至 Lv' + G.state.player.skills.caiyao.lv);
 G.setCurrent('caiyao2', 1);
-ok(G.state.current && G.state.current.key === 'caiyao2', '达到等级后采灵芝可设为当前动作');
+ok(G.state.current && (G.state.current && G.state.current.key) === 'caiyao2', '达到等级后采灵芝可设为当前动作');
 
 // 8) ensurePlayer 兼容旧档：缺技能自动补默认
 const oldSave = {
@@ -219,11 +276,19 @@ G.state.player = G.defaultPlayer();
 G.state.current = null;
 G.setCurrent('tuna');   // 不设次数 → 无限循环
 ok(G.state.current && G.state.current.mode === 'repeat', 'setCurrent uses repeat mode');
-ok(Number.isFinite(G.state.current.count), 'repeat action state is JSON-safe');
-const xiwei0 = G.state.player.xiwei;
-advanceSeconds(100);     // 一次性推进 100s（≈20 次打坐）
-ok(G.state.player.xiwei > xiwei0, '循环执行持续产出修为（实际 +' + (G.state.player.xiwei - xiwei0) + '）');
-ok(G.state.current !== null, '循环执行未因 done>=count 而自动清空');
+ok(
+  !!G.state.current && Number.isFinite((G.state.current && G.state.current.count)),
+  'repeat action state is JSON-safe'
+);
+if (G.state.current) {
+  const xiwei0 = G.state.player.xiwei;
+  advanceSeconds(100);     // 一次性推进 100s（≈20 次打坐）
+  ok(G.state.player.xiwei > xiwei0, '循环执行持续产出修为（实际 +' + (G.state.player.xiwei - xiwei0) + '）');
+  ok(G.state.current !== null, '循环执行未因 done>=count 而自动清空');
+} else {
+  ok(false, '循环执行持续产出修为（实际 +0）');
+  ok(false, '循环执行未因 done>=count 而自动清空');
+}
 
 // 14) 探索是有限动作，循环采集/生产是 JSON 安全的重复动作
 G.state.player = G.defaultPlayer();
@@ -232,7 +297,7 @@ G.setCurrent('gather:explore:herb');
 ok(
   G.state.current &&
     G.state.current.mode === 'finite' &&
-    G.state.current.count === 1,
+    (G.state.current && G.state.current.count) === 1,
   'resource exploration uses one finite action'
 );
 
@@ -307,7 +372,7 @@ const longOfflineReport = advanceSeconds(
 ok(
   longOfflineReport &&
     longOfflineReport.action.completed === 8640 &&
-    G.state.current.done === 8640,
+    (G.state.current && G.state.current.done) === 8640,
   'twenty-hour offline main action respects the twelve-hour cap'
 );
 ok(
@@ -478,7 +543,7 @@ if (G.__test && typeof G.__test.runRuntimeFrame === 'function') {
     'ninety seconds online autosaves three times independent of frame rate'
   );
   ok(
-    G.state.current.done === 18,
+    G.state.current && (G.state.current && G.state.current.done) === 18,
     'modal state does not pause online advancement'
   );
 
@@ -556,11 +621,11 @@ if (G.__test && typeof G.__test.handleVisibilityChange === 'function') {
       G.state.processedThroughMs === 10000,
     'hiding advances and persists the visible interval first'
   );
-  const hiddenDone = G.state.current.done;
+  const hiddenDone = G.state.current ? (G.state.current && G.state.current.done) : null;
   G.__test.runRuntimeFrame(40000);
   G.__test.flushLifecycle(50000);
   ok(
-    G.state.current.done === hiddenDone,
+    G.state.current != null && (G.state.current && G.state.current.done) === hiddenDone,
     'hidden rAF and page lifecycle flush do not double-count hidden time'
   );
   const firstVisible = G.__test.handleVisibilityChange(false, 70000);
@@ -571,11 +636,12 @@ if (G.__test && typeof G.__test.handleVisibilityChange === 'function') {
       G.state.showOffline === true,
     'showing settles and persists exactly the hidden interval'
   );
-  const firstResumeDone = G.state.current.done;
+  const firstResumeDone = G.state.current ? (G.state.current && G.state.current.done) : 0;
   G.__test.handleVisibilityChange(true, 80000);
   G.__test.handleVisibilityChange(false, 90000);
   ok(
-    G.state.current.done - firstResumeDone === 4 &&
+    G.state.current != null &&
+      (G.state.current && G.state.current.done) - firstResumeDone === 4 &&
       G.state.pendingOfflineReports.length === 2,
     'two hide-resume cycles neither lose nor duplicate time'
   );
@@ -689,7 +755,7 @@ if (G.__test && typeof G.__test.settleStartupOffline === 'function') {
       rollbackResult.state.processedThroughMs === 120000,
     'clock rollback preserves the durable watermark and records a warning'
   );
-  const rollbackDone = G.state.current.done;
+  const rollbackDone = (G.state.current && G.state.current.done);
   const rollbackRng = G.state.rngState;
   G.state._last = 60000;
   G.state._nextAutosaveAt = 999999;
@@ -697,7 +763,7 @@ if (G.__test && typeof G.__test.settleStartupOffline === 'function') {
   G.__test.runRuntimeFrame(120000);
   ok(
     G.state.processedThroughMs === 120000 &&
-      G.state.current.done === rollbackDone &&
+      (G.state.current && G.state.current.done) === rollbackDone &&
       G.state.rngState === rollbackRng,
     'clock rollback freezes gameplay until wall time catches the watermark'
   );
@@ -715,7 +781,7 @@ ok(G.persist(43210) === true, 'runtime snapshot persistence reports success');
 const runtimeSnapshot = store.cloud_save_v1 ? JSON.parse(store.cloud_save_v1) : null;
 ok(
   runtimeSnapshot &&
-    runtimeSnapshot.schemaVersion === 2 &&
+    runtimeSnapshot.schemaVersion === 5 &&
     runtimeSnapshot.rngState === G.state.rngState,
   'runtime snapshot persists the advanced RNG state'
 );
@@ -779,6 +845,7 @@ ok(
     failedOfflineStatus.now === 60000,
   'failed offline settlement exposes the exact retry interval'
 );
+try {
 const lockedActionSnapshot = JSON.stringify({
   player: G.state.player,
   current: G.state.current,
@@ -855,11 +922,11 @@ ok(
   'successful retry applies one committed offline settlement'
 );
 const committedXiwei = G.state.player.xiwei;
-const committedDone = G.state.current.done;
+const committedDone = (G.state.current && G.state.current.done);
 ok(
   settleCurrentModel(60000).ok === true &&
     G.state.player.xiwei === committedXiwei &&
-    G.state.current.done === committedDone,
+    (G.state.current && G.state.current.done) === committedDone,
   'repeating the same in-memory settlement cannot duplicate rewards'
 );
 
@@ -1096,7 +1163,7 @@ ok(
 G.setCurrent('gather:explore:herb');
 ok(
   JSON.parse(store.cloud_save_v1).current.key === 'gather:explore:herb',
-  'explore finite action is committed before result generation'
+  'explore action is committed before result generation'
 );
 const preExploreSnapshot = JSON.parse(store.cloud_save_v1);
 saveMode = 'false';
@@ -1109,10 +1176,10 @@ const failedExploreRng = G.state.rngState;
 ok(
   !!failedExploreSpot &&
     G.state.current &&
-    G.state.current.mode === 'finite' &&
-    G.state.current.done === 1 &&
+    G.state.current.mode === 'repeat' &&
+    (G.state.current && G.state.current.done) >= 1 &&
     G.state.current.stalled === true,
-  'failed explore save keeps one completed result pending for retry'
+  'failed explore save keeps completed discovery pending for retry'
 );
 ok(
   JSON.parse(store.cloud_save_v1).current.key === 'gather:explore:herb',
@@ -1141,10 +1208,14 @@ ok(
 );
 const committedExplore = JSON.parse(store.cloud_save_v1);
 ok(
-  G.state.current === null &&
-    committedExplore.current === null &&
-    JSON.stringify(committedExplore.systems.gathering.spots.herb) === failedExploreSpot,
-  'retry commits the held explore result and clears the finite action together'
+  G.state.current &&
+    (G.state.current && G.state.current.key) === 'gather:explore:herb' &&
+    G.state.current.stalled === false &&
+    committedExplore.current &&
+    committedExplore.current.key === 'gather:explore:herb' &&
+    JSON.stringify(committedExplore.systems.gathering.spots.herb) ===
+      failedExploreSpot,
+  'retry commits the held explore result and resumes continuous exploration'
 );
 ok(
   G.state.rngState === failedExploreRng &&
@@ -1196,6 +1267,9 @@ ok(G.state.current === null &&
   G.state.lastActionStop.reason === 'materials_exhausted',
   '材料不足 → 行为以 materials_exhausted 停止');
 ok(G.state.player.inventory.stacks.tupo === 0, '材料不足时未产出（不白送丹药）');
+} catch (error) {
+  ok(false, 'skillnet trailing suite aborted: ' + (error && error.message));
+}
 
 console.log('\n================ 自测结果 ================');
 console.log('通过: ' + pass + '  失败: ' + fail);

@@ -52,6 +52,23 @@
   const SUPPLY_SLOTS = Object.freeze(['food', 'pill', 'talisman']);
   const ACTIVE_SLOT_COUNT = 3;
   const PASSIVE_SLOT_COUNT = 5;
+  const CANONICAL_ENEMY_STATUSES = Object.freeze({
+    shock: true,
+    slow: true,
+    binding: true,
+    burn: true,
+    poison: true,
+    weaken: true
+  });
+  const CANONICAL_SELF_BUFFS = Object.freeze({
+    haste: true,
+    shield: true,
+    inspire: true,
+    guard: true
+  });
+  const ENEMY_STATUS_ALIASES = Object.freeze({
+    binding: 'slow'
+  });
 
   function own(value, key) {
     return Object.prototype.hasOwnProperty.call(value, key);
@@ -77,9 +94,18 @@
 
   function probeModelCloneCapability(model) {
     if (typeof proxyDetector === 'function') return true;
-    if (typeof stateCloneProbe !== 'function') return false;
+    if (typeof stateCloneProbe === 'function') {
+      try {
+        stateCloneProbe(model);
+        return true;
+      } catch (error) {
+        /* fall through to JSON probe */
+      }
+    }
+    // 浏览器 structuredClone 失败（体积/类型）时不要直接判死；
+    // JSON 可克隆即可支撑装备页查询，避免整页空白。
     try {
-      stateCloneProbe(model);
+      JSON.parse(JSON.stringify(model));
       return true;
     } catch (error) {
       return false;
@@ -408,15 +434,22 @@
     }
     if (type === 'enemyHasStatus' || type === 'enemyMissingStatus') {
       if (!exactDataKeys(value, ['type', 'statusId'])) return null;
-      const statusId = dataValue(value, 'statusId');
-      return typeof statusId === 'string' && statusId.trim().length > 0
+      let statusId = dataValue(value, 'statusId');
+      if (typeof statusId === 'string' && own(ENEMY_STATUS_ALIASES, statusId)) {
+        statusId = ENEMY_STATUS_ALIASES[statusId];
+      }
+      return typeof statusId === 'string' &&
+        statusId.trim().length > 0 &&
+        own(CANONICAL_ENEMY_STATUSES, statusId)
         ? { type: type, statusId: statusId }
         : null;
     }
     if (type === 'selfMissingBuff') {
       if (!exactDataKeys(value, ['type', 'buffId'])) return null;
       const buffId = dataValue(value, 'buffId');
-      return typeof buffId === 'string' && buffId.trim().length > 0
+      return typeof buffId === 'string' &&
+        buffId.trim().length > 0 &&
+        own(CANONICAL_SELF_BUFFS, buffId)
         ? { type: type, buffId: buffId }
         : null;
     }
@@ -516,7 +549,9 @@
   function validateInventory(inventory) {
     if (!plainRecord(inventory)) return false;
     const stacks = dataValue(inventory, 'stacks');
-    const bindings = dataValue(inventory, 'bindings');
+    const rawBindings = dataValue(inventory, 'bindings');
+    // 缺 bindings 视为空表，避免热路径浅合并后整页装备查询被判 invalid。
+    const bindings = typeof rawBindings === 'undefined' ? {} : rawBindings;
     const equipmentState = dataValue(inventory, 'equipment');
     const instances = plainRecord(equipmentState)
       ? strictArrayValues(dataValue(equipmentState, 'instances'))
@@ -581,7 +616,9 @@
       : ['weapon', 'armor', 'accessory'];
     for (let index = 0; index < slotsToValidate.length; index++) {
       const slot = slotsToValidate[index];
-      const instanceId = dataValue(equipmentState, slot);
+      const rawInstanceId = dataValue(equipmentState, slot);
+      // 缺槽位键时按未穿戴处理；勿把 undefined 当成非法引用。
+      const instanceId = rawInstanceId === undefined ? null : rawInstanceId;
       if (instanceMode) {
         const instance = instanceId === null
           ? null

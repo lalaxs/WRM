@@ -85,8 +85,13 @@
     if (actor.side === 'ally') metrics.damageDealt += applied;
     else metrics.damageTaken += applied;
     events.push({
-      type: 'damage', sourceId: actor.id, targetId: target.id, amount: applied,
-      critical: critical, techniqueId: techniqueId || null
+      type: 'damage',
+      sourceId: actor.id,
+      targetId: target.id,
+      amount: applied,
+      critical: critical,
+      techniqueId: techniqueId || null,
+      hit: true
     });
   }
   function applyStatus(target, status, state) {
@@ -110,6 +115,15 @@
     target.statuses = target.statuses || {};
     target.statuses[id] = applied;
   }
+  function mwiHitChance(accuracy, evasion) {
+    const acc = Math.max(0, Number(accuracy) || 0);
+    const eva = Math.max(0, Number(evasion) || 0);
+    const accPower = Math.pow(acc, 1.4);
+    const evaPower = Math.pow(eva, 1.4);
+    const total = accPower + evaPower;
+    if (!(total > 0)) return 0.5;
+    return accPower / total;
+  }
   function attack(session, actor, targetRule, effect, state, events, metrics, techniqueId) {
     const hits = Math.max(1, Math.floor(effect && effect.hits || 1));
     for (let index = 0; index < hits; index++) {
@@ -119,12 +133,16 @@
       if (!target) return;
       const hitRoll = draw(state.rngState);
       state.rngState = hitRoll.seed;
-      const hitChance = Math.max(0.2, Math.min(0.98,
-        0.75 + ((actor.accuracy || 0) - (target.evasion || 0)) * 0.005));
+      const hitChance = mwiHitChance(actor.accuracy, target.evasion);
       if (hitRoll.value >= hitChance) {
         events.push({
-          type: 'damage', sourceId: actor.id, targetId: target.id, amount: 0,
-          critical: false, techniqueId: techniqueId || null
+          type: 'damage',
+          sourceId: actor.id,
+          targetId: target.id,
+          amount: 0,
+          critical: false,
+          techniqueId: techniqueId || null,
+          hit: false
         });
         continue;
       }
@@ -149,9 +167,85 @@
   function executeTechnique(session, actor, technique, state, events, metrics) {
     const effect = technique.effect;
     if (!effect) return false;
-    if (effect.type === 'attack') {
+    if (effect.type === 'attack' || effect.type === 'aoeAttack') {
+      let multiplier = Number(effect.multiplier) || 1;
+      if (effect.type === 'aoeAttack') {
+        const enemies = opponents(session, actor).filter(alive);
+        const count = Math.max(1, Math.min(4, enemies.length || 1));
+        const coefficients = [1, 0.85, 0.72, 0.65];
+        multiplier *= coefficients[count - 1];
+        enemies.slice(0, count).forEach(function (target) {
+          const hits = Math.max(1, Math.floor(effect.hits || 1));
+          for (let index = 0; index < hits; index++) {
+            const hitRoll = draw(state.rngState);
+            state.rngState = hitRoll.seed;
+            const hitChance = mwiHitChance(actor.accuracy, target.evasion);
+            if (hitRoll.value >= hitChance) {
+              events.push({
+                type: 'damage',
+                sourceId: actor.id,
+                targetId: target.id,
+                amount: 0,
+                critical: false,
+                techniqueId: technique.techniqueId || null,
+                hit: false
+              });
+              continue;
+            }
+            const critRoll = draw(state.rngState);
+            state.rngState = critRoll.seed;
+            const critical = critRoll.value < (actor.critChance || 0);
+            recordDamage(actor, target, damageFor(actor, target,
+              multiplier, effect.defenseIgnore, critical),
+            critical, technique.techniqueId, events, metrics);
+            applyStatus(target, effect.status, state);
+          }
+        });
+        return true;
+      }
       attack(session, actor, technique.targetRule || 'highestThreatEnemy', effect,
         state, events, metrics, technique.techniqueId);
+      return true;
+    }
+    if (effect.type === 'restoreQi') {
+      const amount = Number(effect.amount) || 0;
+      const ratio = Number(effect.maxQiRatio) || 0;
+      const restore = amount + (actor.maxQi || 0) * ratio;
+      const before = actor.qi || 0;
+      actor.qi = Math.min(actor.maxQi || before, before + restore);
+      events.push({
+        type: 'restore_qi',
+        sourceId: actor.id,
+        targetId: actor.id,
+        amount: (actor.qi || 0) - before,
+        critical: false,
+        techniqueId: technique.techniqueId,
+        hit: true
+      });
+      return true;
+    }
+    if (effect.type === 'shield') {
+      const selected = selectTarget(session, actor,
+        technique.targetRule || 'self', state.rngState);
+      state.rngState = selected.rngState;
+      const target = findUnit(session, selected.targetId);
+      if (!target) return false;
+      const defenseFactor = Number(effect.defenseFactor) || 0;
+      const maxHpRatio = Number(effect.maxHpRatio) || 0;
+      const shield = Math.max(0,
+        (actor.defense || 0) * defenseFactor +
+        (target.maxHp || 0) * maxHpRatio);
+      const cap = (target.maxHp || 0) * 0.5;
+      target.shield = Math.min(cap, Math.max(target.shield || 0, shield));
+      events.push({
+        type: 'shield',
+        sourceId: actor.id,
+        targetId: target.id,
+        amount: shield,
+        critical: false,
+        techniqueId: technique.techniqueId,
+        hit: true
+      });
       return true;
     }
     if (effect.type !== 'heal') return false;
@@ -162,7 +256,9 @@
     if (!target) return false;
     const ratioAmount = Number(effect.maxHpRatio) || 0;
     const fixedAmount = Number(effect.amount) || 0;
-    const amount = fixedAmount || Math.round(target.maxHp * ratioAmount);
+    const attackFactor = Number(effect.attackFactor) || 0;
+    const amount = fixedAmount ||
+      ((actor.attack || 0) * attackFactor + target.maxHp * ratioAmount);
     const before = target.hp;
     target.hp = Math.min(target.maxHp, target.hp + Math.round(amount * (actor.cooperation || 1)));
     target.fallen = target.hp <= 0;
@@ -170,9 +266,36 @@
     actor.threat = (actor.threat || 0) + healed * 0.6;
     metrics.healingDone += healed;
     events.push({
-      type: 'heal', sourceId: actor.id, targetId: target.id, amount: healed,
-      critical: false, techniqueId: technique.techniqueId
+      type: 'heal',
+      sourceId: actor.id,
+      targetId: target.id,
+      amount: healed,
+      critical: false,
+      techniqueId: technique.techniqueId,
+      hit: true
     });
+    if (effect.purge === true) {
+      const statuses = target.statuses || {};
+      const purgeable = ['shock', 'slow', 'burn', 'poison'];
+      let purged = null;
+      for (let index = 0; index < purgeable.length; index++) {
+        const statusId = purgeable[index];
+        if (Object.prototype.hasOwnProperty.call(statuses, statusId)) {
+          delete statuses[statusId];
+          purged = statusId;
+          break;
+        }
+      }
+      events.push({
+        type: 'purge',
+        sourceId: actor.id,
+        targetId: target.id,
+        amount: purged ? 1 : 0,
+        critical: false,
+        techniqueId: technique.techniqueId,
+        hit: true
+      });
+    }
     return true;
   }
   function act(session, actor, state, events, metrics) {
@@ -199,6 +322,15 @@
     const metrics = { damageDealt: 0, damageTaken: 0, healingDone: 0 };
     next.teams.allies.concat(next.teams.enemies).forEach(function (unit) {
       if (unit.cooldownTicks > 0) unit.cooldownTicks--;
+      if (unit.statuses && typeof unit.statuses === 'object') {
+        Object.keys(unit.statuses).forEach(function (statusId) {
+          const status = unit.statuses[statusId];
+          if (!status) return;
+          const remaining = Math.floor(Number(status.remainingTicks) || 0) - 1;
+          if (remaining <= 0) delete unit.statuses[statusId];
+          else status.remainingTicks = remaining;
+        });
+      }
     });
     next.teams.allies.concat(next.teams.enemies).forEach(function (unit) {
       act(next, unit, state, events, metrics);

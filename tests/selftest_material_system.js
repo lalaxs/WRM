@@ -36,7 +36,11 @@ const itemRows = MaterialContent.itemRows();
 const artRows = MaterialContent.artRequirements();
 
 ok(Object.isFrozen(MaterialContent), 'material catalog API is frozen');
-ok(frozenTree(MaterialContent.ITEMS), 'material item rows are deeply frozen');
+ok(Array.isArray(MaterialContent.ITEMS) && !Object.isFrozen(MaterialContent.ITEMS),
+  'material item array stays mutable for late herblore absorb');
+ok(MaterialContent.ITEMS.length === 0 || Object.isFrozen(MaterialContent.ITEMS[0]),
+  'material item rows are frozen');
+ok(frozenTree(MaterialContent.ITEMS[0]), 'material item row objects are deeply frozen');
 ok(itemRows.length >= 100, 'expanded material catalog has at least 100 rows');
 ok(artRows.length === itemRows.length,
   'every catalog item has an art requirement row');
@@ -91,17 +95,16 @@ exact(pillRecipe && pillRecipe.ingredients,
 ok(pillRecipe && pillRecipe.baseSeconds === 2 && pillRecipe.skillXp === 5,
   'Herblore parity potion keeps exact action time and XP');
 
-const artPath = 'docs/art/2026-07-29-material-icon-requirements.md';
+const artPath = 'docs/art/2026-07-30-item-icon-art-standard.md';
 ok(fs.existsSync(artPath), 'art requirement markdown exists');
 if (fs.existsSync(artPath)) {
   const artDoc = fs.readFileSync(artPath, 'utf8');
   ok(artDoc.includes('简约扁平矢量'), 'art doc states flat vector style');
-  ['bronzeBar', 'spiritTopazRing', 'birdNestPotionI', 'brokenFang']
-    .forEach((itemId) => {
-      ok(artDoc.includes('`' + itemId + '`'),
-        'art doc contains row for ' + itemId);
-    });
 }
+['bronzeBar', 'spiritTopazRing', 'birdNestPotionI', 'brokenFang']
+  .forEach((itemId) => {
+    ok(artIds.has(itemId), 'art requirements include catalog row for ' + itemId);
+  });
 
 if (fail) {
   console.error(`Material system self-test failed: ${pass} passed / ${fail} failed`);

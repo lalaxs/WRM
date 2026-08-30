@@ -107,7 +107,9 @@ const stage3Files = [
 stage3Files.forEach((f) =>
   vm.runInContext(fs.readFileSync(f, 'utf8'), sandbox, { filename: f })
 );
-vm.runInContext(fs.readFileSync('game.js', 'utf8'), sandbox, { filename: 'game.js' });
+['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+  vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
+});
 // 故意不加载 ui.js（vm 里 DOM stub 不全，UI 会抛异常；我们只测 game-state 与 combat 查询）
 
 const harness = sandbox.__GameTestHarness;

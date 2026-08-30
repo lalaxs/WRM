@@ -283,6 +283,16 @@
       result.identity = cloneRecord(raw.identity);
       result.regionId = cleanString(raw.regionId, 'qinglan-town');
       result.flags = cloneRecord(raw.flags);
+      // Stage4 字段必须透传：否则 normalize → Stage4.normalize 时 rawPlayer
+      // 丢 kin/lifecycle，存档与 applyToRuntime 会把开局友人圈清成空。
+      result.spiritualRootId = cleanString(raw.spiritualRootId, null);
+      result.kin = cloneRecord(raw.kin);
+      result.familyId = cleanString(raw.familyId, null);
+      result.parentIds = Array.isArray(raw.parentIds)
+        ? raw.parentIds.slice()
+        : [];
+      result.metPlayer = raw.metPlayer === true;
+      result.lifecycle = cloneRecord(raw.lifecycle);
     }
     return result;
   }
@@ -372,11 +382,22 @@
       result.sects = cloneRecord(source.sects);
       result.social = cloneRecord(source.social);
       result.teamCombat = cloneRecord(source.teamCombat);
+      // 人生转换 / 族谱进行中状态必须透传，否则 begin 后一正规化就被清空，弹窗永远出不来
+      result.lineage = cloneRecord(source.lineage);
+      result.homestead.inheritanceHall = cloneRecord(
+        homestead.inheritanceHall
+      );
       result.world.elapsedSeconds = world.elapsedSeconds;
       result.world.activeAccumulator = world.activeAccumulator;
       result.world.backgroundAccumulator = world.backgroundAccumulator;
       result.world.sectAccumulator = world.sectAccumulator;
       result.world.eventAccumulator = world.eventAccumulator;
+      result.world.monthAccumulator = world.monthAccumulator;
+      // 日历与世界见闻必须透传，否则每帧 fromRuntime/normalize 会清空，
+      // 导致大事记永远不出现。
+      result.world.calendar = cloneRecord(world.calendar);
+      result.world.worldEvents = cloneArray(world.worldEvents);
+      result.world.nextWorldEventId = world.nextWorldEventId;
       result.world.regions = cloneRecord(world.regions);
     }
     return result;
@@ -458,7 +479,8 @@
       'events',
       'sects',
       'social',
-      'teamCombat'
+      'teamCombat',
+      'lineage'
     ].some(function (key) {
       return isRecord(dataValue(systems, key));
     });
@@ -487,13 +509,16 @@
     let current = SaveSystem.normalizeAction(source.current);
     let pendingOfflineReports = normalizePendingReports(source, now);
     if (current && includeStage2) {
-      const normalizedKey = Stage2State.normalizeActionKey(current.key);
+      const normalizedKey = Stage2State.normalizeActionKey(current.key) ||
+        (HAS_STAGE3_STATE
+          ? Stage3State.normalizeActionKey(current.key)
+          : null) ||
+        (HAS_STAGE4_STATE &&
+          typeof Stage4State.normalizeActionKey === 'function'
+          ? Stage4State.normalizeActionKey(current.key)
+          : null);
       if (normalizedKey) {
         current.key = normalizedKey;
-      } else if (HAS_STAGE3_STATE) {
-        const combatKey = Stage3State.normalizeActionKey(current.key);
-        if (combatKey) current.key = combatKey;
-        else current = discloseRemovedCurrent();
       } else {
         current = discloseRemovedCurrent();
       }
@@ -551,9 +576,17 @@
       lastActionStop: normalizeLastActionStop(source.lastActionStop)
     };
     if (includeStage4) {
-      return Stage4State.normalize(base, {
+      const normalized = Stage4State.normalize(base, {
         preserveLegacyFields: true
       });
+      // 空池补人口；已有人口时仍会补写缺失的开局结识见闻。
+      if (typeof Stage4State.ensureWorldPopulation === 'function') {
+        return Stage4State.normalize(
+          Stage4State.ensureWorldPopulation(normalized),
+          { preserveLegacyFields: true }
+        );
+      }
+      return normalized;
     }
     if (HAS_STAGE3_STATE) {
       return Stage3State.normalize(base, { preserveLegacyFields: true });
@@ -589,6 +622,62 @@
     }, nowMs, HAS_STAGE2_STATE);
   }
 
+  // UI/查询专用：信任运行时已在 applyToRuntime 时规范化，避免每帧深拷贝+重规范化 Stage4。
+  function queryView(runtime, nowMs) {
+    if (!isRecord(runtime)) {
+      return {
+        modelVersion: MODEL_VERSION,
+        created: false,
+        appearance: { parts: {} },
+        player: null,
+        current: null,
+        rngState: GameRandom.normalizeSeed(undefined),
+        offlineLimitSeconds: DEFAULT_OFFLINE_LIMIT_SECONDS,
+        systems: {},
+        pendingOfflineReports: [],
+        reportArchive: [],
+        processedThroughMs: finiteNumber(nowMs, Date.now(), 0),
+        lastActionStop: null,
+        savedAt: finiteNumber(nowMs, Date.now(), 0)
+      };
+    }
+    const now = finiteNumber(nowMs, Date.now(), 0);
+    const parts = isRecord(runtime.parts) ? runtime.parts : {};
+    const offlineLimitSeconds = Math.min(
+      MAX_OFFLINE_LIMIT_SECONDS,
+      Math.max(
+        DEFAULT_OFFLINE_LIMIT_SECONDS,
+        finiteNumber(
+          runtime.offlineLimitSeconds,
+          DEFAULT_OFFLINE_LIMIT_SECONDS
+        )
+      )
+    );
+    return {
+      modelVersion: MODEL_VERSION,
+      created: !!runtime.created,
+      appearance: { parts: parts },
+      player: runtime.player || null,
+      current: runtime.current || null,
+      rngState: GameRandom.normalizeSeed(runtime.rngState),
+      offlineLimitSeconds: offlineLimitSeconds,
+      systems: isRecord(runtime.systems) ? runtime.systems : {},
+      pendingOfflineReports: Array.isArray(runtime.pendingOfflineReports)
+        ? runtime.pendingOfflineReports
+        : [],
+      reportArchive: Array.isArray(runtime.reportArchive)
+        ? runtime.reportArchive
+        : [],
+      processedThroughMs: finiteNumber(
+        runtime.processedThroughMs,
+        finiteNumber(runtime.savedAt, now, 0),
+        0
+      ),
+      lastActionStop: runtime.lastActionStop || null,
+      savedAt: finiteNumber(runtime.savedAt, now, 0)
+    };
+  }
+
   function applyToRuntime(runtime, model) {
     if (!isRecord(runtime)) return runtime;
     const clean = normalizeInternal(
@@ -615,10 +704,8 @@
       model,
       dataValue(model, 'processedThroughMs')
     );
-    return normalize(
-      cloneJson(clean, normalize({}, 0)),
-      clean.processedThroughMs
-    );
+    // Already normalized; one JSON-safe clone is enough for save input.
+    return cloneJson(clean, {});
   }
 
   function deepFreeze(value) {
@@ -640,6 +727,7 @@
     MODEL_VERSION,
     normalize,
     fromRuntime,
+    queryView,
     applyToRuntime,
     toSnapshotInput,
     readonly

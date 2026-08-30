@@ -1,0 +1,19 @@
+[
+  {
+    "id": "mentor-0197",
+    "weight": 8,
+    "type": "mentor",
+    "actors": "pair",
+    "template": "{a}在{loc}收下{b}一拜，约定三日一课。",
+    "officeRankA": [
+      "elder",
+      "hall",
+      "trueDisciple"
+    ],
+    "officeRankB": [
+      "outer",
+      "inner"
+    ],
+    "sameSect": true
+  }
+]

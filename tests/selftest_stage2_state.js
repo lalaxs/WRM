@@ -77,8 +77,8 @@ ok(defaults.systems.homestead.beasts.activeIds.length === 0,
   'no beast starts active');
 ok(defaults.systems.homestead.beasts.encounters.length === 0,
   'no beast encounter starts pending');
-ok(Object.keys(defaults.systems.gathering.fishStocks).length === 10,
-  'ten fish stocks exist');
+ok(Object.keys(defaults.systems.gathering.fishStocks).length >= 10,
+  'fish stocks catalog is populated');
 ok(Object.values(defaults.systems.gathering.fishStocks)
   .every((stock) => stock === 20),
   'all fish species start at their shared stock cap');
@@ -151,11 +151,10 @@ ok(
     canonicalMasteryNormalized.player.legacyProgress.masteryPools.herb === 25,
   'canonical mastery outranks a legacy UI view without rewriting its archive'
 );
-ok(migrated.systems.gathering.spots.herb.entryId === 'parityHerb1' &&
-   migrated.systems.gathering.spots.herb.instanceId === 'spot-1' &&
-   migrated.systems.gathering.spots.herb.quality === 'common' &&
-   migrated.systems.gathering.spots.herb.capacity === 20 &&
-   migrated.systems.gathering.spots.herb.remaining === 11,
+ok(migrated.systems.gathering.spots.herb[0].entryId === 'parityHerb1' &&
+   migrated.systems.gathering.spots.herb[0].instanceId === 'spot-1' &&
+   migrated.systems.gathering.spots.herb[0].capacity === 50 &&
+   migrated.systems.gathering.spots.herb[0].remaining === 11,
   'legacy resource point is retained with a stable v3 instance ID');
 ok(migrated.systems.gathering.nextSpotId === 2,
   'legacy resource point allocation advances the stable ID counter');
@@ -227,6 +226,12 @@ Object.keys(actionAliases).forEach((key) => {
 ok(Stage2State.normalizeActionKey('gather:mining:copper') ===
   'gather:collect:mining:copper',
   'legacy gather action key migrates');
+ok(Stage2State.normalizeActionKey('gather:collect:mining:spot-3') ===
+  'gather:collect:mining:spot-3',
+  'instance gather action key remains stable');
+ok(Stage2State.normalizeActionKey('gather:mining:spot-4') ===
+  'gather:collect:mining:spot-4',
+  'legacy gather instance key migrates to collect form');
 ok(Stage2State.normalizeActionKey('gather:fishing:pond') === 'fish:pond',
   'legacy fishing action key migrates');
 ok(Stage2State.normalizeActionKey(
@@ -460,12 +465,15 @@ ok(Stage2State.occupiedSlots({
 }) === 1, 'occupied slot helper rejects zero and invalid quantities');
 ok(normalized.systems.gathering.nextSpotId === 8,
   'next resource ID advances beyond retained stable IDs');
-ok(normalized.systems.gathering.spots.herb.capacity === 20 &&
-   normalized.systems.gathering.spots.herb.remaining === 20 &&
-   normalized.systems.gathering.spots.herb.quality === 'rare',
+ok(normalized.systems.gathering.spots.herb[0] &&
+   normalized.systems.gathering.spots.herb[0].capacity === 50 &&
+   normalized.systems.gathering.spots.herb[0].remaining === 20 &&
+   !('quality' in normalized.systems.gathering.spots.herb[0]),
   'valid resource points clamp remaining capacity');
-ok(normalized.systems.gathering.spots.mining === null &&
-   normalized.systems.gathering.spots.woodcutting === null &&
+ok(Array.isArray(normalized.systems.gathering.spots.mining) &&
+   normalized.systems.gathering.spots.mining.length === 0 &&
+   Array.isArray(normalized.systems.gathering.spots.woodcutting) &&
+   normalized.systems.gathering.spots.woodcutting.length === 0 &&
    !('obsolete' in normalized.systems.gathering.spots),
   'invalid and unknown resource point records are removed');
 ok(normalized.systems.gathering.fishStocks.spiritCarp === 20 &&
@@ -586,7 +594,7 @@ const preservedContainers = Stage2State.migrateLegacyPlayer(
   { name: '已迁移角色' },
   existingContainers
 );
-ok(preservedContainers.systems.gathering.spots.herb.instanceId ===
+ok(preservedContainers.systems.gathering.spots.herb[0].instanceId ===
    'spot-17' &&
    preservedContainers.systems.homestead.farm.plots[0].ready === true &&
    preservedContainers.systems.homestead.formations.slots[0] ===
@@ -695,7 +703,7 @@ continuedCounters.systems.gathering.spots.mining = {
 };
 const continuedCounterModel = Stage2State.normalize(continuedCounters);
 ok(continuedCounterModel.systems.homestead.beasts.nextId === 53 &&
-   continuedCounterModel.systems.gathering.spots.mining.instanceId ===
+   continuedCounterModel.systems.gathering.spots.mining[0].instanceId ===
      'spot-45' &&
    continuedCounterModel.systems.gathering.nextSpotId === 46,
   'continued allocations cannot reuse persisted beast or resource-point IDs');
@@ -844,45 +852,14 @@ const v2Adapter = jsonAdapter({
   [SaveSystem.SNAPSHOT_KEY]: JSON.stringify(v2Raw)
 });
 const v2Loaded = SaveSystem.load(v2Adapter, 9000.875);
-ok(v2Loaded.source === 'snapshot' && v2Loaded.migrated === true &&
-   v2Loaded.needsRepair === true,
-  'schema v2 explicitly migrates through v3 and v4 to v5 and requests durable repair');
-ok(v2Loaded.snapshot.schemaVersion === 5,
-  'migrated snapshot has schema version five');
-ok(v2Loaded.snapshot.savedAt === 8000.125 &&
-   v2Loaded.snapshot.processedThroughMs === 8000.125,
-  'v2 migration preserves sub-millisecond timestamps exactly');
-ok(v2Loaded.snapshot.player.lingshi === 987 &&
-   v2Loaded.snapshot.player.breakthrough.cultivation === 123.5 &&
-   v2Loaded.snapshot.player.breakthrough.realmId === 'qi-3' &&
-   v2Loaded.snapshot.current.key === 'gather:explore:herb' &&
-   v2Loaded.snapshot.current.done === 4 &&
-   v2Loaded.snapshot.current.elapsed === 0.4,
-  'v2 migration preserves currency, cultivation, and action');
-const v2Repeated = SaveSystem.load(jsonAdapter({
-  [SaveSystem.SNAPSHOT_KEY]: JSON.stringify(v2Raw)
-}), 9000.875);
-ok(v2Loaded.snapshot.rngState !== 0x12345678 &&
-   v2Repeated.snapshot.rngState === v2Loaded.snapshot.rngState &&
-   JSON.stringify(v2Repeated.snapshot.systems.npcs.records) ===
-     JSON.stringify(v2Loaded.snapshot.systems.npcs.records),
-  'v4→v5 bootstrap deterministically advances the saved RNG');
-ok(Object.keys(v2Loaded.snapshot.systems.npcs.records).length === 120 &&
-   v2Loaded.snapshot.systems.npcs.nextId === 121,
-  'v2 migration persists the first 120 permanent characters');
-ok(v2Loaded.snapshot.pendingOfflineReports[0].id === 'legacy-report' &&
-   v2Loaded.snapshot.pendingOfflineReports[0].gains.cultivation === 2 &&
-   v2Loaded.snapshot.reportArchive[0].id === 'archive-only',
-  'v2 migration preserves pending and archived simulation reports');
+ok(v2Loaded.source === 'empty' && v2Loaded.migrated === false &&
+   v2Loaded.needsRepair === false,
+  'schema v2 is rejected instead of migrated to v5');
+ok(v2Loaded.snapshot.player === null &&
+   v2Loaded.snapshot.schemaVersion === 5,
+  'rejected v2 load yields an empty v5 shell');
 ok(v2Adapter.writes === 0,
-  'loading a v2 migration performs no hidden write');
-ok(SaveSystem.save(v2Adapter, v2Loaded.snapshot, 9000.875) === true,
-  'the migrated v5 population can be durably repaired');
-const v2Reopened = SaveSystem.load(v2Adapter, 9000.875);
-ok(v2Reopened.snapshot.rngState === v2Loaded.snapshot.rngState &&
-   JSON.stringify(v2Reopened.snapshot.systems.npcs.records) ===
-     JSON.stringify(v2Loaded.snapshot.systems.npcs.records),
-  'reopening the repaired v5 snapshot never rerolls people or RNG');
+  'rejecting a v2 snapshot performs no hidden write');
 
 const v1Raw = {
   schemaVersion: 1,
@@ -917,39 +894,10 @@ const v1Raw = {
 const v1Loaded = SaveSystem.load(jsonAdapter({
   [SaveSystem.SNAPSHOT_KEY]: JSON.stringify(v1Raw)
 }), 9000.875);
-ok(v1Loaded.snapshot.schemaVersion === 5 &&
-   v1Loaded.migrated === true && v1Loaded.needsRepair === true,
-  'schema v1 explicitly migrates through v2, v3, and v4 to v5');
-same({
-  skills: v1Loaded.snapshot.player.skills,
-  inventory: v1Loaded.snapshot.player.inventory,
-  gathering: v1Loaded.snapshot.systems.gathering,
-  current: {
-    key: v1Loaded.snapshot.current.key,
-    mode: v1Loaded.snapshot.current.mode,
-    count: v1Loaded.snapshot.current.count,
-    done: v1Loaded.snapshot.current.done,
-    elapsed: v1Loaded.snapshot.current.elapsed
-  },
-  rngState: v1Loaded.snapshot.rngState,
-  processedThroughMs: v1Loaded.snapshot.processedThroughMs
-}, {
-  skills: v2Loaded.snapshot.player.skills,
-  inventory: v2Loaded.snapshot.player.inventory,
-  gathering: Object.assign({}, v2Loaded.snapshot.systems.gathering, {
-    fishRecoverAnchorMs: null,
-    fishRecoverBaseSeconds: null
-  }),
-  current: {
-    key: v2Loaded.snapshot.current.key,
-    mode: v2Loaded.snapshot.current.mode,
-    count: v2Loaded.snapshot.current.count,
-    done: v2Loaded.snapshot.current.done,
-    elapsed: v2Loaded.snapshot.current.elapsed
-  },
-  rngState: v2Loaded.snapshot.rngState,
-  processedThroughMs: v2Loaded.snapshot.processedThroughMs
-}, 'v1→v2→v3→v4→v5 and equivalent direct v2 migration progress are identical');
+ok(v1Loaded.source === 'empty' &&
+   v1Loaded.migrated === false && v1Loaded.needsRepair === false &&
+   v1Loaded.snapshot.player === null,
+  'schema v1 is rejected instead of migrated to v5');
 
 function removedWarningCount(model) {
   return model.pendingOfflineReports.reduce((total, report) =>
@@ -973,24 +921,20 @@ removedV2.current.key = 'removed_v2_action';
 const removedV2Result = loadThenNormalize(jsonAdapter({
   [SaveSystem.SNAPSHOT_KEY]: JSON.stringify(removedV2)
 }), 9001);
-ok(removedV2Result.model.current === null &&
-   removedV2Result.model.pendingOfflineReports.length === 1 &&
-   removedV2Result.model.pendingOfflineReports[0].id === 'legacy-report' &&
-   removedWarningCount(removedV2Result.model) === 1,
-  'v2 removed action appends exactly one warning to the next pending report');
+ok(removedV2Result.loaded.source === 'empty' &&
+   removedV2Result.model.player === null &&
+   removedWarningCount(removedV2Result.model) === 0,
+  'old schema v2 with a removed action is ignored entirely');
 
 const removedV1 = JSON.parse(JSON.stringify(v1Raw));
 removedV1.current.key = 'removed_v1_action';
 const removedV1Result = loadThenNormalize(jsonAdapter({
   [SaveSystem.SNAPSHOT_KEY]: JSON.stringify(removedV1)
 }), 9002);
-ok(removedV1Result.model.current === null &&
-   removedV1Result.model.pendingOfflineReports.length === 1 &&
-   removedV1Result.model.pendingOfflineReports[0].requestedSeconds === 0 &&
-   removedV1Result.model.pendingOfflineReports[0].fromMs ===
-     removedV1Result.model.pendingOfflineReports[0].toMs &&
-   removedWarningCount(removedV1Result.model) === 1,
-  'v1 removed action creates one zero-duration warning report');
+ok(removedV1Result.loaded.source === 'empty' &&
+   removedV1Result.model.player === null &&
+   removedWarningCount(removedV1Result.model) === 0,
+  'old schema v1 with a removed action is ignored entirely');
 
 const removedLegacyResult = loadThenNormalize(jsonAdapter({
   cloud_created: JSON.stringify(1),
@@ -1006,31 +950,102 @@ const removedLegacyResult = loadThenNormalize(jsonAdapter({
   }),
   cloud_lastsave: JSON.stringify(9003)
 }), 9003);
-ok(removedLegacyResult.loaded.source === 'legacy' &&
-   removedLegacyResult.model.current === null &&
-   removedWarningCount(removedLegacyResult.model) === 1,
-  'split-key legacy load discloses a removed action exactly once');
+ok(removedLegacyResult.loaded.source === 'empty' &&
+   removedLegacyResult.model.player === null &&
+   removedWarningCount(removedLegacyResult.model) === 0,
+  'split-key legacy cloud_* saves are ignored entirely');
 
-const prewarnedV2 = v2Snapshot();
-prewarnedV2.current.key = 'removed_pre_warned_action';
-prewarnedV2.pendingOfflineReport.reports[0].warnings.push(
-  'legacy_action_removed'
-);
-const prewarnedV2Result = loadThenNormalize(jsonAdapter({
-  [SaveSystem.SNAPSHOT_KEY]: JSON.stringify(prewarnedV2)
+const removedV5 = SaveSystem.createSnapshot({
+  created: true,
+  player: { name: '现行角色' },
+  current: {
+    key: 'fish:pond',
+    mode: 'repeat',
+    count: 0,
+    done: 0,
+    elapsed: 0,
+    stalled: false
+  }
+}, 9004);
+removedV5.current.key = 'removed_v5_action';
+const removedV5Result = loadThenNormalize(jsonAdapter({
+  [SaveSystem.SNAPSHOT_KEY]: JSON.stringify(removedV5)
 }), 9004);
-ok(removedWarningCount(prewarnedV2Result.model) === 1,
-  'migration never duplicates an existing removed-action warning');
+ok(removedV5Result.model.current === null &&
+   removedWarningCount(removedV5Result.model) === 1,
+  'same-version v5 removed action appends exactly one warning');
 
-const knownAliasV2 = v2Snapshot();
-knownAliasV2.current.key = 'liandan_heal';
-const knownAliasV2Result = loadThenNormalize(jsonAdapter({
-  [SaveSystem.SNAPSHOT_KEY]: JSON.stringify(knownAliasV2)
+const prewarnedV5 = SaveSystem.createSnapshot({
+  created: true,
+  player: { name: '已提示角色' },
+  current: {
+    key: 'fish:pond',
+    mode: 'repeat',
+    count: 0,
+    done: 0,
+    elapsed: 0,
+    stalled: false
+  },
+  pendingOfflineReport: {
+    version: 1,
+    reports: [{
+      id: 'pending-report',
+      source: 'offline',
+      fromMs: 9004.5,
+      toMs: 9004.5,
+      requestedSeconds: 0,
+      action: {
+        key: 'fish:pond',
+        completed: 0,
+        stopReason: null,
+        stopAtMs: null
+      },
+      gains: {
+        items: {},
+        skillXp: {},
+        masteryXp: {},
+        cultivation: 0
+      },
+      costs: { items: {}, supplies: {} },
+      levels: [],
+      unlocks: [],
+      passive: {
+        fishRecovered: 0,
+        farmCompleted: [],
+        parallelCompleted: []
+      },
+      world: { ticks: 0, events: [] },
+      warnings: ['legacy_action_removed']
+    }]
+  }
+}, 9004.5);
+prewarnedV5.current.key = 'removed_pre_warned_action';
+const prewarnedV5Result = loadThenNormalize(jsonAdapter({
+  [SaveSystem.SNAPSHOT_KEY]: JSON.stringify(prewarnedV5)
+}), 9004.5);
+ok(removedWarningCount(prewarnedV5Result.model) === 1,
+  'same-version normalize never duplicates an existing removed-action warning');
+
+const knownAliasV5 = SaveSystem.createSnapshot({
+  created: true,
+  player: { name: '别名角色' },
+  current: {
+    key: 'fish:pond',
+    mode: 'repeat',
+    count: 0,
+    done: 0,
+    elapsed: 0,
+    stalled: false
+  }
+}, 9005);
+knownAliasV5.current.key = 'liandan_heal';
+const knownAliasV5Result = loadThenNormalize(jsonAdapter({
+  [SaveSystem.SNAPSHOT_KEY]: JSON.stringify(knownAliasV5)
 }), 9005);
-ok(knownAliasV2Result.model.current.key ===
+ok(knownAliasV5Result.model.current.key ===
      'produce:alchemy:healingPill' &&
-   removedWarningCount(knownAliasV2Result.model) === 0,
-  'known aliases migrate without a removed-action warning');
+   removedWarningCount(knownAliasV5Result.model) === 0,
+  'known aliases normalize on valid v5 without a removed-action warning');
 
 const canonicalSnapshot = SaveSystem.createSnapshot(
   StateModel.toSnapshotInput(StateModel.normalize({
@@ -1144,9 +1159,37 @@ function brokenPrimary(mutator) {
 }
 
 const strictReportFixture = StateModel.normalize(
-  v2Loaded.snapshot,
-  v2Loaded.snapshot.processedThroughMs
-).pendingOfflineReports[0];
+  canonicalSnapshot,
+  canonicalSnapshot.processedThroughMs
+).pendingOfflineReports[0] || {
+  id: 'strict-report',
+  source: 'offline',
+  fromMs: 1000.125,
+  toMs: 1000.125,
+  requestedSeconds: 0,
+  action: {
+    key: 'fish:pond',
+    completed: 0,
+    stopReason: null,
+    stopAtMs: null
+  },
+  gains: {
+    items: { copperOre: 1 },
+    skillXp: {},
+    masteryXp: {},
+    cultivation: 0
+  },
+  costs: { items: {}, supplies: {} },
+  levels: [],
+  unlocks: [],
+  passive: {
+    fishRecovered: 0,
+    farmCompleted: [],
+    parallelCompleted: []
+  },
+  world: { ticks: 0, events: [] },
+  warnings: []
+};
 
 [
   ['missing skills', (snapshot) => { delete snapshot.player.skills; }],
@@ -1313,20 +1356,20 @@ ok(futureLoad.writeProtected === true &&
   'future schema blocks every write and preserves exact primary/backup bytes');
 
 const validV5PrimaryBytes = JSON.stringify(canonicalSnapshot);
-const v6BackupBytes = JSON.stringify({
-  schemaVersion: 6,
+const futureOnlyBackupBytes = JSON.stringify({
+  schemaVersion: SaveSystem.SCHEMA_VERSION + 1,
   savedAt: 75,
   irreplaceable: { nextStage: true }
 });
 const futureBackupAdapter = jsonAdapter({
   [SaveSystem.SNAPSHOT_KEY]: validV5PrimaryBytes,
-  [SaveSystem.BACKUP_KEY]: v6BackupBytes
+  [SaveSystem.BACKUP_KEY]: futureOnlyBackupBytes
 });
 const futureBackupLoad = SaveSystem.load(futureBackupAdapter, 100);
 const futureBackupWrites = futureBackupAdapter.writes;
 ok(futureBackupLoad.source === 'snapshot' &&
    futureBackupLoad.future === true &&
-   futureBackupLoad.futureSchemaVersion === 6 &&
+   futureBackupLoad.futureSchemaVersion === SaveSystem.SCHEMA_VERSION + 1 &&
    futureBackupLoad.writeProtected === true &&
    futureBackupLoad.needsRepair === false &&
    SaveSystem.save(
@@ -1336,8 +1379,8 @@ ok(futureBackupLoad.source === 'snapshot' &&
    ) === false &&
    futureBackupAdapter.writes === futureBackupWrites &&
    futureBackupAdapter.raw[SaveSystem.SNAPSHOT_KEY] === validV5PrimaryBytes &&
-   futureBackupAdapter.raw[SaveSystem.BACKUP_KEY] === v6BackupBytes,
-  'active-v5 load scans a future backup and preserves both exact byte strings');
+   futureBackupAdapter.raw[SaveSystem.BACKUP_KEY] === futureOnlyBackupBytes,
+  'active load scans a future backup and preserves both exact byte strings');
 
 const runtime = { cache: { canvas: true }, navIndex: 4 };
 StateModel.applyToRuntime(runtime, roundTripped.snapshot);
@@ -1386,84 +1429,47 @@ ok(typeof browserSandbox.Stage2State.createDefaults === 'function' &&
      .systems.homestead.farm.unlockedPlots === 3,
   'Stage 2 state exposes the same UMD browser API');
 
-const legacyCompositionSandbox = { console, JSON, Object, Array, Number };
-legacyCompositionSandbox.globalThis = legacyCompositionSandbox;
-vm.createContext(legacyCompositionSandbox);
+const incompleteCompositionSandbox = { console, JSON, Object, Array, Number };
+incompleteCompositionSandbox.globalThis = incompleteCompositionSandbox;
+vm.createContext(incompleteCompositionSandbox);
 vm.runInContext(
   fs.readFileSync('core/save-system.js', 'utf8'),
-  legacyCompositionSandbox,
+  incompleteCompositionSandbox,
   { filename: 'core/save-system.js' }
 );
-const LegacyCompositionSave = legacyCompositionSandbox.SaveSystem;
-const legacyCompositionV2 = LegacyCompositionSave.createSnapshot({
-  player: { name: '尚未装配 Stage 2' }
-}, 77.25);
-ok(LegacyCompositionSave.SCHEMA_VERSION === 5 &&
-   legacyCompositionV2.schemaVersion === 2,
-  'public schema target stays five while unassembled composition writes only v2');
-const legacyCompositionAdapter = jsonAdapter({
-  [LegacyCompositionSave.SNAPSHOT_KEY]: JSON.stringify(legacyCompositionV2)
-});
-const legacyCompositionLoad = LegacyCompositionSave.load(
-  legacyCompositionAdapter,
-  80.5
-);
-ok(legacyCompositionLoad.source === 'snapshot' &&
-   legacyCompositionLoad.snapshot.schemaVersion === 2 &&
-   legacyCompositionLoad.writeProtected === false,
-  'unassembled composition safely continues its existing v2 protocol');
-const legacyV2PrimaryBytes = JSON.stringify(legacyCompositionV2);
-const legacyV3BackupBytes = JSON.stringify({
-  schemaVersion: 3,
-  savedAt: 79,
-  irreplaceable: { stage2: true }
-});
-const legacyFutureBackupAdapter = jsonAdapter({
-  [LegacyCompositionSave.SNAPSHOT_KEY]: legacyV2PrimaryBytes,
-  [LegacyCompositionSave.BACKUP_KEY]: legacyV3BackupBytes
-});
-const legacyFutureBackupLoad = LegacyCompositionSave.load(
-  legacyFutureBackupAdapter,
-  80.5
-);
-const legacyFutureBackupWrites = legacyFutureBackupAdapter.writes;
-ok(legacyFutureBackupLoad.source === 'snapshot' &&
-   legacyFutureBackupLoad.future === true &&
-   legacyFutureBackupLoad.futureSchemaVersion === 3 &&
-   legacyFutureBackupLoad.writeProtected === true &&
-   legacyFutureBackupLoad.needsRepair === false &&
-   LegacyCompositionSave.save(
-     legacyFutureBackupAdapter,
-     legacyFutureBackupLoad.snapshot,
-     80.5
-   ) === false &&
-   legacyFutureBackupAdapter.writes === legacyFutureBackupWrites &&
-   legacyFutureBackupAdapter.raw[LegacyCompositionSave.SNAPSHOT_KEY] ===
-     legacyV2PrimaryBytes &&
-   legacyFutureBackupAdapter.raw[LegacyCompositionSave.BACKUP_KEY] ===
-     legacyV3BackupBytes,
-  'active-v2 load scans a v3 backup and preserves both exact byte strings');
-const protectedV5Bytes = JSON.stringify(canonicalSnapshot);
-const protectedV5Adapter = jsonAdapter({
-  [LegacyCompositionSave.SNAPSHOT_KEY]: protectedV5Bytes
-});
-const protectedV5Load = LegacyCompositionSave.load(
-  protectedV5Adapter,
-  2000
-);
-const protectedV5Writes = protectedV5Adapter.writes;
-ok(protectedV5Load.future === true &&
-   protectedV5Load.futureSchemaVersion === 5 &&
-   protectedV5Load.writeProtected === true &&
-   LegacyCompositionSave.save(
-     protectedV5Adapter,
-     legacyCompositionV2,
-     2000
-   ) === false &&
-   protectedV5Adapter.writes === protectedV5Writes &&
-   protectedV5Adapter.raw[LegacyCompositionSave.SNAPSHOT_KEY] ===
-     protectedV5Bytes,
-  'unassembled composition treats v5 as future and performs zero writes');
+const IncompleteSave = incompleteCompositionSandbox.SaveSystem;
+ok(IncompleteSave.SCHEMA_VERSION === 5,
+  'public schema target stays five even without Stage modules assembled');
+let incompleteCreateError = null;
+try {
+  IncompleteSave.createSnapshot({ player: { name: '尚未装配' } }, 77.25);
+} catch (error) {
+  incompleteCreateError = error;
+}
+ok(incompleteCreateError &&
+   /Stage4State is required/.test(String(incompleteCreateError.message || '')),
+  'unassembled composition cannot create snapshots without Stage4State');
+let incompleteLoadError = null;
+try {
+  IncompleteSave.load(
+    jsonAdapter({
+      [IncompleteSave.SNAPSHOT_KEY]: JSON.stringify({
+        schemaVersion: 2,
+        savedAt: 77.25,
+        created: true
+      })
+    }),
+    80.5
+  );
+} catch (error) {
+  incompleteLoadError = error;
+}
+ok(incompleteLoadError &&
+   /Stage4State is required/.test(String(incompleteLoadError.message || '')),
+  'unassembled composition cannot load without Stage4State');
+ok(typeof IncompleteSave.migrateV3 !== 'function' &&
+   typeof IncompleteSave.migrateV4 !== 'function',
+  'SaveSystem no longer exports cross-version migrate helpers');
 
 console.log('\n=== Stage 2 状态自测：' + pass + ' 通过 / ' + fail + ' 失败 ===');
 if (fail) process.exit(1);

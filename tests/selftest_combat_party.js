@@ -36,12 +36,12 @@ function baseModel() {
         edges: {
           'player>npc-1': {
             affection: 72, trust: 60, romanticAttachment: 20, desire: 0,
-            dependence: 0, loyalty: 10, jealousy: 0, resentment: 0,
+            dependence: 0, loyalty: 10, jealousy: 0, closeness: 0,
             lastChangedAt: 0
           },
           'npc-1>player': {
             affection: 68, trust: 55, romanticAttachment: 15, desire: 0,
-            dependence: 0, loyalty: 10, jealousy: 0, resentment: 0,
+            dependence: 0, loyalty: 10, jealousy: 0, closeness: 0,
             lastChangedAt: 0
           }
         },

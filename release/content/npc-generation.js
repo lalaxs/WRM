@@ -31,6 +31,38 @@
     baseLifespanYears: { min: 28, max: 56 }
   });
 
+  // 开局结构关系种子（父母 / 师徒 / NPC 道侣）。只在人口 bootstrap 后跑一次。
+  const RELATION_SEED_RULES = deepFreeze({
+    blood: {
+      clusterCount: { min: 8, max: 12 },
+      maxClustersPerFamily: 2,
+      singleParentChance: 0.30,
+      childrenPerCluster: { min: 1, max: 2 },
+      minParentAge: 36,
+      minAgeGap: 16,
+      maxParentAgeGap: 25,
+      affinity: 42
+    },
+    mentor: {
+      pairCount: { min: 12, max: 20 },
+      minMentorRealm: 3,
+      minRealmGap: 1,
+      softMinAgeGap: 8,
+      disciplesPerMentor: { min: 1, max: 3 },
+      requireSect: true,
+      affinity: 28
+    },
+    daoCompanion: {
+      pairCount: { min: 6, max: 10 },
+      minAge: 22,
+      maxAgeGap: 20,
+      maxRealmGap: 3,
+      sameSectWeight: 3,
+      sameRegionWeight: 2,
+      affinity: 55
+    }
+  });
+
   const REALM_WEIGHTS = deepFreeze([
     { realmStage: 0, weight: 400, lifespanMultiplier: 1.00 },
     { realmStage: 1, weight: 260, lifespanMultiplier: 1.05 },
@@ -109,88 +141,60 @@
 
   const PERSONALITY_PROFILES = deepFreeze([
     {
-      id: 'steady',
-      name: '沉稳',
+      id: 'chicheng',
+      name: '赤诚',
       weight: 10,
-      summary: '看重长期积累，态度变化较慢但持久。',
-      relationModifiers: { trust: 1.10, resentment: 0.90 }
+      summary: '直率坦诚，快意恩仇。',
+      relationModifiers: { affection: 1.08, trust: 1.05, closeness: 1.02 }
     },
     {
-      id: 'direct',
-      name: '直率',
+      id: 'qingleng',
+      name: '清冷',
       weight: 10,
-      summary: '喜欢清楚表达，也更快回应坦诚。',
-      relationModifiers: { affection: 1.05, resentment: 1.05 }
+      summary: '性情淡泊，专注修行。',
+      relationModifiers: { trust: 1.12, closeness: 0.85, dependence: 0.80 }
     },
     {
-      id: 'patient',
-      name: '耐心',
+      id: 'rechen',
+      name: '热忱',
       weight: 10,
-      summary: '愿意花时间倾听，不容易因小事动摇。',
-      relationModifiers: { trust: 1.08, jealousy: 0.85 }
+      summary: '古道热肠，乐于助人。',
+      relationModifiers: { affection: 1.12, closeness: 1.08, jealousy: 1.05 }
     },
     {
-      id: 'practical',
-      name: '务实',
-      weight: 10,
-      summary: '重视可靠行动与实际结果。',
-      relationModifiers: { trust: 1.05, dependence: 0.90 }
-    },
-    {
-      id: 'forthright',
-      name: '爽朗',
-      weight: 10,
-      summary: '待人热情，情绪来得快也去得快。',
-      relationModifiers: { affection: 1.10, resentment: 0.85 }
-    },
-    {
-      id: 'diplomatic',
-      name: '圆融',
-      weight: 10,
-      summary: '擅长体察他人，也愿意寻找折中办法。',
-      relationModifiers: { trust: 1.06, jealousy: 0.90 }
-    },
-    {
-      id: 'curious',
-      name: '好奇',
-      weight: 10,
-      summary: '乐于接触新人物、新技艺与新见闻。',
-      relationModifiers: { affection: 1.06, dependence: 0.95 }
-    },
-    {
-      id: 'reserved',
-      name: '内敛',
-      weight: 10,
-      summary: '不轻易显露心意，建立信任后十分认真。',
-      relationModifiers: { trust: 1.12, affection: 0.92 }
-    },
-    {
-      id: 'warm',
-      name: '温厚',
-      weight: 10,
-      summary: '习惯照顾身边的人，也珍惜日常陪伴。',
-      relationModifiers: { affection: 1.08, dependence: 1.05 }
-    },
-    {
-      id: 'ambitious',
-      name: '进取',
-      weight: 10,
-      summary: '看重成长与成就，欣赏有行动力的人。',
-      relationModifiers: { loyalty: 1.05, resentment: 1.02 }
-    },
-    {
-      id: 'free-spirited',
+      id: 'shuaituo',
       name: '洒脱',
       weight: 10,
-      summary: '重视自由选择，不喜欢被过度约束。',
+      summary: '不拘小节，好游历。',
       relationModifiers: { affection: 1.04, dependence: 0.80 }
     },
     {
-      id: 'meticulous',
-      name: '缜密',
+      id: 'zhizhuo',
+      name: '执着',
       weight: 10,
-      summary: '重视细节与承诺，对失约也更敏感。',
-      relationModifiers: { trust: 1.10, resentment: 1.08 }
+      summary: '心志坚定，专一。',
+      relationModifiers: { loyalty: 1.15, romanticAttachment: 1.10, jealousy: 1.08 }
+    },
+    {
+      id: 'renhou',
+      name: '仁厚',
+      weight: 10,
+      summary: '心胸宽广，包容。',
+      relationModifiers: { trust: 1.08, jealousy: 0.85, closeness: 1.05 }
+    },
+    {
+      id: 'jiaojin',
+      name: '骄矜',
+      weight: 10,
+      summary: '自信骄傲，追求卓越。',
+      relationModifiers: { loyalty: 1.05, affection: 0.95, desire: 1.05 }
+    },
+    {
+      id: 'wenya',
+      name: '温雅',
+      weight: 10,
+      summary: '温润如玉，善于倾听。',
+      relationModifiers: { trust: 1.08, closeness: 1.10, desire: 0.95 }
     }
   ]);
 
@@ -214,6 +218,180 @@
     },
     { id: 'balanced', name: '持中', weight: 10, priorities: ['分寸', '调和'] }
   ]);
+
+  // 道心标签：独立于性格/价值观的一层人物标签，每种都挂真实机制
+  // （社交 delta 乘数 / 误解率 / 突破偏见 / 事件叙事门控）。NPC 生成时
+  // 按权重抽取 1~2 个写入 records 的 traits 字段；旧档无 traits 时由
+  // stage4-state 按 id 哈希派生（与 preferences 同款哈希法）。
+  const DAO_HEART_TRAITS = deepFreeze([
+    {
+      id: 'loyal',
+      name: '忠义',
+      weight: 10,
+      summary: '重诺守义，一旦认准便极难动摇。',
+      effects: {
+        loyalGrowth: 1.30,
+        willfulResistance: 0
+      }
+    },
+    {
+      id: 'willful',
+      name: '执拗',
+      weight: 10,
+      summary: '心志极坚，软磨硬泡反而不易打动。',
+      effects: {
+        willfulResistance: 0.15,
+        loyalGrowth: 0
+      }
+    },
+    {
+      id: 'generous',
+      name: '慷慨',
+      weight: 10,
+      summary: '出手大方，也最容易被真心打动。',
+      effects: {
+        giftAffection: 1.30,
+        giftMisunderstandingScale: 0.5
+      }
+    },
+    {
+      id: 'thrifty',
+      name: '节俭',
+      weight: 10,
+      summary: '惜物重理，礼物难以收买，交心却可长久。',
+      effects: {
+        giftAffection: 0.80,
+        marketTrust: 1.10
+      }
+    },
+    {
+      id: 'scholarly',
+      name: '好古',
+      weight: 10,
+      summary: '嗜读古卷，论道最能引为知己。',
+      effects: {
+        daoTrust: 1.30
+      }
+    },
+    {
+      id: 'pious',
+      name: '敬天',
+      weight: 10,
+      summary: '敬畏天道，心性契合天地规律，渡劫更顺。',
+      effects: {
+        breakthroughBias: 0.1
+      }
+    },
+    {
+      id: 'principled',
+      name: '方正',
+      weight: 10,
+      summary: '一板一眼，认死理，也最重名分。',
+      effects: {
+        loyalGrowth: 1.20,
+        principledRigidity: 0.1
+      }
+    },
+    {
+      id: 'wanderer',
+      name: '逍遥',
+      weight: 10,
+      summary: '云游四方，最不耐烦被一处牵绊。',
+      effects: {
+        outingAffection: 1.20,
+        stayAffection: 0.90
+      }
+    }
+  ]);
+
+  // 对标原版 _lg / linggen0..7 + dns.lg_exp
+  // 权重：高档稀有，杂/多灵根更常见（原版造人权未钉死，按档次稀有度）
+  const SPIRITUAL_ROOTS = deepFreeze([
+    {
+      id: 'mutant-heaven',
+      name: '变异天灵根',
+      lgIndex: 0,
+      lgExp: 180,
+      weight: 1,
+      efficiencyMult: 1.8,
+      traits: ['天资', '变异']
+    },
+    {
+      id: 'heaven',
+      name: '天灵根',
+      lgIndex: 1,
+      lgExp: 150,
+      weight: 2,
+      efficiencyMult: 1.5,
+      traits: ['天资']
+    },
+    {
+      id: 'mutant',
+      name: '变异灵根',
+      lgIndex: 2,
+      lgExp: 130,
+      weight: 4,
+      efficiencyMult: 1.3,
+      traits: ['变异']
+    },
+    {
+      id: 'single',
+      name: '单灵根',
+      lgIndex: 3,
+      lgExp: 100,
+      weight: 18,
+      efficiencyMult: 1.0,
+      traits: ['纯粹']
+    },
+    {
+      id: 'dual',
+      name: '双灵根',
+      lgIndex: 4,
+      lgExp: 90,
+      weight: 22,
+      efficiencyMult: 0.9,
+      traits: ['双行']
+    },
+    {
+      id: 'triple',
+      name: '三灵根',
+      lgIndex: 5,
+      lgExp: 80,
+      weight: 20,
+      efficiencyMult: 0.8,
+      traits: ['驳杂']
+    },
+    {
+      id: 'quad',
+      name: '四灵根',
+      lgIndex: 6,
+      lgExp: 70,
+      weight: 16,
+      efficiencyMult: 0.7,
+      traits: ['驳杂']
+    },
+    {
+      id: 'mixed',
+      name: '杂灵根',
+      lgIndex: 7,
+      lgExp: 60,
+      weight: 28,
+      efficiencyMult: 0.6,
+      traits: ['驳杂']
+    }
+  ]);
+
+  // 旧五行/伪灵根 → 原版档（读档兼容）
+  const SPIRITUAL_ROOT_ALIASES = deepFreeze({
+    metal: 'single',
+    wood: 'single',
+    water: 'single',
+    fire: 'single',
+    earth: 'dual',
+    'mutant-ice': 'mutant',
+    'mutant-thunder': 'mutant',
+    waste: 'mixed'
+  });
 
   const TALENTS = deepFreeze([
     {
@@ -300,28 +478,28 @@
 
   const ROMANCE_PRINCIPLES = deepFreeze([
     {
-      id: 'open',
-      name: '接受开放关系',
+      id: 'exclusive',
+      name: '专一',
       weight: 20,
-      summary: '更看重坦诚与共同约定。'
+      summary: '必须为唯一结契对象，否则心动易锁定。'
     },
     {
-      id: 'negotiable',
-      name: '可以协商',
+      id: 'devoted',
+      name: '从一而终',
       weight: 35,
-      summary: '愿意通过长期相处讨论彼此边界。'
+      summary: '默认唯一，特殊条件可破例再多容忍一二人。'
     },
     {
-      id: 'monogamous',
-      name: '倾向专一',
-      weight: 35,
-      summary: '通常希望双方保持专一。'
+      id: 'tolerant',
+      name: '宽和',
+      weight: 30,
+      summary: '接受多结契，吃醋增长较慢。'
     },
     {
-      id: 'absolute-monogamy',
-      name: '要求绝对专一',
-      weight: 10,
-      summary: '把双方绝对专一视为重要承诺。'
+      id: 'casual',
+      name: '随性',
+      weight: 15,
+      summary: '不太在意契约形式，随缘而合。'
     }
   ]);
 
@@ -344,12 +522,88 @@
     return findById(TALENTS, talentId);
   }
 
+  function getSpiritualRoot(rootId) {
+    let id = rootId;
+    if (typeof id === 'string' && SPIRITUAL_ROOT_ALIASES[id]) {
+      id = SPIRITUAL_ROOT_ALIASES[id];
+    }
+    return findById(SPIRITUAL_ROOTS, id);
+  }
+
   function getRomancePrinciple(principleId) {
     return findById(ROMANCE_PRINCIPLES, principleId);
   }
 
+  function getDaoHeartTrait(traitId) {
+    return findById(DAO_HEART_TRAITS, traitId);
+  }
+
+  function cultivationEfficiencyFor(realmStage, spiritualRootId, variance) {
+    const stage = Math.max(0, Math.floor(Number(realmStage) || 0));
+    const root = getSpiritualRoot(spiritualRootId);
+    const lg = root && Number.isFinite(root.lgIndex) ? root.lgIndex : 3;
+    const stub = {
+      realmStage: stage,
+      level_l: stage <= 8 ? stage : Math.min(9, 8 + Math.ceil((stage - 8) / 2)),
+      expsx: 0.9 + (Number.isFinite(variance) ? variance : 0.5) * 0.5,
+      lg: lg,
+      spiritualRootId: spiritualRootId
+    };
+    function resolveDns() {
+      if (typeof globalThis !== 'undefined' && globalThis.Dns) {
+        return globalThis.Dns;
+      }
+      if (typeof require === 'function') {
+        try { return require('../core/dns.js'); } catch (e) { return null; }
+      }
+      return null;
+    }
+    const Dns = resolveDns();
+    if (Dns && typeof Dns.cultivationPerMonth === 'function') {
+      return Dns.cultivationPerMonth(stub);
+    }
+    if (Dns && typeof Dns.getexps === 'function') {
+      return Dns.getexps(stub);
+    }
+    return 1;
+  }
+
+  // 道心标签 id 列表 → 显示名列表（保留顺序，去重，忽略非法 id）。
+  function daoHeartTraitNames(traitIds) {
+    const names = [];
+    const seen = {};
+    (Array.isArray(traitIds) ? traitIds : []).forEach(function (id) {
+      if (typeof id !== 'string' || seen[id]) return;
+      seen[id] = true;
+      const trait = getDaoHeartTrait(id);
+      if (trait) names.push(trait.name);
+    });
+    return names;
+  }
+
+  // 道心标签 id 列表 → { id, name, summary, effects } 视图列表。
+  function daoHeartTraitViews(traitIds) {
+    const views = [];
+    const seen = {};
+    (Array.isArray(traitIds) ? traitIds : []).forEach(function (id) {
+      if (typeof id !== 'string' || seen[id]) return;
+      seen[id] = true;
+      const trait = getDaoHeartTrait(id);
+      if (trait) {
+        views.push({
+          id: trait.id,
+          name: trait.name,
+          summary: trait.summary,
+          effects: trait.effects
+        });
+      }
+    });
+    return views;
+  }
+
   return Object.freeze({
     GENERATION_RULES: GENERATION_RULES,
+    RELATION_SEED_RULES: RELATION_SEED_RULES,
     REALM_WEIGHTS: REALM_WEIGHTS,
     GENDERS: GENDERS,
     SURNAMES: SURNAMES,
@@ -357,11 +611,19 @@
     APPEARANCE_FEATURES: APPEARANCE_FEATURES,
     PERSONALITY_PROFILES: PERSONALITY_PROFILES,
     VALUE_PROFILES: VALUE_PROFILES,
+    DAO_HEART_TRAITS: DAO_HEART_TRAITS,
+    SPIRITUAL_ROOTS: SPIRITUAL_ROOTS,
+    SPIRITUAL_ROOT_ALIASES: SPIRITUAL_ROOT_ALIASES,
     TALENTS: TALENTS,
     ROMANCE_PRINCIPLES: ROMANCE_PRINCIPLES,
     getPersonality: getPersonality,
     getValueProfile: getValueProfile,
     getTalent: getTalent,
-    getRomancePrinciple: getRomancePrinciple
+    getSpiritualRoot: getSpiritualRoot,
+    getRomancePrinciple: getRomancePrinciple,
+    getDaoHeartTrait: getDaoHeartTrait,
+    daoHeartTraitNames: daoHeartTraitNames,
+    daoHeartTraitViews: daoHeartTraitViews,
+    cultivationEfficiencyFor: cultivationEfficiencyFor
   });
 });

@@ -233,6 +233,7 @@ function chunked(
 const runtime = Stage3Rules.create(runtimeDeps());
 const fastCombatEngine = Object.freeze({
   createSession: CombatEngine.createSession,
+  createEnemy: CombatEngine.createEnemy,
   advanceTick: CombatEngine.advanceTick
 });
 const fastRuntime = Stage3Rules.create(runtimeDeps({
@@ -888,6 +889,30 @@ equal(runtime.lanes.map(function (lane) { return lane.id; }), [
   'summarized Stage 3 report data is deeply frozen');
 }
 
+function combatSemanticEqual(onlineState, offlineState, message) {
+  equal(onlineState.rngState, offlineState.rngState, message + ' (rng)');
+  equal(
+    bytes(onlineState.systems.combat.session),
+    bytes(offlineState.systems.combat.session),
+    message + ' (session)'
+  );
+  equal(
+    bytes(onlineState.player.inventory),
+    bytes(offlineState.player.inventory),
+    message + ' (inventory)'
+  );
+  equal(
+    bytes(onlineState.current),
+    bytes(offlineState.current),
+    message + ' (current)'
+  );
+  ok(
+    onlineState.player.lingshi === offlineState.player.lingshi &&
+      onlineState.player.cultivation === offlineState.player.cultivation,
+    message + ' (player progress)'
+  );
+}
+
 {
   const initial = makeEndlessRegion(runtime, 31);
   const online = chunked(runtime, initial, 120, [0.25], 1000);
@@ -896,8 +921,11 @@ equal(runtime.lanes.map(function (lane) { return lane.id; }), [
     fromMs: 1000,
     limit: 43200
   });
-  equal(bytes(online.state), bytes(offline.state),
-    '120 seconds in 480 ticks equals one offline batch byte-for-byte');
+  combatSemanticEqual(
+    online.state,
+    offline.state,
+    '120-second online/offline combat remains semantically identical'
+  );
   equal(
     normalizeSummary(online.reports),
     normalizeSummary([offline.report]),
@@ -921,8 +949,11 @@ equal(runtime.lanes.map(function (lane) { return lane.id; }), [
     limit: 43200,
     lanes: []
   });
-  equal(bytes(online.state), bytes(offline.state),
-    'trusted-engine irregular combat ticks equal one batch byte-for-byte');
+  combatSemanticEqual(
+    online.state,
+    offline.state,
+    'trusted-engine irregular online/offline combat remains semantically identical'
+  );
   equal(
     normalizeSummary(online.reports),
     normalizeSummary([offline.report]),
@@ -1098,14 +1129,18 @@ function parityAfterReload(initial, beforeSeconds, afterSeconds, mutate) {
     fromMs: 0,
     limit: 43200
   });
-  equal(bytes(chunks.state), bytes(batch.state),
-    'multi-seed online/offline parity holds for seed ' + seed);
+  combatSemanticEqual(
+    chunks.state,
+    batch.state,
+    'multi-seed online/offline parity holds for seed ' + seed
+  );
 });
 
 {
   function hostileEngine(mutate) {
     return Object.freeze({
       createSession: CombatEngine.createSession,
+      createEnemy: CombatEngine.createEnemy,
       advanceTick: function (session, context) {
         const tick = json(CombatEngine.advanceTick(session, context));
         mutate(tick);
@@ -1237,6 +1272,7 @@ function parityAfterReload(initial, beforeSeconds, afterSeconds, mutate) {
   function counterEngine(mutate) {
     return Object.freeze({
       createSession: CombatEngine.createSession,
+      createEnemy: CombatEngine.createEnemy,
       advanceTick: function (session, context) {
         session.elapsedTicks++;
         mutate(session);
@@ -1638,6 +1674,24 @@ function parityAfterReload(initial, beforeSeconds, afterSeconds, mutate) {
      typeof sandbox.Stage3Rules.create === 'function' &&
      Object.isFrozen(sandbox.Stage3Rules),
   'Stage3Rules attaches a frozen browser UMD API');
+}
+
+{
+  // Melvor-style offline batching should settle an hour of endless combat
+  // well under a hard wall-clock budget on the test machine.
+  const initial = makeEndlessRegion(runtime, 99);
+  const startedAt = Date.now();
+  const out = advance(runtime, initial, 3600, {
+    source: 'offline',
+    fromMs: 0,
+    limit: 43200,
+    lanes: []
+  });
+  const elapsedMs = Date.now() - startedAt;
+  ok(out.report.combat.ticks === 3600 / 0.25,
+    '1-hour offline combat still advances the full tick count');
+  ok(elapsedMs < 8000,
+    '1-hour offline combat settles within 8s (took ' + elapsedMs + 'ms)');
 }
 
 console.log(

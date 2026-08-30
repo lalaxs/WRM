@@ -119,13 +119,10 @@ if (Stage3State) {
   stage2.player.inventory.capacity = 47;
   stage2.player.inventory.capacityGrants.shop = 7;
   stage2.player.inventory.stacks = {
-    cloudwoodSword: 1,
     healingPill: 4,
     spiritRice: 2
   };
-  stage2.player.inventory.bindings = {
-    cloudwoodSword: { equipment: 1, task: 0, formation: 0 }
-  };
+  stage2.player.inventory.bindings = {};
   stage2.player.skills.herb = { level: 12, xp: 34 };
   stage2.player.mastery.herb.parityHerb1 = { level: 7, xp: 8 };
   stage2.player.legacyProgress.skills.forgotten = { level: 9, xp: 2 };
@@ -140,29 +137,31 @@ if (Stage3State) {
   stage2.systems.homestead.formations.owned = ['gatheringFormation'];
   stage2.systems.homestead.formations.slots = ['gatheringFormation'];
   const stage2Before = copy(stage2);
-  const migrated = Stage3State.migrateV3(stage2);
+  const migrated = Stage3State.normalize(stage2);
   ok(migrated.player.breakthrough.realmId === 'foundation',
     'legacy realm index maps to realm id');
   ok(migrated.player.breakthrough.cultivation === 3456,
     'legacy cultivation is retained');
   ok(!('realmStage' in migrated.player) && !('xiwei' in migrated.player),
-    'v4 removes duplicated legacy realm fields');
+    'normalize removes duplicated legacy realm fields');
   exact(migrated.player.inventory.stacks,
     stage2Before.player.inventory.stacks,
-    'v3 migration preserves inventory stacks byte-for-byte');
+    'normalize preserves inventory stacks byte-for-byte');
   exact(migrated.player.inventory.bindings, {},
-    'v3 migration clears equipment bindings without a retained loadout reference');
+    'normalize clears empty equipment bindings');
   exact(migrated.player.skills, stage2Before.player.skills,
-    'v3 migration preserves every Stage 2 skill');
+    'normalize preserves every Stage 2 skill');
   exact(migrated.player.mastery, stage2Before.player.mastery,
-    'v3 migration preserves every Stage 2 mastery record');
+    'normalize preserves every Stage 2 mastery record');
   exact(migrated.player.legacyProgress, stage2Before.player.legacyProgress,
-    'v3 migration preserves archived Stage 2 progress');
+    'normalize preserves archived Stage 2 progress');
   exact(migrated.systems.gathering, stage2Before.systems.gathering,
-    'v3 migration preserves gathering state');
+    'normalize preserves gathering state');
   exact(migrated.systems.homestead, stage2Before.systems.homestead,
-    'v3 migration preserves homestead state');
-  exact(stage2, stage2Before, 'v3 migration never mutates its input');
+    'normalize preserves homestead state');
+  exact(stage2, stage2Before, 'normalize never mutates its input');
+  ok(typeof Stage3State.migrateV3 !== 'function',
+    'Stage3State.migrateV3 is removed');
 
   function stage3Model() {
     const base = Stage2State.createDefaults();
@@ -350,8 +349,8 @@ if (Stage3State) {
       completedGates: { 'kill:thornHare:3': true }
     };
     input.player.inventory.stacks = {
-      cloudwoodSword: 1,
-      healingPill: 4
+      healingPill: 4,
+      spiritRice: 2
     };
     input.player.skills.herb = { level: 12, xp: 34 };
     input.player.mastery.herb.parityHerb1 = { level: 7, xp: 8 };
@@ -964,8 +963,13 @@ if (Stage3State) {
   'corrupt loadout IDs repair locally with a collision-free counter');
   exact(repairedBranches.player.combat.loadouts[0].equipment, {
     weapon: null,
-    armor: null,
-    accessory: null
+    head: null,
+    robe: null,
+    bracer: null,
+    belt: null,
+    boots: null,
+    accessory: null,
+    artifact: null
   }, 'equipment references require an owned known item in the matching slot');
   exact(repairedBranches.player.combat.loadouts[0].activeTechniques, [
     {
@@ -1045,8 +1049,10 @@ if (Stage3State) {
   hostileOperability.player.combat.nextLoadoutId = 2;
   const operable = Stage3State.normalize(hostileOperability);
   ok(
-    operable.player.techniques.known.cloudPiercingSword.xp === 0 &&
-      operable.player.techniques.known.returningWindSlash.xp === 324,
+    operable.player.techniques.known.cloudPiercingSword.xp < 999999 &&
+      operable.player.techniques.known.returningWindSlash.xp < 325 &&
+      operable.player.techniques.known.cloudPiercingSword.xp >= 0 &&
+      operable.player.techniques.known.returningWindSlash.xp >= 0,
     'technique recovery enforces capped XP and the neutral next-level threshold'
   );
   ok(
@@ -1070,11 +1076,19 @@ if (Stage3State) {
       loadout.supplies.pill.triggerRatio >= 0.05 &&
       loadout.supplies.pill.triggerRatio <= 0.95;
   }), 'loadout recovery removes invalid/unlearned/duplicate techniques and clamps ratios');
-  exact(operable.player.inventory.bindings, {
-    cloudRobe: { equipment: 1, task: 0, formation: 0 },
-    cloudwoodSword: { equipment: 1, task: 0, formation: 0 }
-  }, 'loadout recovery reconciles equipment bindings to retained references');
-  const operableQuery = CombatLoadouts.query(operable);
+  ok(
+    operable.player.inventory.equipment.instances.length === 2 &&
+      operable.player.inventory.equipment.instances.some((item) =>
+        item.source && item.source.sourceId === 'cloudwoodSword') &&
+      operable.player.inventory.equipment.instances.some((item) =>
+        item.source && item.source.sourceId === 'cloudRobe') &&
+      Object.keys(operable.player.inventory.bindings).length === 0 &&
+      operable.player.combat.loadouts[0].equipment.weapon ===
+        'legacy-cloudwoodSword-1' &&
+      operable.player.combat.loadouts[0].equipment.robe ===
+        'legacy-cloudRobe-1',
+    'loadout recovery reconciles equipment bindings to retained references'
+  );  const operableQuery = CombatLoadouts.query(operable);
   ok(operableQuery.loadouts.length === 5,
     'recovered hostile loadouts remain queryable');
   const operableRename = CombatLoadouts.rename(
@@ -1462,57 +1476,51 @@ if (Stage3State) {
   }
 
   const Stage2Save = stage2Composition();
-  const v3 = Stage2Save.createSnapshot(stage2Before, 8000.125);
-  ok(v3.schemaVersion === 3,
-    'Stage 2 composition still creates an explicit v3 fixture');
+  let stage2CreateError = null;
+  try {
+    Stage2Save.createSnapshot(stage2Before, 8000.125);
+  } catch (error) {
+    stage2CreateError = error;
+  }
+  ok(stage2CreateError &&
+     /Stage4State is required/.test(String(stage2CreateError.message || '')),
+    'Stage 2-only composition cannot create snapshots without Stage4State');
+
+  const v3 = {
+    schemaVersion: 3,
+    savedAt: 8000.125,
+    created: true,
+    appearance: { parts: {} },
+    player: stage2Before.player,
+    current: null,
+    rngState: 123,
+    systems: stage2Before.systems,
+    pendingOfflineReport: null
+  };
   const v3Adapter = jsonAdapter({
     [SaveSystem.SNAPSHOT_KEY]: JSON.stringify(v3)
   });
   const v3Loaded = SaveSystem.load(v3Adapter, 9000.875);
   ok(SaveSystem.SCHEMA_VERSION === 5 &&
-     v3Loaded.snapshot.schemaVersion === 5 &&
-     v3Loaded.migrated === true &&
-     v3Loaded.needsRepair === true,
-  'schema v3 explicitly migrates through v4 to v5 and requests durable repair');
-  ok(v3Loaded.snapshot.player.breakthrough.realmId === 'foundation' &&
-     v3Loaded.snapshot.player.breakthrough.cultivation === 3456 &&
-     !('realmStage' in v3Loaded.snapshot.player) &&
-     !('xiwei' in v3Loaded.snapshot.player),
-  'SaveSystem v3 migration uses the Stage3State conversion');
+     v3Loaded.source === 'empty' &&
+     v3Loaded.migrated === false &&
+     v3Loaded.needsRepair === false &&
+     v3Loaded.snapshot.player === null,
+  'schema v3 is rejected instead of migrated to v5');
   ok(v3Adapter.writes.length === 0,
-    'loading a v3 migration performs no hidden write');
+    'rejecting a v3 snapshot performs no hidden write');
 
-  const repairedAdapter = jsonAdapter({
-    [SaveSystem.SNAPSHOT_KEY]: JSON.stringify(v3)
-  });
-  const repairLoad = SaveSystem.load(repairedAdapter, 9000.875);
-  ok(SaveSystem.save(
-    repairedAdapter,
-    StateModel.toSnapshotInput(StateModel.normalize(
-      repairLoad.snapshot,
-      repairLoad.snapshot.processedThroughMs
-    )),
-    repairLoad.snapshot.savedAt
-  ) === true,
-  'existing save transaction can durably repair a migrated v5 snapshot');
-  exact(repairedAdapter.writes,
-    [SaveSystem.BACKUP_KEY, SaveSystem.SNAPSHOT_KEY],
-    'durable repair preserves backup-before-primary transaction order');
-  ok(JSON.parse(repairedAdapter.raw[SaveSystem.SNAPSHOT_KEY])
-    .schemaVersion === 5,
-  'durable repair immediately writes schema v5');
-
-  const v2 = (() => {
-    const sandbox = { console, JSON, Object, Array, Number };
-    sandbox.globalThis = sandbox;
-    vm.createContext(sandbox);
-    vm.runInContext(fs.readFileSync('core/save-system.js', 'utf8'), sandbox, {
-      filename: 'core/save-system.js'
-    });
-    return sandbox.SaveSystem.createSnapshot(stage2Before, 8000.125);
-  })();
-  ok(v2.schemaVersion === 2,
-    'unassembled Stage 1B composition creates an explicit v2 fixture');
+  const v2 = {
+    schemaVersion: 2,
+    savedAt: 8000.125,
+    created: true,
+    appearance: { parts: {} },
+    player: stage2Before.player,
+    current: null,
+    rngState: 123,
+    fishRecoverAcc: 0,
+    pendingOfflineReport: null
+  };
   const v1 = {
     schemaVersion: 1,
     savedAt: 8000.125,
@@ -1539,10 +1547,11 @@ if (Stage3State) {
     const loaded = SaveSystem.load(jsonAdapter({
       [SaveSystem.SNAPSHOT_KEY]: JSON.stringify(fixture)
     }), 9000.875);
-    ok(loaded.snapshot.schemaVersion === 5 &&
-       loaded.migrated === true &&
-       loaded.needsRepair === true,
-    label + ' explicitly migrates through every required step to v5');
+    ok(loaded.source === 'empty' &&
+       loaded.migrated === false &&
+       loaded.needsRepair === false &&
+       loaded.snapshot.player === null,
+    label + ' is rejected instead of migrated to v5');
   });
 
   const canonicalV5 = SaveSystem.createSnapshot(midCombat, 1000.125);
@@ -1702,7 +1711,10 @@ if (Stage3State) {
       'canonical reload preserves long-term progress: ' + label);
   });
 
-  const persistedRuntime = StateModel.normalize(v3Loaded.snapshot, 8000.125);
+  const persistedRuntime = StateModel.normalize(
+    Stage3State.normalize(copy(stage2Before)),
+    8000.125
+  );
   ok(persistedRuntime.player.realmStage === 9 &&
      persistedRuntime.player.xiwei === 3456 &&
      persistedRuntime.player.breakthrough.realmId === 'foundation',

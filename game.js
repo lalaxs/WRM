@@ -1,5 +1,7 @@
-(function (runtimeRoot) {
 'use strict';
+
+const runtimeRoot = typeof globalThis !== 'undefined' ? globalThis : this;
+
 
 // ============================================================
 // 云隐小师妹 · 角色创建流程 + 主界面骨架（TapTap H5 小游戏 · 原生 JS + Canvas2D）
@@ -123,8 +125,8 @@ if (missingBootstrapGlobals.length > 0) {
   );
 }
 
-// Stage 3 is also all-or-none. Legacy and Stage 2-only harnesses load none
-// of these globals; production loads the complete dependency topology.
+// Stage 3 content half is all-or-none at parse time. Combat *engines* load
+ // later via LazyContent.ensureCombatRuntime() → refreshStage3CombatRuntime().
 const stage3Bootstrap = {
   Stage3State: typeof Stage3State === 'undefined' ? null : Stage3State,
   Stage3Rules: typeof Stage3Rules === 'undefined' ? null : Stage3Rules,
@@ -172,21 +174,37 @@ const useEquipmentRuntime = !!(
   stage2Bootstrap.Inventory &&
   stage3Bootstrap.CombatLoadouts
 );
-const stage3ExtensionNames = Object.keys(stage3Bootstrap);
-const useStage3Runtime = stage3ExtensionNames.some(function (name) {
+const stage3ContentNames = Object.freeze([
+  'Stage3State',
+  'CombatContent',
+  'TechniqueContent',
+  'RealmContent',
+  'CombatLoadouts',
+  'Techniques',
+  'Breakthrough'
+]);
+const stage3CombatRuntimeNames = Object.freeze([
+  'Stage3Rules',
+  'CombatStats',
+  'CombatEngine',
+  'CombatRewards',
+  'CombatProgress'
+]);
+const useStage3Runtime = stage3ContentNames.some(function (name) {
   return stage3Bootstrap[name] !== null;
 });
-const missingStage3Globals = useStage3Runtime
-  ? stage3ExtensionNames.filter(function (name) {
+const missingStage3Content = useStage3Runtime
+  ? stage3ContentNames.filter(function (name) {
     return stage3Bootstrap[name] === null;
   })
   : [];
-if (missingStage3Globals.length > 0) {
+if (missingStage3Content.length > 0) {
   throw new Error(
     'Incomplete Stage 3 bootstrap: missing ' +
-    missingStage3Globals.join(', ')
+    missingStage3Content.join(', ')
   );
 }
+let useStage3CombatRuntime = false;
 
 // Stage 4 character-world composition is all-or-none. Older VM harnesses load
 // none of these globals; the browser loads the complete topology from index.
@@ -195,6 +213,18 @@ const stage4Bootstrap = {
   Stage4Rules: typeof Stage4Rules === 'undefined' ? null : Stage4Rules,
   RegionContent: typeof RegionContent === 'undefined' ? null : RegionContent,
   SectContent: typeof SectContent === 'undefined' ? null : SectContent,
+  SectOfficeContent: typeof SectOfficeContent === 'undefined'
+    ? null
+    : SectOfficeContent,
+  SectOffices: typeof SectOffices === 'undefined' ? null : SectOffices,
+  SectMissionContent: typeof SectMissionContent === 'undefined'
+    ? null
+    : SectMissionContent,
+  SectMissions: typeof SectMissions === 'undefined' ? null : SectMissions,
+  SectPavilionContent: typeof SectPavilionContent === 'undefined'
+    ? null
+    : SectPavilionContent,
+  SectPavilion: typeof SectPavilion === 'undefined' ? null : SectPavilion,
   NpcGenerationContent: typeof NpcGenerationContent === 'undefined'
     ? null
     : NpcGenerationContent,
@@ -202,9 +232,6 @@ const stage4Bootstrap = {
     typeof SocialInteractionContent === 'undefined'
       ? null
       : SocialInteractionContent,
-  EventTemplateContent: typeof EventTemplateContent === 'undefined'
-    ? null
-    : EventTemplateContent,
   NpcRoster: typeof NpcRoster === 'undefined' ? null : NpcRoster,
   Relationships: typeof Relationships === 'undefined'
     ? null
@@ -213,17 +240,14 @@ const stage4Bootstrap = {
     ? null
     : NpcCombatConfig,
   CombatParty: typeof CombatParty === 'undefined' ? null : CombatParty,
-  TeamCombatSnapshot: typeof TeamCombatSnapshot === 'undefined'
-    ? null
-    : TeamCombatSnapshot,
   Social: typeof Social === 'undefined' ? null : Social,
-  EventEngine: typeof EventEngine === 'undefined' ? null : EventEngine,
   NpcSimulation: typeof NpcSimulation === 'undefined'
     ? null
     : NpcSimulation,
   SectSimulation: typeof SectSimulation === 'undefined'
     ? null
-    : SectSimulation
+    : SectSimulation,
+  WorldMonth: typeof WorldMonth === 'undefined' ? null : WorldMonth
 };
 const stage4ExtensionNames = Object.keys(stage4Bootstrap);
 const useStage4Runtime = stage4ExtensionNames.some(function (name) {
@@ -276,12 +300,14 @@ const state = {
   parts: { body: 0, cloth: 0, eyebrush: 0, eyes: 0, hair: 0, mouth: 0, nose: 0 },
   navIndex: 0,                       // 左侧导航选中项（0 = 洞府）
   phase: 'create',                   // 'create' 创建角色 | 'game' 主游戏 | 'edit' 编辑形象 | 'lunhui' 轮回结算
-  created: false,                    // 是否已完成首次创建（持久化 cloud_created）
+  created: false,                    // 是否已完成首次创建（写入 cloud_save_v1 快照）
   player: null,                      // 轻量角色档案（创建后生成：名/境界/修为/灵石）
   dirty: true,                       // 需要重新离屏合成
   cache: null,                       // 合成后的缓存位图（离屏画布）
   current: null,                     // 当前动作（梅尔沃式·一次只做一件事）：{key,count,done,elapsed}
   showOffline: false,                // 是否弹出离线收益面板
+  settlingOffline: false,            // 启动离线结算进行中（先出壳再结算）
+  _offlineSettleProgress: null,      // { fromMs, currentMs, toMs } 结算进度（仅运行时）
   offlineResult: null,              // 离线收益结算结果
   pendingOfflineReports: [],        // v2 完整待领取报告；Task 6 接管展示前不得丢失
   offlineLimitSeconds: 43200,
@@ -714,6 +740,142 @@ function composite() {
 // 供 ui.js 取合成缓存位图（DOM 预览用）；dirty 时先重合成一次
 function getCharCache() { if (state.dirty) composite(); return state.cache; }
 
+function hashSeed(text) {
+  const source = String(text || '');
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index++) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function nieGenderForPerson(genderId) {
+  return genderId === 'male' ? 'b' : 'g';
+}
+
+function randomNieParts(seedText, genderId) {
+  const gender = nieGenderForPerson(genderId);
+  const catalog = NIE && NIE[gender] ? NIE[gender] : null;
+  const parts = {};
+  let cursor = hashSeed(seedText + ':' + gender);
+  CATS.forEach(function (cat) {
+    const list = catalog && Array.isArray(catalog[cat]) ? catalog[cat] : [];
+    const count = Math.max(1, list.length || 1);
+    cursor = (Math.imul(cursor, 1664525) + 1013904223) >>> 0;
+    parts[cat] = cursor % count;
+  });
+  return { gender: gender, parts: parts };
+}
+
+const NIE_PORTRAIT_CACHE_LIMIT = 160;
+const niePortraitCache = Object.create(null);
+const niePortraitCacheOrder = [];
+
+function niePortraitCacheKey(appearance) {
+  if (!appearance || !appearance.parts) return '';
+  const gender = appearance.gender === 'b' ? 'b' : 'g';
+  const parts = appearance.parts;
+  let key = gender;
+  for (let index = 0; index < CATS.length; index++) {
+    const cat = CATS[index];
+    key += ':' + (Number.isFinite(parts[cat]) ? parts[cat] : 0);
+  }
+  return key;
+}
+
+function rememberNiePortrait(key, canvas) {
+  if (!key || !canvas) return;
+  if (!Object.prototype.hasOwnProperty.call(niePortraitCache, key)) {
+    niePortraitCacheOrder.push(key);
+    while (niePortraitCacheOrder.length > NIE_PORTRAIT_CACHE_LIMIT) {
+      const oldest = niePortraitCacheOrder.shift();
+      delete niePortraitCache[oldest];
+    }
+  }
+  niePortraitCache[key] = canvas;
+}
+
+function drawCharacterAppearance(targetCanvas, appearance, options) {
+  if (!targetCanvas || typeof targetCanvas.getContext !== 'function') {
+    return false;
+  }
+  if (!appearance || !appearance.parts) return false;
+  const gender = appearance.gender === 'b' ? 'b' : 'g';
+  const parts = appearance.parts;
+  const cacheKey = niePortraitCacheKey(appearance);
+  let scratch = cacheKey ? niePortraitCache[cacheKey] : null;
+  let complete = !!scratch;
+  if (!scratch) {
+    scratch = Platform.createCanvas();
+    scratch.width = 300;
+    scratch.height = 300;
+    const scratchCtx = scratch.getContext('2d');
+    if (!scratchCtx) return false;
+    scratchCtx.clearRect(0, 0, 300, 300);
+    let painted = 0;
+    for (let index = 0; index < CATS.length; index++) {
+      const cat = CATS[index];
+      const partIndex = Number.isFinite(parts[cat]) ? parts[cat] : 0;
+      const img = loadImg(gender, cat, partIndex);
+      if (img && (img._ready || img.complete)) {
+        scratchCtx.drawImage(img, 0, 0, 300, 300);
+        painted++;
+      }
+    }
+    if (!painted) return false;
+    complete = painted === CATS.length;
+    if (complete) rememberNiePortrait(cacheKey, scratch);
+  }
+  const target = targetCanvas.getContext('2d');
+  if (!target) return false;
+  const targetDpr = typeof window !== 'undefined' &&
+    Number.isFinite(Number(window.devicePixelRatio))
+    ? Math.max(1, Number(window.devicePixelRatio))
+    : 1;
+  const hintedWidth = options && Number(options.cssWidth);
+  const hintedHeight = options && Number(options.cssHeight);
+  const cssWidth = Math.max(
+    1,
+    (Number.isFinite(hintedWidth) && hintedWidth > 0
+      ? hintedWidth
+      : 0) ||
+      Number(targetCanvas.clientWidth) ||
+      Number(targetCanvas.width) / targetDpr ||
+      1
+  );
+  const cssHeight = Math.max(
+    1,
+    (Number.isFinite(hintedHeight) && hintedHeight > 0
+      ? hintedHeight
+      : 0) ||
+      Number(targetCanvas.clientHeight) ||
+      Number(targetCanvas.height) / targetDpr ||
+      1
+  );
+  const physicalWidth = Math.max(1, Math.round(cssWidth * targetDpr));
+  const physicalHeight = Math.max(1, Math.round(cssHeight * targetDpr));
+  if (targetCanvas.width !== physicalWidth) targetCanvas.width = physicalWidth;
+  if (targetCanvas.height !== physicalHeight) {
+    targetCanvas.height = physicalHeight;
+  }
+  if (typeof target.setTransform === 'function') {
+    target.setTransform(targetDpr, 0, 0, targetDpr, 0, 0);
+  }
+  if (typeof target.clearRect === 'function') {
+    target.clearRect(0, 0, cssWidth, cssHeight);
+  }
+  const size = Math.min(cssWidth, cssHeight);
+  target.drawImage(
+    scratch,
+    (cssWidth - size) / 2,
+    (cssHeight - size) / 2,
+    size,
+    size
+  );
+  return complete ? true : 'partial';
+}
+
 function drawCharacter(targetCanvas) {
   if (!targetCanvas || typeof targetCanvas.getContext !== 'function') {
     return false;
@@ -780,7 +942,7 @@ function vGrad(x, y, w, h, top, bottom) {
 // 6. 左侧导航（可拖动滚动列表：标签多时上下拖拽查看）
 // 古风浅紫少女风精修：竖向渐变侧栏 + 选中渐变 + 左选中条 + 右指向三角 + 仙珠装饰
 const NAV = [
-  '洞府', '背包', '装备', '商城', '事件', '探索', '战斗', '宗门', '天下',
+  '洞府', '背包', '装备', '商城', '事件', '战斗', '宗门', '天下',
   '关系', '设置', '采药', '采矿', '伐木', '钓鱼', '炼丹', '炼器', '烹饪',
   '符箓'
 ];
@@ -805,6 +967,7 @@ function defaultPlayer() {
   return {
     name: '云隐弟子', realmStage: 0,
     realm: REALM_TABLE[0].name, title: '练气',
+    spiritualRootId: 'single',
     xiwei: 0, breakNeed: REALM_TABLE[0].need,
     mood: MOOD_MAX, moodAnchorMs: null, moodBase: null,
     jingqi: 100, lingshi: 100, shengwang: 0, lingyu: 0,  // 心情=社交属性；灵玉=付费货币（仅商城，数据预留）
@@ -842,6 +1005,16 @@ function ensurePlayer(p) {
         r.inventory = Object.assign({}, p.inventory, {
           stacks: Object.assign({}, d.inventory.stacks, incoming)
         });
+        if (!r.inventory.bindings || typeof r.inventory.bindings !== 'object') {
+          r.inventory.bindings = {};
+        }
+        if (!r.inventory.equipment || typeof r.inventory.equipment !== 'object') {
+          r.inventory.equipment = { instances: [] };
+        } else if (!Array.isArray(r.inventory.equipment.instances)) {
+          r.inventory.equipment = Object.assign({}, r.inventory.equipment, {
+            instances: []
+          });
+        }
       } else r[k] = p[k];
     }
   }
@@ -1019,57 +1192,98 @@ const stage2RuntimeDeps = {
   GameRandom: stage2Bootstrap.GameRandom
 };
 
-const simulationRuntime = useStage5Runtime
-  ? stage5Bootstrap.Stage5Rules.create(Object.assign(
+function readGlobalApi(name) {
+  if (!runtimeRoot) return null;
+  const value = runtimeRoot[name];
+  return value == null ? null : value;
+}
+
+function syncStage3CombatBootstrapFromGlobals() {
+  stage3Bootstrap.Stage3Rules = readGlobalApi('Stage3Rules');
+  stage3Bootstrap.CombatStats = readGlobalApi('CombatStats');
+  stage3Bootstrap.CombatEngine = readGlobalApi('CombatEngine');
+  stage3Bootstrap.CombatRewards = readGlobalApi('CombatRewards');
+  stage3Bootstrap.CombatProgress = readGlobalApi('CombatProgress');
+  teamCombatBootstrap.TeamCombatEngine = readGlobalApi('TeamCombatEngine');
+  teamCombatBootstrap.TeamCombatSnapshot = readGlobalApi('TeamCombatSnapshot');
+  teamCombatBootstrap.TeamCombatConsequences =
+    readGlobalApi('TeamCombatConsequences');
+}
+
+function stage3CombatRuntimeReadyFromBootstrap() {
+  for (let i = 0; i < stage3CombatRuntimeNames.length; i++) {
+    if (stage3Bootstrap[stage3CombatRuntimeNames[i]] === null) return false;
+  }
+  // Team combat modules are optional enrichment for Stage3Rules.
+  return true;
+}
+
+function buildSimulationRuntime() {
+  // Until combat engines load, Stage4/5 wrap Stage2Rules as a Stage3 stand-in
+  // so world/social lanes still run; refresh rebuilds with real Stage3Rules.
+  const stage3RulesApi = useStage3CombatRuntime
+    ? stage3Bootstrap.Stage3Rules
+    : stage2Bootstrap.Stage2Rules;
+  const combatDeps = {
+    Stage3Rules: stage3RulesApi,
+    Stage2Rules: stage2Bootstrap.Stage2Rules,
+    CombatEngine: stage3Bootstrap.CombatEngine,
+    TeamCombatEngine: teamCombatBootstrap.TeamCombatEngine,
+    TeamCombatSnapshot: teamCombatBootstrap.TeamCombatSnapshot,
+    TeamCombatConsequences: teamCombatBootstrap.TeamCombatConsequences,
+    CombatProgress: stage3Bootstrap.CombatProgress,
+    Techniques: stage3Bootstrap.Techniques
+  };
+  if (useStage5Runtime) {
+    return stage5Bootstrap.Stage5Rules.create(Object.assign(
       {
         Stage4Rules: stage4Bootstrap.Stage4Rules,
-        Stage3Rules: stage3Bootstrap.Stage3Rules,
-        Stage2Rules: stage2Bootstrap.Stage2Rules,
-        CombatEngine: stage3Bootstrap.CombatEngine,
-        TeamCombatEngine: teamCombatBootstrap.TeamCombatEngine,
-        TeamCombatSnapshot: teamCombatBootstrap.TeamCombatSnapshot,
-        TeamCombatConsequences: teamCombatBootstrap.TeamCombatConsequences,
-        CombatProgress: stage3Bootstrap.CombatProgress,
-        Techniques: stage3Bootstrap.Techniques,
         SocialInteractionContent:
-          stage4Bootstrap.SocialInteractionContent,
-        eventTemplates: stage4Bootstrap.EventTemplateContent
+          stage4Bootstrap.SocialInteractionContent
       },
+      combatDeps,
       stage2RuntimeDeps
-    ))
-  : useStage4Runtime
-    ? stage4Bootstrap.Stage4Rules.create(Object.assign(
+    ));
+  }
+  if (useStage4Runtime) {
+    return stage4Bootstrap.Stage4Rules.create(Object.assign(
       {
-        Stage3Rules: stage3Bootstrap.Stage3Rules,
-        Stage2Rules: stage2Bootstrap.Stage2Rules,
-        CombatEngine: stage3Bootstrap.CombatEngine,
-        TeamCombatEngine: teamCombatBootstrap.TeamCombatEngine,
-        TeamCombatSnapshot: teamCombatBootstrap.TeamCombatSnapshot,
-        TeamCombatConsequences: teamCombatBootstrap.TeamCombatConsequences,
-        CombatProgress: stage3Bootstrap.CombatProgress,
-        Techniques: stage3Bootstrap.Techniques,
         SocialInteractionContent:
-          stage4Bootstrap.SocialInteractionContent,
-        eventTemplates: stage4Bootstrap.EventTemplateContent
+          stage4Bootstrap.SocialInteractionContent
       },
+      combatDeps,
       stage2RuntimeDeps
-      ))
-    : useStage3Runtime
-    ? stage3Bootstrap.Stage3Rules.create(Object.assign(
-      {
-        Stage2Rules: stage2Bootstrap.Stage2Rules,
-        CombatEngine: stage3Bootstrap.CombatEngine,
-        TeamCombatEngine: teamCombatBootstrap.TeamCombatEngine,
-        TeamCombatSnapshot: teamCombatBootstrap.TeamCombatSnapshot,
-        TeamCombatConsequences: teamCombatBootstrap.TeamCombatConsequences,
-        CombatProgress: stage3Bootstrap.CombatProgress,
-        Techniques: stage3Bootstrap.Techniques
-      },
+    ));
+  }
+  if (useStage3CombatRuntime) {
+    return stage3Bootstrap.Stage3Rules.create(Object.assign(
+      {},
+      combatDeps,
       stage2RuntimeDeps
-      ))
-    : useStage2Runtime
-      ? stage2Bootstrap.Stage2Rules.create(stage2RuntimeDeps)
-      : stage2Bootstrap.GameRules.create(baseGameRulesConfig);
+    ));
+  }
+  if (useStage3Runtime || useStage2Runtime) {
+    return stage2Bootstrap.Stage2Rules.create(stage2RuntimeDeps);
+  }
+  return stage2Bootstrap.GameRules.create(baseGameRulesConfig);
+}
+
+function refreshStage3CombatRuntime() {
+  syncStage3CombatBootstrapFromGlobals();
+  useStage3CombatRuntime = stage3CombatRuntimeReadyFromBootstrap();
+  activeSimulationRuntime = buildSimulationRuntime();
+  return useStage3CombatRuntime;
+}
+
+let activeSimulationRuntime = null;
+refreshStage3CombatRuntime();
+const simulationRuntime = Object.freeze({
+  get rules() { return activeSimulationRuntime.rules; },
+  get lanes() { return activeSimulationRuntime.lanes; }
+});
+if (runtimeRoot) {
+  runtimeRoot.refreshStage3CombatRuntime = refreshStage3CombatRuntime;
+}
 
 const stage2ProductionQuery = useStage2Runtime
   ? stage2Bootstrap.Production.create({
@@ -1139,16 +1353,38 @@ function setCurrent(key, count) {
   return result.ok;
 }
 
-function simulateModel(model, fromMs, toMs, source, mainActionLimitSeconds) {
+function simulateModel(
+  model,
+  fromMs,
+  toMs,
+  source,
+  mainActionLimitSeconds,
+  options
+) {
   const elapsedSeconds = Math.max(0, (toMs - fromMs) / 1000);
+  const monthCap = stage4Bootstrap &&
+    stage4Bootstrap.WorldMonth &&
+    Number.isFinite(stage4Bootstrap.WorldMonth.OFFLINE_MONTH_CAP)
+    ? stage4Bootstrap.WorldMonth.OFFLINE_MONTH_CAP
+    : 48;
+  const extra = options && typeof options === 'object' ? options : {};
   const result = Simulation.advance(model, elapsedSeconds, {
     source,
     fromMs,
     mainActionLimitSeconds,
+    offlineMonthCap: source === 'offline' ? monthCap : null,
+    timeBudgetMs: extra.timeBudgetMs,
     rules: simulationRuntime.rules,
     lanes: simulationRuntime.lanes
   });
-  result.state.processedThroughMs = toMs;
+  const advancedTo = result.done
+    ? toMs
+    : (
+      result.report && Number.isFinite(result.report.toMs)
+        ? result.report.toMs
+        : fromMs
+    );
+  result.state.processedThroughMs = advancedTo;
   return result;
 }
 
@@ -1160,7 +1396,12 @@ function advanceRuntime(fromMs, toMs, source, mainActionLimitSeconds) {
   const prevStatus = state.player && state.player.lifecycle
     ? state.player.lifecycle.status
     : null;
-  const model = StateModel.fromRuntime(state /* runtime */, fromMs);
+  // 在线热路径：queryView 免去每帧 normalize+snapshot；Simulation.advance 入口会再隔离拷贝。
+  // 离线/重载仍走 fromRuntime，保证落盘边界干净。
+  const model = source === 'online' &&
+    typeof StateModel.queryView === 'function'
+    ? StateModel.queryView(state /* runtime */, fromMs)
+    : StateModel.fromRuntime(state /* runtime */, fromMs);
   const result = simulateModel(
     model,
     fromMs,
@@ -1168,7 +1409,17 @@ function advanceRuntime(fromMs, toMs, source, mainActionLimitSeconds) {
     source,
     mainActionLimitSeconds
   );
-  StateModel.applyToRuntime(state /* runtime */, result.state);
+  // 在线：信任 Simulation 输出，跳过 apply 时的 Stage4 全量 normalize。
+  // 离线结算仍走完整 normalize，保证落盘前形态干净。
+  if (typeof StateModel.applyToRuntime === 'function') {
+    StateModel.applyToRuntime(
+      state /* runtime */,
+      result.state,
+      source === 'online' ? { trustedSimulation: true } : null
+    );
+  } else {
+    StateModel.applyToRuntime(state /* runtime */, result.state);
+  }
   state._lastSimulationReport = result.report;
   // 边缘触发：生命周期状态「进入安全缓冲」时弹一次提示（不每帧弹）
   const newStatus = state.player && state.player.lifecycle
@@ -1188,10 +1439,19 @@ function getLastSimulationReport() {
 
 function advanceGameplay(fromMs, toMs, source, mainActionLimitSeconds) {
   if (isPersistenceLocked()) return null;
-  const highWater = Number.isFinite(state.processedThroughMs)
+  const now = Number.isFinite(toMs) ? toMs : Date.now();
+  const rawHighWater = Number.isFinite(state.processedThroughMs)
     ? state.processedThroughMs
     : fromMs;
-  const effectiveFrom = Math.max(fromMs, highWater);
+  // 在线帧推进同样消毒坏水位线，避免 _last 正常但 processedThroughMs=0 时被 max 拉回纪元初。
+  const highWater = sanitizeTimeCursorMs(rawHighWater, now, now);
+  if (rawHighWater !== highWater) {
+    state.processedThroughMs = highWater;
+  }
+  const effectiveFrom = Math.max(
+    sanitizeTimeCursorMs(fromMs, now, highWater),
+    highWater
+  );
   if (toMs <= effectiveFrom) return null;
   const exploring = !!(
     state.current &&
@@ -1209,18 +1469,30 @@ function advanceGameplay(fromMs, toMs, source, mainActionLimitSeconds) {
   if (exploring &&
       report &&
       report.action.completed > 0 &&
-      state.current === null &&
       !persistSafely(toMs)) {
-    pendingExplore.done = pendingExplore.count;
-    pendingExplore.elapsed = 0;
-    pendingExplore.stalled = true;
-    state.current = pendingExplore;
+    if (state.current === null && pendingExplore) {
+      pendingExplore.done = Math.max(
+        1,
+        Number(pendingExplore.done) || 0,
+        Number(pendingExplore.count) || 1
+      );
+      pendingExplore.count = Math.max(
+        1,
+        Number(pendingExplore.count) || pendingExplore.done
+      );
+      pendingExplore.elapsed = 0;
+      pendingExplore.stalled = true;
+      state.current = pendingExplore;
+    } else if (state.current) {
+      state.current.stalled = true;
+    }
     setPersistenceIssue({
       kind: 'explore',
       message: '探索结果保存失败，请重试',
       successMessage: '探索结果已保存'
     });
   }
+  if (report) publishGainTipsFromReport(report);
   return report;
 }
 // 突破率：基础概率 + 持有突破丹加成（每颗 +20%，封顶 95%）
@@ -1313,10 +1585,19 @@ function tryBreakthrough() {
 }
 
 function isPersistenceLocked() {
-  return !!state._persistenceIssue;
+  return !!state._persistenceIssue || !!state.settlingOffline;
 }
 
 function getPersistenceStatus() {
+  if (state.settlingOffline) {
+    return {
+      locked: true,
+      kind: 'settle',
+      message: '正在结算离线收益…',
+      error: null,
+      canRetry: false
+    };
+  }
   const issue = state._persistenceIssue;
   if (!issue) {
     return {
@@ -1348,6 +1629,16 @@ function clearPersistenceIssue() {
 }
 
 function runtimeModelAt() {
+  // 命令/自动存档热路径：只深拷贝，不在此处 Stage4 全量 normalize。
+  // 完整 normalize 留给 persistModel → toSnapshotInput（存档边界）。
+  if (typeof StateModel.captureRuntime === 'function') {
+    return StateModel.captureRuntime(
+      state /* runtime */,
+      Number.isFinite(state.processedThroughMs)
+        ? state.processedThroughMs
+        : Date.now()
+    );
+  }
   return StateModel.fromRuntime(
     state /* runtime */,
     Number.isFinite(state.processedThroughMs)
@@ -1475,11 +1766,12 @@ const persistenceRecovery = (function () {
       : Number.isFinite(descriptor.now)
         ? descriptor.now
       : candidate.processedThroughMs;
-    if (!persistModel(candidate, saveAt)) return false;
+    const saved = persistModel(candidate, saveAt);
+    if (!saved) return false;
 
     held = null;
     clearPersistenceIssue();
-    applyModelToRuntime(candidate);
+    applyModelToRuntime(saved, { trustedSimulation: true });
     state._lastSimulationReport = report || state._lastSimulationReport;
     state._last = Date.now();
     state._hiddenAt = null;
@@ -1548,7 +1840,8 @@ function persistCurrentModel(now) {
   candidate.processedThroughMs = watermark; // 修复离线结算：保存时把结算水位线对齐到当前真实时间，避免刷新/关闭后把在线时段误算成离线
   const saved = persistModel(candidate, watermark);
   if (saved) {
-    applyModelToRuntime(candidate);
+    // saved 已是 toSnapshotInput 规范化结果，写回时跳过二次 normalize。
+    applyModelToRuntime(saved, { trustedSimulation: true });
     return true;
   }
   persistenceRecovery.hold({
@@ -1577,22 +1870,81 @@ function offlineDisplayResult(reports) {
   return Object.keys(result).length > 0 ? result : null;
 }
 
-function applyModelToRuntime(model) {
-  StateModel.applyToRuntime(state /* runtime */, model);
+// 查询模型缓存必须在 applyModelToRuntime 之前初始化（启动读档会立刻调用）。
+let queryModelFrameId = -1;
+let queryModelFrameCache = null;
+let queryModelRenderFrame = 0;
+let queryModelTTLCache = null;
+let queryModelTTLAt = 0;
+const QUERY_MODEL_TTL_MS = 500;
+
+function beginQueryModelFrame() {
+  queryModelRenderFrame++;
+  queryModelFrameCache = null;
+  queryModelFrameId = queryModelRenderFrame;
+}
+
+function invalidateQueryModelCache() {
+  queryModelFrameCache = null;
+  queryModelTTLCache = null;
+  queryModelTTLAt = 0;
+}
+
+function stage2QueryModel() {
+  if (queryModelFrameCache &&
+      queryModelFrameId === queryModelRenderFrame) {
+    return queryModelFrameCache;
+  }
+  const now = Date.now();
+  if (queryModelTTLCache &&
+      (now - queryModelTTLAt) < QUERY_MODEL_TTL_MS) {
+    queryModelFrameCache = queryModelTTLCache;
+    queryModelFrameId = queryModelRenderFrame;
+    return queryModelTTLCache;
+  }
+  // Combat loadout queries require a full cloneable model. queryView is a
+  // hot-path projection that can omit/reshape fields CombatLoadouts rejects
+  // while a session is active — prefer fromRuntime in that window.
+  const combatSessionActive = !!(state.systems &&
+    state.systems.combat &&
+    state.systems.combat.session);
+  const model = (!combatSessionActive &&
+      typeof StateModel.queryView === 'function')
+    ? StateModel.queryView(state, state.processedThroughMs)
+    : StateModel.fromRuntime(state, state.processedThroughMs);
+  queryModelFrameCache = model;
+  queryModelFrameId = queryModelRenderFrame;
+  queryModelTTLCache = model;
+  queryModelTTLAt = now;
+  return model;
+}
+
+function applyModelToRuntime(model, options) {
+  invalidateQueryModelCache();
+  StateModel.applyToRuntime(state /* runtime */, model, options || null);
   state.parts = normalizeParts(
     model.appearance && model.appearance.parts
   );
   state.player = state.player ? ensurePlayer(state.player) : null;
   state.offlineResult = null;
-  state.showOffline = state.pendingOfflineReports.length > 0;
+  state.showOffline = typeof SimulationReport !== 'undefined' &&
+    SimulationReport &&
+    typeof SimulationReport.isMeaningfulOfflineReports === 'function'
+    ? SimulationReport.isMeaningfulOfflineReports(state.pendingOfflineReports)
+    : state.pendingOfflineReports.length > 0;
 }
 
 function persistModel(model, nowMs) {
-  return SaveSystem.save(
-    Platform,
-    StateModel.toSnapshotInput(model),
-    nowMs
-  ) === true;
+  // 存档边界：唯一必做的全量 normalize。成功时返回规范化快照供写回 runtime。
+  try {
+    const snapshot = StateModel.toSnapshotInput(model);
+    if (SaveSystem.save(Platform, snapshot, nowMs) !== true) {
+      return null;
+    }
+    return snapshot;
+  } catch (error) {
+    return null;
+  }
 }
 
 function normalizeStartupModel(snapshot, now) {
@@ -1616,29 +1968,73 @@ function normalizeStartupModel(snapshot, now) {
 // 避免用户快速刷新网页（只离开几秒/几十秒）也误弹一次收益弹窗。
 // 语义为「至少 1 分钟」：offlineSeconds >= 60 才结算，60 秒整也算触发。
 const MIN_OFFLINE_SETTLE_MS = 60000;
-// 离线寿元/被动结算允许的最大回看窗口：与离线收益上限同级（默认 12 小时），
+// 离线寿元/被动结算允许的最大回看窗口：与离线收益上限同级（默认 48 小时），
 // 防止水位线损坏（如历史默认 0）时从纪元初一口气把寿元耗尽。
 const MAX_OFFLINE_LOOKBACK_MS = 172800 * 1000;
-function sanitizeOfflineFromMs(model, now) {
-  const savedAt = Number.isFinite(model && model.savedAt)
-    ? model.savedAt
+function sanitizeTimeCursorMs(rawFromMs, nowMs, fallbackMs) {
+  const now = Math.max(0, Math.floor(Number(nowMs) || 0));
+  const fallback = Number.isFinite(fallbackMs) && fallbackMs > 0
+    ? fallbackMs
     : now;
-  let from = Number.isFinite(model && model.processedThroughMs)
-    ? model.processedThroughMs
-    : savedAt;
-  // 0 / 负数视为未初始化水位线，回退到 savedAt 或 now
+  let from = Number.isFinite(rawFromMs) ? rawFromMs : fallback;
+  // 0 / 负数视为未初始化水位线，绝不能当「从 1970 年起算」去扣寿元。
   if (!Number.isFinite(from) || from <= 0) {
-    from = savedAt > 0 ? savedAt : now;
+    from = fallback > 0 ? fallback : now;
   }
   from = Math.min(from, now);
   const earliest = Math.max(0, now - MAX_OFFLINE_LOOKBACK_MS);
   if (from < earliest) from = earliest;
   return from;
 }
+function sanitizeOfflineFromMs(model, now) {
+  const savedAt = Number.isFinite(model && model.savedAt)
+    ? model.savedAt
+    : now;
+  return sanitizeTimeCursorMs(
+    model && model.processedThroughMs,
+    now,
+    savedAt
+  );
+}
+function kickEnsureCombatRuntime() {
+  if (typeof LazyContent !== 'undefined' &&
+      LazyContent &&
+      typeof LazyContent.ensureCombatRuntime === 'function') {
+    return LazyContent.ensureCombatRuntime();
+  }
+  if (typeof refreshStage3CombatRuntime === 'function') {
+    refreshStage3CombatRuntime();
+  }
+  return Promise.resolve(useStage3CombatRuntime);
+}
+
+function modelNeedsCombatRuntime(model) {
+  if (!model || typeof model !== 'object') return false;
+  const key = model.current && typeof model.current.key === 'string'
+    ? model.current.key
+    : '';
+  if (key.indexOf('combat:') === 0) return true;
+  const combat = model.systems && model.systems.combat;
+  if (!combat || typeof combat !== 'object') return false;
+  if (combat.session) return true;
+  if (combat.injury) return true;
+  const pending = combat.pendingRewards;
+  if (pending && typeof pending === 'object') {
+    if (Array.isArray(pending) && pending.length > 0) return true;
+    if (!Array.isArray(pending) && Object.keys(pending).length > 0) return true;
+  }
+  return false;
+}
+
+function snapshotNeedsCombatRuntime(snapshot) {
+  return modelNeedsCombatRuntime(snapshot);
+}
+
 function settleStartupOffline(snapshot, nowMs) {
   const now = Math.max(0, Math.floor(Number(nowMs) || 0));
   const model = normalizeStartupModel(snapshot, now);
-  if (isPersistenceLocked()) {
+  // 仅真实存档故障才跳过；settlingOffline 锁不能挡住本函数本身。
+  if (state._persistenceIssue) {
     return {
       ok: false,
       snapshot: cloneRuntimeState(snapshot),
@@ -1673,12 +2069,17 @@ function settleStartupOffline(snapshot, nowMs) {
     report.warnings.push('clock_rollback');
     candidate = StateModel.normalize(model, now);
     candidate.processedThroughMs = model.processedThroughMs;
-    candidate.pendingOfflineReports = SimulationReport.addPending(
-      model.pendingOfflineReports,
-      report
-    );
-    newReports.push(report);
-    if (!persistModel(candidate, now)) {
+    if (SimulationReport.isMeaningfulOfflineReport(report)) {
+      candidate.pendingOfflineReports = SimulationReport.addPending(
+        model.pendingOfflineReports,
+        report
+      );
+      newReports.push(report);
+    } else {
+      candidate.pendingOfflineReports = model.pendingOfflineReports || [];
+    }
+    const savedRollback = persistModel(candidate, now);
+    if (!savedRollback) {
       applyModelToRuntime(model);
       persistenceRecovery.hold({
         kind: 'offline',
@@ -1699,6 +2100,7 @@ function settleStartupOffline(snapshot, nowMs) {
         newReports: []
       };
     }
+    candidate = savedRollback;
     didPersist = true;
   } else if (now - from >= MIN_OFFLINE_SETTLE_MS) {
     const limit = model.systems &&
@@ -1707,13 +2109,18 @@ function settleStartupOffline(snapshot, nowMs) {
       : (model.offlineLimitSeconds || 43200);
     const result = simulateModel(model, from, now, 'offline', limit);
     report = result.report;
-    result.state.pendingOfflineReports = SimulationReport.addPending(
-      model.pendingOfflineReports,
-      report
-    );
     candidate = result.state;
-    newReports.push(report);
-    if (!persistModel(candidate, now)) {
+    if (SimulationReport.isMeaningfulOfflineReport(report)) {
+      candidate.pendingOfflineReports = SimulationReport.addPending(
+        model.pendingOfflineReports,
+        report
+      );
+      newReports.push(report);
+    } else {
+      candidate.pendingOfflineReports = model.pendingOfflineReports || [];
+    }
+    const savedOffline = persistModel(candidate, now);
+    if (!savedOffline) {
       applyModelToRuntime(model);
       persistenceRecovery.hold({
         kind: 'offline',
@@ -1728,7 +2135,9 @@ function settleStartupOffline(snapshot, nowMs) {
         candidateSummary: {
           processedThroughMs: result.state.processedThroughMs,
           rngState: result.state.rngState,
-          pendingReportCount: result.state.pendingOfflineReports.length
+          pendingReportCount: (
+            result.state.pendingOfflineReports || []
+          ).length
         }
       });
       toast('离线收益保存失败，请重试');
@@ -1740,25 +2149,280 @@ function settleStartupOffline(snapshot, nowMs) {
         newReports: []
       };
     }
+    candidate = savedOffline;
     didPersist = true;
   }
 
-  applyModelToRuntime(candidate);
+  applyModelToRuntime(
+    candidate,
+    didPersist ? { trustedSimulation: true } : null
+  );
   state._lastSimulationReport = report;
   state._offlineSec = Math.max(0, (now - from) / 1000);
-  const savedSnapshot = didPersist
-    ? SaveSystem.load(Platform, now).snapshot
-    : SaveSystem.createSnapshot(
+  state._offlineSettleProgress = null;
+  if (didPersist) {
+    const savedSnapshot = SaveSystem.load(Platform, now).snapshot;
+    return {
+      ok: true,
+      snapshot: savedSnapshot,
+      state: StateModel.normalize(savedSnapshot, now),
+      report,
+      newReports
+    };
+  }
+  // 未落盘时优先走 createSnapshot；测试 harness 缺 Stage4 时回退为候选快照。
+  try {
+    const savedSnapshot = SaveSystem.createSnapshot(
       StateModel.toSnapshotInput(candidate),
       now
     );
-  return {
-    ok: true,
-    snapshot: savedSnapshot,
-    state: StateModel.normalize(savedSnapshot, now),
-    report,
-    newReports
+    return {
+      ok: true,
+      snapshot: savedSnapshot,
+      state: StateModel.normalize(savedSnapshot, now),
+      report,
+      newReports
+    };
+  } catch (error) {
+    return {
+      ok: true,
+      snapshot: StateModel.toSnapshotInput(candidate),
+      state: candidate,
+      report,
+      newReports
+    };
+  }
+}
+
+function offlineLimitFromModel(model) {
+  if (model && model.systems &&
+      Number.isFinite(model.systems.offlineLimitSeconds)) {
+    return model.systems.offlineLimitSeconds;
+  }
+  return model && Number.isFinite(model.offlineLimitSeconds)
+    ? model.offlineLimitSeconds
+    : 43200;
+}
+
+function formatOfflineSettleProgress(progress) {
+  if (!progress) return '正在结算离线收益，请稍候…';
+  const from = Number(progress.fromMs) || 0;
+  const to = Number(progress.toMs) || 0;
+  const current = Number(progress.currentMs) || from;
+  const total = Math.max(0, to - from);
+  if (!(total > 0)) return '正在结算离线收益，请稍候…';
+  const done = Math.max(0, Math.min(total, current - from));
+  const pct = Math.max(0, Math.min(100, Math.floor((done / total) * 100)));
+  return '正在结算离线收益… ' + pct + '%';
+}
+
+function finishChunkedOfflineSettle(job) {
+  const now = job.now;
+  const from = job.from;
+  let candidate = job.model;
+  const reports = Array.isArray(job.reports) ? job.reports : [];
+  const meaningful = reports.filter(SimulationReport.isMeaningfulOfflineReport);
+  const report = meaningful.length
+    ? meaningful[meaningful.length - 1]
+    : (reports.length ? reports[reports.length - 1] : null);
+  if (meaningful.length) {
+    let pending = job.basePending || [];
+    meaningful.forEach(function (item) {
+      pending = SimulationReport.addPending(pending, item);
+    });
+    candidate.pendingOfflineReports = pending;
+  } else {
+    candidate.pendingOfflineReports = job.basePending || [];
+  }
+  const savedOffline = persistModel(candidate, now);
+  if (!savedOffline) {
+    applyModelToRuntime(job.baseModel);
+    persistenceRecovery.hold({
+      kind: 'offline',
+      message: '离线收益保存失败，请重试',
+      savedAt: from,
+      now,
+      fromMs: from,
+      toMs: now,
+      source: 'offline',
+      mainActionLimitSeconds: job.limit,
+      baseModel: job.baseModel,
+      candidateSummary: {
+        processedThroughMs: candidate.processedThroughMs,
+        rngState: candidate.rngState,
+        pendingReportCount: (candidate.pendingOfflineReports || []).length
+      }
+    });
+    toast('离线收益保存失败，请重试');
+    state._offlineSettleJob = null;
+    state._offlineSettleProgress = null;
+    return false;
+  }
+  applyModelToRuntime(savedOffline, { trustedSimulation: true });
+  state._lastSimulationReport = report;
+  state._offlineSec = Math.max(0, (now - from) / 1000);
+  state._offlineSettleJob = null;
+  state._offlineSettleProgress = null;
+  return true;
+}
+
+function stepChunkedOfflineSettle() {
+  const job = state._offlineSettleJob;
+  if (!job) return true;
+  const cursor = job.cursorMs;
+  const now = job.now;
+  if (!(cursor < now)) {
+    return finishChunkedOfflineSettle(job);
+  }
+  // 每片最多推进一段游戏时间，并用墙钟预算打断，保证结算中弹窗可刷新。
+  const CHUNK_GAME_MS = 10 * 60 * 1000;
+  const TIME_BUDGET_MS = 32;
+  const sliceEnd = Math.min(now, cursor + CHUNK_GAME_MS);
+  const result = simulateModel(
+    job.model,
+    cursor,
+    sliceEnd,
+    'offline',
+    job.mainLimitLeft,
+    { timeBudgetMs: TIME_BUDGET_MS }
+  );
+  job.model = result.state;
+  let advancedTo = Number.isFinite(result.state.processedThroughMs)
+    ? result.state.processedThroughMs
+    : cursor;
+  // 单片零推进（极端卡顿）：去掉时间片预算强制跑完本片，避免跳过游戏逻辑。
+  if (advancedTo <= cursor && sliceEnd > cursor) {
+    const forced = simulateModel(
+      job.model,
+      cursor,
+      sliceEnd,
+      'offline',
+      job.mainLimitLeft,
+      null
+    );
+    job.model = forced.state;
+    advancedTo = Number.isFinite(forced.state.processedThroughMs)
+      ? forced.state.processedThroughMs
+      : sliceEnd;
+    if (forced.report) {
+      job.reports.push(forced.report);
+      const used = Number(forced.report.mainActionSeconds) || 0;
+      job.mainLimitLeft = Math.max(0, job.mainLimitLeft - used);
+    }
+  } else if (result.report) {
+    job.reports.push(result.report);
+    const used = Number(result.report.mainActionSeconds) || 0;
+    job.mainLimitLeft = Math.max(0, job.mainLimitLeft - used);
+  }
+  job.cursorMs = Math.max(cursor, advancedTo);
+  state._offlineSettleProgress = {
+    fromMs: job.from,
+    currentMs: job.cursorMs,
+    toMs: job.now
   };
+  state.dirty = true;
+  if (job.cursorMs >= job.now) {
+    return finishChunkedOfflineSettle(job);
+  }
+  return false;
+}
+
+function startupNeedsOfflineSettle(snapshot, nowMs) {
+  const now = Math.max(0, Math.floor(Number(nowMs) || 0));
+  if (state._persistenceIssue) return false;
+  const model = normalizeStartupModel(snapshot, now);
+  if (!model.player) return false;
+  const rawThrough = Number.isFinite(model.processedThroughMs)
+    ? model.processedThroughMs
+    : 0;
+  if (rawThrough > now) return true;
+  const from = sanitizeOfflineFromMs(model, now);
+  return now - from >= MIN_OFFLINE_SETTLE_MS;
+}
+
+// 长离线结算可能数百毫秒～数十秒：先出游戏壳与「结算中」提示，再分帧追算，
+// 避免启动期长时间白屏。短间隔（<1 分钟）仍同步走完，无感知。
+function scheduleStartupOfflineSettle(snapshot, nowMs) {
+  const now = Math.max(0, Math.floor(Number(nowMs) || 0));
+  const harness = !!(runtimeRoot &&
+    runtimeRoot.__GAME_TEST_HARNESS_REQUEST__ === true);
+  // 测试桩常把 rAF/setTimeout 做成空函数；若仍走延迟路径，settlingOffline 会永久卡死。
+  if (harness || !startupNeedsOfflineSettle(snapshot, now)) {
+    settleStartupOffline(snapshot, now);
+    return;
+  }
+  const model = normalizeStartupModel(snapshot, now);
+  if (state._persistenceIssue || !model.player) {
+    settleStartupOffline(snapshot, now);
+    return;
+  }
+  const rawThrough = Number.isFinite(model.processedThroughMs)
+    ? model.processedThroughMs
+    : 0;
+  if (rawThrough > now) {
+    // 时钟回拨路径短且需立刻落盘，仍同步处理。
+    settleStartupOffline(snapshot, now);
+    return;
+  }
+  const from = sanitizeOfflineFromMs(model, now);
+  if (rawThrough !== from) {
+    model.processedThroughMs = from;
+  }
+  const limit = offlineLimitFromModel(model);
+  state.settlingOffline = true;
+  state._offlineSettleProgress = {
+    fromMs: from,
+    currentMs: from,
+    toMs: now
+  };
+  state._offlineSettleJob = {
+    model: model,
+    baseModel: cloneRuntimeState(model),
+    basePending: model.pendingOfflineReports || [],
+    from: from,
+    now: now,
+    cursorMs: from,
+    limit: limit,
+    mainLimitLeft: limit,
+    reports: []
+  };
+  state.dirty = true;
+
+  function runSettleSlice() {
+    try {
+      const done = stepChunkedOfflineSettle();
+      if (!done) {
+        if (typeof setTimeout === 'function') {
+          setTimeout(runSettleSlice, 0);
+        } else {
+          while (!stepChunkedOfflineSettle()) { /* sync fallback */ }
+          state.settlingOffline = false;
+          state.dirty = true;
+        }
+        return;
+      }
+    } finally {
+      if (!state._offlineSettleJob) {
+        state.settlingOffline = false;
+        state.dirty = true;
+      }
+    }
+  }
+
+  function afterPaint() {
+    if (typeof setTimeout === 'function') {
+      setTimeout(runSettleSlice, 0);
+    } else {
+      runSettleSlice();
+    }
+  }
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(function () {
+      requestAnimationFrame(afterPaint);
+    });
+  } else {
+    afterPaint();
+  }
 }
 
 function persistSafely(now) {
@@ -1949,9 +2613,30 @@ const STAGE4_MESSAGES = Object.freeze({
   social_progress_busy: '与对方的事情尚未结束',
   event_not_found: '这件事已经不在待处理列表中',
   option_not_found: '未找到这个选择',
+  pending_removed: '待决策已移除，请在宗门页直接加入或离开',
   pending_capacity: '待处理事件已满',
   event_effect_invalid: '事件内容暂时无法结算',
-  sect_requirement_failed: '尚未满足宗门要求'
+  sect_requirement_failed: '尚未满足宗门要求',
+  choice_locked: '暂时无法选择宗门',
+  action_required: '暂时无法选择宗门',
+  cooldown: '暂时无法选择宗门',
+  unknown_sect: '未找到这座宗门',
+  already_joined: '你已有宗门身份',
+  lifespan_buffer: '寿元不足，请先完成传承或开启新身份',
+  not_in_sect: '你尚未加入宗门',
+  unknown_mission: '未找到这项宗门任务',
+  mission_busy: '已有进行中的宗门任务',
+  mission_done: '这项宗门任务已经完成',
+  materials_short: '上交物资不足',
+  combat_incomplete: '尚未完成对应战斗挑战',
+  no_active_mission: '当前没有进行中的宗门任务',
+  not_combat_step: '当前步骤不是战斗挑战',
+  unknown_offer: '藏宝阁中没有这项功法',
+  already_learned: '你已学会该功法',
+  rank_locked: '宗门地位不足，无法兑换',
+  contribution_short: '宗门贡献不足',
+  promotion_locked: '尚未达到晋升条件',
+  realm_requirement: '修为境界不足'
 });
 
 function stage4Code(code) {
@@ -2067,20 +2752,27 @@ function commitModel(mutator, nowMs, recovery, options) {
   const now = Number.isFinite(Number(nowMs))
     ? Math.max(0, Math.floor(Number(nowMs)))
     : Date.now();
-  const base = StateModel.fromRuntime(
-    state /* runtime */,
-    Number.isFinite(state.processedThroughMs)
-      ? state.processedThroughMs
-      : now
-  );
+  const rawThrough = Number.isFinite(state.processedThroughMs)
+    ? state.processedThroughMs
+    : now;
+  // 与离线启动同一套消毒：水位线 0/损坏/过旧时，禁止在线 settle 从纪元初扣光寿元。
+  const settleFrom = sanitizeTimeCursorMs(rawThrough, now, now);
+  if (rawThrough !== settleFrom) {
+    state.processedThroughMs = settleFrom;
+  }
+  // 成熟闲置热路径：命令只深拷贝 runtime，不在点击时 Stage4 全量 normalize。
+  const base = typeof StateModel.captureRuntime === 'function'
+    ? StateModel.captureRuntime(state /* runtime */, settleFrom)
+    : StateModel.fromRuntime(state /* runtime */, settleFrom);
+  base.processedThroughMs = settleFrom;
   let candidate = base;
   let settledToTimestamp = false;
   if (options &&
       options.settleToTimestamp === true &&
-      now > base.processedThroughMs) {
+      now > settleFrom) {
     candidate = simulateModel(
       base,
-      base.processedThroughMs,
+      settleFrom,
       now,
       'online',
       null
@@ -2090,18 +2782,22 @@ function commitModel(mutator, nowMs, recovery, options) {
   const result = typeof mutator === 'function'
     ? mutator(candidate)
     : null;
-  if (result && result.ok === false && result.changed === false) {
+  // 未发生补算时，失败命令直接返回；若已 settle，必须落盘补算结果，不能丢弃时间推进。
+  if (result &&
+      result.ok === false &&
+      result.changed === false &&
+      !settledToTimestamp) {
     return result;
   }
   if (result && result.changed === false && !settledToTimestamp) {
     return result;
   }
 
-  let saved = false;
+  let saved = null;
   try {
     saved = persistModel(candidate, now);
   } catch (error) {
-    saved = false;
+    saved = null;
   }
   if (!saved) {
     const descriptor = recovery || {};
@@ -2118,7 +2814,15 @@ function commitModel(mutator, nowMs, recovery, options) {
       retryable: true
     });
   }
-  applyModelToRuntime(candidate);
+  applyModelToRuntime(saved, { trustedSimulation: true });
+  const newStatus = saved.player && saved.player.lifecycle
+    ? saved.player.lifecycle.status
+    : null;
+  if (settledToTimestamp &&
+      newStatus === 'safety_buffer' &&
+      !state.showLifespanBuffer) {
+    state.showLifespanBuffer = true;
+  }
   if (result && result.ok === false) return result;
   if (result && result.changed === false) return result;
   return commandResult(
@@ -2134,10 +2838,15 @@ function acknowledgeOffline(reportIds) {
   if (isPersistenceLocked()) {
     return commandResult(false, 'persistence_locked', false, null, null);
   }
-  const model = StateModel.fromRuntime(
-    state /* runtime */,
-    state.processedThroughMs
-  );
+  const model = typeof StateModel.captureRuntime === 'function'
+    ? StateModel.captureRuntime(
+      state /* runtime */,
+      state.processedThroughMs
+    )
+    : StateModel.fromRuntime(
+      state /* runtime */,
+      state.processedThroughMs
+    );
   const ids = new Set(reportIds || []);
   const selected = model.pendingOfflineReports.filter(function (report) {
     return ids.has(report.id);
@@ -2146,7 +2855,8 @@ function acknowledgeOffline(reportIds) {
     return commandResult(true, 'no_change', false, null, null);
   }
 
-  const candidate = StateModel.normalize(model, model.processedThroughMs);
+  // 不在领取时额外 Stage4.normalize；落盘 toSnapshotInput 会做边界规范化。
+  const candidate = model;
   candidate.reportArchive = SimulationReport.archive(
     model.reportArchive,
     selected,
@@ -2158,7 +2868,8 @@ function acknowledgeOffline(reportIds) {
     }
   );
   const saveAt = candidate.processedThroughMs;
-  if (!persistModel(candidate, saveAt)) {
+  const saved = persistModel(candidate, saveAt);
+  if (!saved) {
     persistenceRecovery.hold({
       kind: 'closeOffline',
       message: '保存失败，离线收益仍待领取',
@@ -2168,17 +2879,22 @@ function acknowledgeOffline(reportIds) {
     });
     return commandResult(false, 'save_failed', false, null, null);
   }
-  applyModelToRuntime(candidate);
+  applyModelToRuntime(saved, { trustedSimulation: true });
   return commandResult(true, 'acknowledged', true, null, {
     reportIds: selected.map(function (report) { return report.id; })
   });
 }
 
 function closeOffline() {
-  const model = StateModel.fromRuntime(
-    state /* runtime */,
-    state.processedThroughMs
-  );
+  const model = typeof StateModel.captureRuntime === 'function'
+    ? StateModel.captureRuntime(
+      state /* runtime */,
+      state.processedThroughMs
+    )
+    : StateModel.fromRuntime(
+      state /* runtime */,
+      state.processedThroughMs
+    );
   return acknowledgeOffline(
     model.pendingOfflineReports.map(function (report) { return report.id; })
   ).ok;
@@ -2226,17 +2942,31 @@ function enterLunhui() {
     player: cloneRuntimeState(state.player),
     current: cloneRuntimeState(state.current),
     showLunhui: state.showLunhui,
-    navIndex: state.navIndex
+    navIndex: state.navIndex,
+    world: cloneRuntimeState(
+      state.systems && state.systems.world ? state.systems.world : null
+    )
   };
   state.player = defaultPlayer();
   state.current = null;
   state.showLunhui = false;
   state.navIndex = NAV_HOME;
+  if (stage5Bootstrap && stage5Bootstrap.LegacyTransition &&
+      typeof stage5Bootstrap.LegacyTransition.clearPreviousLifeChronicle ===
+        'function') {
+    stage5Bootstrap.LegacyTransition.clearPreviousLifeChronicle(state);
+  } else if (state.systems && state.systems.world) {
+    state.systems.world.worldEvents = [];
+    state.systems.world.nextWorldEventId = 1;
+  }
   if (!persistSafely()) {
     state.player = checkpoint.player;
     state.current = checkpoint.current;
     state.showLunhui = checkpoint.showLunhui;
     state.navIndex = checkpoint.navIndex;
+    if (checkpoint.world && state.systems) {
+      state.systems.world = checkpoint.world;
+    }
     setPersistenceIssue({ kind: 'save', message: '轮回结果保存失败，请重试' });
     return false;
   }
@@ -2305,10 +3035,140 @@ function fmtDur(sec) {
 
 
 
-// 8. 轻量 toast
+// 8. 轻量 toast + 右下角收益飘字
 let toastMsg = '', toastUntil = 0;
 function toast(m) { toastMsg = m; toastUntil = Date.now() + 1800; if (window.UI && window.UI.showToast) window.UI.showToast(m); }
 
+const GAIN_TIP_SKILL_LABELS = Object.freeze({
+  herb: '采药',
+  mining: '采矿',
+  woodcutting: '伐木',
+  fishing: '钓鱼',
+  alchemy: '炼丹',
+  forging: '炼器',
+  cooking: '烹饪',
+  talisman: '符箓',
+  liandan: '炼丹',
+  lianqi: '炼器',
+  fulu: '符箓',
+  chuyi: '烹饪',
+  caiyao: '采药',
+  caiju: '采矿',
+  famu: '伐木',
+  diaoyu: '钓鱼',
+  charm: '魅力',
+  beastTaming: '御兽'
+});
+
+function gainTipSkillLabel(skillId) {
+  const id = String(skillId || '');
+  if (GAIN_TIP_SKILL_LABELS[id]) return GAIN_TIP_SKILL_LABELS[id];
+  if (SKILL_TITLE[id]) return SKILL_TITLE[id];
+  return id || '技能';
+}
+
+function appendGainTipMap(entries, map, type, keyPrefix, labelForKey) {
+  if (!map || typeof map !== 'object') return;
+  Object.keys(map).forEach(function (id) {
+    const amount = Number(map[id]);
+    if (!Number.isFinite(amount) || amount === 0) return;
+    const tip = {
+      key: keyPrefix + id,
+      type: type,
+      amount: amount,
+      label: labelForKey ? labelForKey(id) : id
+    };
+    if (type === 'item') tip.itemId = id;
+    entries.push(tip);
+  });
+}
+
+function publishGainTipsFromReport(report) {
+  if (!report || report.source !== 'online') return;
+  if (!window.UI || typeof window.UI.pushGainTips !== 'function') return;
+  const entries = [];
+  const gains = report.gains || {};
+  const gainItems = gains.items && typeof gains.items === 'object'
+    ? gains.items
+    : {};
+  appendGainTipMap(
+    entries,
+    gainItems,
+    'item',
+    'item:',
+    function (itemId) {
+      return stage3ItemDisplayName(itemId);
+    }
+  );
+  appendGainTipMap(
+    entries,
+    gains.skillXp,
+    'skillXp',
+    'skillXp:',
+    gainTipSkillLabel
+  );
+  const cultivation = Number(gains.cultivation);
+  if (Number.isFinite(cultivation) && cultivation > 0) {
+    entries.push({
+      key: 'cultivation',
+      type: 'cultivation',
+      amount: cultivation,
+      label: '修为'
+    });
+  }
+  const techniques = report.techniques && report.techniques.xp;
+  appendGainTipMap(
+    entries,
+    techniques,
+    'techniqueXp',
+    'techniqueXp:',
+    stage3TechniqueDisplayName
+  );
+  const combat = report.combat || {};
+  appendGainTipMap(
+    entries,
+    combat.enemiesDefeated,
+    'kill',
+    'kill:',
+    combatEnemyDisplayName
+  );
+  if (combat.loot && typeof combat.loot === 'object') {
+    Object.keys(combat.loot).forEach(function (itemId) {
+      if (Object.prototype.hasOwnProperty.call(gainItems, itemId)) return;
+      const amount = Number(combat.loot[itemId]);
+      if (!Number.isFinite(amount) || amount === 0) return;
+      entries.push({
+        key: 'item:' + itemId,
+        type: 'item',
+        amount: amount,
+        label: stage3ItemDisplayName(itemId),
+        itemId: itemId
+      });
+    });
+  }
+  if (entries.length) window.UI.pushGainTips(entries);
+  const socialCompleted = report.social &&
+    Array.isArray(report.social.completed)
+    ? report.social.completed
+    : [];
+  if (socialCompleted.length && typeof toast === 'function') {
+    socialCompleted.forEach(function (entry) {
+      if (!entry) return;
+      const text = entry.narrative || entry.label;
+      if (!text) return;
+      toast(text + '（可在人物「经历」查看）');
+    });
+  }
+}
+
+
+function onlineAdvanceMinMs() {
+  // 在线推进每次都会 fromRuntime + Simulation 深拷贝整份世界。
+  // 不必跟 rAF 60Hz 对齐；战斗稍密，其余约 12Hz 足够。
+  const key = state.current && state.current.key;
+  if (typeof key === 'string' && key.indexOf('combat:') === 0) return 33;
+  return 80;
+}
 
 function advanceVisibleTo(nowMs) {
   if (isPersistenceLocked() || state._hiddenAt != null) return false;
@@ -2318,6 +3178,7 @@ function advanceVisibleTo(nowMs) {
     state._last = now;
     return true;
   }
+  if (now - state._last < onlineAdvanceMinMs()) return true;
   advanceGameplay(state._last, now, 'online', null);
   state._last = now;
   return true;
@@ -2380,11 +3241,16 @@ function handleVisibilityChange(hidden, nowMs) {
     return true;
   }
 
-  // 由后台回到前台：停止后台定时器，恢复运行交由 rAF 主循环接管（不再补算隐藏区间）。
-  // 离线收益仍只在「重新加载页面」时按存档的 processedThroughMs 时间戳结算（梅尔沃放置式），
-  // 最小化期间游戏时钟已在后台持续推进，回来后不会重复结算。
+  // 由后台回到前台：停止后台定时器；若后台定时器被系统杀掉，补算隐藏期间，
+  // 再把运行交还给 rAF 主循环（用同一套水位线消毒，避免一次扣光寿元）。
   stopHiddenTicker();
   state._hiddenAt = null;
+  const through = Number.isFinite(state.processedThroughMs)
+    ? state.processedThroughMs
+    : now;
+  if (now > through) {
+    advanceGameplay(through, now, 'online', null);
+  }
   state._last = now;
   state._nextAutosaveAt = now + 30000;
   return true;
@@ -2415,25 +3281,33 @@ function render() {
     console.error('[render] runtime frame error:', err && err.stack ? err.stack : err);
   }
 
+  // 仅开新查询帧；不要每帧清 TTL——否则 stage2QueryModel 跨帧缓存形同虚设。
+  // 写路径（applyModelToRuntime / persist）会自行 invalidate。
+  beginQueryModelFrame();
+
+  const uiDriven = !!(window.UI && window.UI.renderGame);
+  const gamePhase = state.phase === 'game';
+
   try {
     if (state.dirty) composite();        // 仅变化时合成一次
     regions = [];
-    // ① 先按「真实屏像素」铺满底色（浅紫天空渐变，营造云霭仙气）
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const ph = canvas.height / dpr;
-    if (!bgGrad || bgGradH !== ph) {
-      bgGrad = ctx.createLinearGradient(0, 0, 0, ph);
-      const sky = readSkyColors();
-      bgGrad.addColorStop(0, sky.top);
-      bgGrad.addColorStop(1, sky.bottom);
-      bgGradH = ph;
+    // 游戏态 UI 已全屏盖住主 canvas（立绘在头像小画布），跳过每帧清屏填天空。
+    if (!(uiDriven && gamePhase)) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const ph = canvas.height / dpr;
+      if (!bgGrad || bgGradH !== ph) {
+        bgGrad = ctx.createLinearGradient(0, 0, 0, ph);
+        const sky = readSkyColors();
+        bgGrad.addColorStop(0, sky.top);
+        bgGrad.addColorStop(1, sky.bottom);
+        bgGradH = ph;
+      }
+      ctx.clearRect(0, 0, canvas.width / dpr, ph);
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, canvas.width / dpr, ph);
+      var v = Platform.view;
+      ctx.setTransform(dpr * v.scale, 0, 0, dpr * v.scale, v.offsetX * dpr, v.offsetY * dpr);
     }
-    ctx.clearRect(0, 0, canvas.width / dpr, ph);
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, canvas.width / dpr, ph);
-    // ② 切到设计坐标(420×logicalH)：宽度填满(scale=屏宽/DW, offsetX=0)，纵向占满(logicalH 随屏高)
-    var v = Platform.view;
-    ctx.setTransform(dpr * v.scale, 0, 0, dpr * v.scale, v.offsetX * dpr, v.offsetY * dpr);
   } catch (err) {
     console.error('[render] canvas compose error:', err && err.stack ? err.stack : err);
   }
@@ -2441,9 +3315,8 @@ function render() {
   // === UI 渲染分派 ===
   // 架构定稿：UI（顶栏/导航/内容/弹窗/toast）全部由 DOM 浮层 ui.js 负责；
   // Canvas 只画「游戏世界」（此处角色立绘已在头像小画布内渲染）。
-  // 若 ui.js 已载入 → 交给 UI.renderGame() 统一驱动 DOM；否则回退旧 Canvas 手绘（兜底）。
   try {
-    if (window.UI && window.UI.renderGame) {
+    if (uiDriven) {
       window.UI.renderGame();
     }
   } catch (err) {
@@ -2610,6 +3483,14 @@ function confirmCreate() {
   state.phase = 'game';
   state.navIndex = NAV_HOME;
   state.dirty = true;
+  if (typeof LazyContent !== 'undefined' && LazyContent) {
+    if (typeof LazyContent.ensureUiPages === 'function') {
+      LazyContent.ensureUiPages().catch(function () { /* ignore */ });
+    }
+    if (typeof LazyContent.ensureGameStyles === 'function') {
+      LazyContent.ensureGameStyles().catch(function () { /* ignore */ });
+    }
+  }
   if (!persistSafely()) {
     setPersistenceIssue({
       kind: 'save',
@@ -2635,71 +3516,116 @@ Platform.getSystemInfoAsync({
     W = DW; H = v.logicalH || DH;            // 逻辑宽度固定 420，高度随屏幕动态
     scale = 1;                               // 字体由 transform 缩放，不双重缩放
 
-    const now = Date.now();
-    const loaded = SaveSystem.load(Platform, now);
-    const save = loaded.snapshot;
-    const model = normalizeStartupModel(save, now);
-    applyModelToRuntime(model);
-    const playerModel = model.player
-      ? cloneRuntimeState(model.player)
-      : null;
-    if (playerModel &&
-        save.player &&
-        !Object.prototype.hasOwnProperty.call(save.player, 'shouyuan')) {
-      delete playerModel.shouyuan;
-    }
-    if (playerModel &&
-        save.player &&
-        !Object.prototype.hasOwnProperty.call(save.player, 'shouMax')) {
-      delete playerModel.shouMax;
-    }
-    state.player = playerModel ? ensurePlayer(playerModel) : null;
-    state.phase = state.created && state.player ? 'game' : 'create';
-    state.navIndex = NAV_HOME;
-    state.gender = 'g';   // 玩家角色恒为女性；男性仅供 NPC 自动生成
-
-    if (loaded.writeProtected) {
-      state._persistenceIssue = {
-        kind: 'future',
-        message: '存档版本高于当前游戏，已进入只读保护',
-        error: 'future-schema',
-        canRetry: false
-      };
-    } else if (loaded.needsRepair) {
-      if (!persistModel(model, save.savedAt)) {
-        persistenceRecovery.hold({
-          kind: 'repair',
-          message: '存档修复保存失败，请重试',
-          savedAt: save.savedAt,
-          now,
-          candidate: model,
-          resumeStartupAt: now
-        });
-      } else {
-        settleStartupOffline(
-          SaveSystem.load(Platform, now).snapshot,
-          now
-        );
+    function beginStartupAfterContent() {
+      // VM harnesses drive models themselves; applying an empty save would wipe them.
+      if (runtimeRoot && runtimeRoot.__GAME_TEST_HARNESS_REQUEST__ === true) {
+        return;
       }
-    } else {
-      settleStartupOffline(save, now);
+      try {
+        const now = Date.now();
+        const loaded = SaveSystem.load(Platform, now);
+        const save = loaded.snapshot;
+        const combatWarm = snapshotNeedsCombatRuntime(save) &&
+          typeof LazyContent !== 'undefined' &&
+          LazyContent &&
+          typeof LazyContent.ensureCombatRuntime === 'function'
+          ? LazyContent.ensureCombatRuntime()
+          : Promise.resolve();
+        combatWarm.then(function () {
+          finishStartupWithSave(loaded, now);
+        }, function () {
+          finishStartupWithSave(loaded, now);
+        });
+      } catch (error) {
+        // Harnesses without full Stage4/Save topology still boot game.js.
+        if (typeof console !== 'undefined' && console.warn) {
+          console.warn('[startup] skipped:', error && error.message);
+        }
+        requestAnimationFrame(render);
+      }
     }
 
-    state._last = now;
-    state._hiddenAt = null;
-    state._nextAutosaveAt = now + 30000;
-    window.addEventListener('pagehide', () => flushLifecycle(Date.now()));
-    window.addEventListener('beforeunload', () => flushLifecycle(Date.now()));
-    document.addEventListener('visibilitychange', () => {
-      handleVisibilityChange(!!document.hidden, Date.now());
-    });
-    state.dirty = true;
-    // 折中态：仅预创建广告对象（mock 环境下为本地假广告），不展示、不发奖。
-    // 任何环节缺失都不报错，绝不影响主流程。
-    if (window.AdManager && window.AdManager.init) {
-      try { window.AdManager.init(); } catch (e) { /* 广告桥接异常不阻塞游戏 */ }
+    function finishStartupWithSave(loaded, now) {
+      const save = loaded.snapshot;
+      const model = normalizeStartupModel(save, now);
+      applyModelToRuntime(model);
+      const playerModel = model.player
+        ? cloneRuntimeState(model.player)
+        : null;
+      if (playerModel &&
+          save.player &&
+          !Object.prototype.hasOwnProperty.call(save.player, 'shouyuan')) {
+        delete playerModel.shouyuan;
+      }
+      if (playerModel &&
+          save.player &&
+          !Object.prototype.hasOwnProperty.call(save.player, 'shouMax')) {
+        delete playerModel.shouMax;
+      }
+      state.player = playerModel ? ensurePlayer(playerModel) : null;
+      state.phase = state.created && state.player ? 'game' : 'create';
+      state.navIndex = NAV_HOME;
+      state.gender = 'g';   // 玩家角色恒为女性；男性仅供 NPC 自动生成
+
+      if (loaded.writeProtected) {
+        state._persistenceIssue = {
+          kind: 'future',
+          message: '存档版本高于当前游戏，已进入只读保护',
+          error: 'future-schema',
+          canRetry: false
+        };
+      } else if (loaded.needsRepair) {
+        if (!persistModel(model, save.savedAt)) {
+          persistenceRecovery.hold({
+            kind: 'repair',
+            message: '存档修复保存失败，请重试',
+            savedAt: save.savedAt,
+            now,
+            candidate: model,
+            resumeStartupAt: now
+          });
+        } else {
+          scheduleStartupOfflineSettle(
+            SaveSystem.load(Platform, now).snapshot,
+            now
+          );
+        }
+      } else {
+        scheduleStartupOfflineSettle(save, now);
+      }
+
+      state._last = now;
+      state._hiddenAt = null;
+      state._nextAutosaveAt = now + 30000;
+      window.addEventListener('pagehide', () => flushLifecycle(Date.now()));
+      window.addEventListener('beforeunload', () => flushLifecycle(Date.now()));
+      document.addEventListener('visibilitychange', () => {
+        handleVisibilityChange(!!document.hidden, Date.now());
+      });
+      state.dirty = true;
+      // 折中态：仅预创建广告对象（mock 环境下为本地假广告），不展示、不发奖。
+      // 任何环节缺失都不报错，绝不影响主流程。
+      if (window.AdManager && window.AdManager.init) {
+        try { window.AdManager.init(); } catch (e) { /* 广告桥接异常不阻塞游戏 */ }
+      }
+      // 已有存档进游戏：后台预取导航页 UI / 游戏样式，与首帧并行。
+      if (state.phase === 'game' &&
+          typeof LazyContent !== 'undefined' && LazyContent) {
+        if (typeof LazyContent.ensureUiPages === 'function') {
+          LazyContent.ensureUiPages().catch(function () { /* 页模块失败不阻塞启动 */ });
+        }
+        if (typeof LazyContent.ensureGameStyles === 'function') {
+          LazyContent.ensureGameStyles().catch(function () { /* 样式失败不阻塞启动 */ });
+        }
+      }
+      requestAnimationFrame(render);
     }
-    requestAnimationFrame(render);
+
+    const herbloreReady = (typeof LazyContent !== 'undefined' &&
+      LazyContent && typeof LazyContent.ensureHerblore === 'function')
+      ? LazyContent.ensureHerblore()
+      : Promise.resolve();
+    herbloreReady.then(beginStartupAfterContent, beginStartupAfterContent);
   }
 });
 
@@ -2714,11 +3640,28 @@ function getTopInfo() {
   const p = getPlayer();
   const st = p.realmStage || 0;
   const cur = REALM_TABLE[st] || REALM_TABLE[0];
+  let calendarLabel = '';
+  if (useStage4Runtime && stage4Bootstrap && stage4Bootstrap.WorldMonth &&
+      typeof stage4Bootstrap.WorldMonth.calendarLabel === 'function' &&
+      typeof stage4Bootstrap.WorldMonth.ensureCalendar === 'function') {
+    try {
+      const model = stage2QueryModel();
+      if (model && model.systems && model.systems.world) {
+        const cal = stage4Bootstrap.WorldMonth.ensureCalendar(
+          model.systems.world
+        );
+        calendarLabel = stage4Bootstrap.WorldMonth.calendarLabel(cal) || '';
+      }
+    } catch (error) {
+      calendarLabel = '';
+    }
+  }
   return {
     name: p.name, realm: p.realm, xiwei: p.xiwei, need: cur.need,
     shouyuan: p.shouyuan, shouMax: p.shouMax,
     pills: { mood: p.mood, jingqi: p.jingqi, lingshi: p.lingshi, shengwang: p.shengwang },
     lingyu: p.lingyu,   // 付费货币（仅商城展示，数据预留）
+    calendarLabel: calendarLabel,
     canBreak: p.xiwei >= cur.need && (cur.dan ? (p.inventory.stacks[cur.dan] || 0) >= 1 : true)
   };
 }
@@ -2909,11 +3852,10 @@ function getGatherPageInfo(navName) {
 }
 
 function readonlyQuery(viewModel) {
-  return StateModel.readonly(viewModel);
-}
-
-function stage2QueryModel() {
-  return StateModel.fromRuntime(state, state.processedThroughMs);
+  // UI 查询热路径：各 query* 应返回当帧临时 view。
+  // 不再 deepFreeze(cloneJson(...))——那会在每帧/切页时拖垮主线程。
+  // 需要真正隔离快照时用 StateModel.readonly。
+  return viewModel;
 }
 
 function stage2Progress(player, skillId) {
@@ -3542,5444 +4484,3 @@ function offlineSummaryView(reports, model) {
     display: combatTelemetryDisplay(summary.combat, summary.techniques)
   };
 }
-
-function queryApp() {
-  return readonlyQuery({
-    phase: state.phase,
-    appearance: {
-      indices: normalizeParts(state.parts)
-    },
-    modals: {
-      break: !!state.showBreak,
-      offline: !!state.showOffline,
-      legacyRebirth: !!state.showLunhui,
-      lifespanBuffer: !!state.showLifespanBuffer
-    }
-  });
-}
-
-function queryNavigation() {
-  return readonlyQuery({
-    activeIndex: state.navIndex,
-    items: NAV.map(function (label, index) {
-      return {
-        id: 'nav-' + index,
-        label,
-        active: index === state.navIndex
-      };
-    })
-  });
-}
-
-function queryTop() {
-  return readonlyQuery(getTopInfo());
-}
-
-function queryHome() {
-  return readonlyQuery(getHomeInfo());
-}
-
-function queryInventory(options) {
-  if (!useStage2Runtime) {
-    return readonlyQuery({
-      capacity: getInventoryList().length,
-      used: getInventoryList().length,
-      free: 0,
-      categories: ['all'],
-      selectedCategory: 'all',
-      search: '',
-      items: getInventoryList().map(function (item) {
-        return {
-          itemId: item.k,
-          name: item.n,
-          category: 'all',
-          quantity: item.v,
-          bound: 0,
-          available: item.v,
-          sellValue: 0
-        };
-      })
-    });
-  }
-  const model = stage2QueryModel();
-  return readonlyQuery(stage2Bootstrap.Inventory.query(
-    model.player && model.player.inventory,
-    options
-  ));
-}
-
-function queryItemInfo(input) {
-  const itemId = input && typeof input.itemId === 'string'
-    ? input.itemId
-    : '';
-  if (!stage2Bootstrap || !stage2Bootstrap.ItemContent || !itemId) {
-    return readonlyQuery(null);
-  }
-  const item = stage2Bootstrap.ItemContent.get(itemId);
-  if (!item) return readonlyQuery(null);
-  const row = {
-    itemId: item.id || itemId,
-    name: item.name || itemId,
-    category: item.category || 'material',
-    icon: item.icon || '📦',
-    description: item.description || '暂无说明。',
-    quality: item.quality || 'white',
-    sellValue: Number.isSafeInteger(item.sellValue) ? item.sellValue : 0
-  };
-  ['iconSrc', 'iconSrc50', 'iconSrc100'].forEach(function (key) {
-    if (item[key]) row[key] = item[key];
-  });
-  return readonlyQuery(row);
-}
-
-function safeOptionalInputFields(input, allowed, required) {
-  try {
-    if (!input || typeof input !== 'object' || Array.isArray(input) ||
-        !safeInputData(input)) {
-      return null;
-    }
-    const keys = Reflect.ownKeys(input);
-    if (keys.some(function (key) {
-      return typeof key !== 'string' || allowed.indexOf(key) < 0;
-    })) {
-      return null;
-    }
-    if ((required || []).some(function (key) {
-      return keys.indexOf(key) < 0;
-    })) {
-      return null;
-    }
-    const result = {};
-    keys.forEach(function (key) {
-      const descriptor = Object.getOwnPropertyDescriptor(input, key);
-      if (!descriptor || !Object.prototype.hasOwnProperty.call(
-        descriptor,
-        'value'
-      )) {
-        throw new Error('invalid input descriptor');
-      }
-      result[key] = descriptor.value;
-    });
-    return result;
-  } catch (error) {
-    return null;
-  }
-}
-
-function equipmentLoadout(model, requestedId) {
-  const combat = model && model.player && model.player.combat;
-  const loadouts = combat && Array.isArray(combat.loadouts)
-    ? combat.loadouts
-    : [];
-  const loadoutId = typeof requestedId === 'string' && requestedId
-    ? requestedId
-    : combat && combat.activeLoadoutId;
-  return loadouts.find(function (loadout) {
-    return loadout && loadout.id === loadoutId;
-  }) || null;
-}
-
-function equipmentReferences(model, instanceId) {
-  const combat = model && model.player && model.player.combat;
-  const loadouts = combat && Array.isArray(combat.loadouts)
-    ? combat.loadouts
-    : [];
-  const references = [];
-  loadouts.forEach(function (loadout) {
-    Object.keys(loadout.equipment || {}).forEach(function (slot) {
-      if (loadout.equipment[slot] === instanceId) {
-        references.push({
-          loadoutId: loadout.id,
-          loadoutName: loadout.name,
-          slot: slot
-        });
-      }
-    });
-  });
-  return references;
-}
-
-function equipmentInstance(model, instanceId) {
-  return useEquipmentRuntime && model && model.player
-    ? stage2Bootstrap.Inventory.findEquipment(
-      model.player.inventory,
-      instanceId
-    )
-    : null;
-}
-
-function numericDelta(after, before) {
-  const result = {};
-  const keys = new Set(
-    Object.keys(after || {}).concat(Object.keys(before || {}))
-  );
-  keys.forEach(function (key) {
-    const delta = (Number(after && after[key]) || 0) -
-      (Number(before && before[key]) || 0);
-    if (delta !== 0) result[key] = Math.round(delta * 10000) / 10000;
-  });
-  return result;
-}
-
-function queryEquipmentInfo(input) {
-  const fields = safeOptionalInputFields(
-    input,
-    ['instanceId', 'loadoutId'],
-    ['instanceId']
-  );
-  if (!useEquipmentRuntime || !fields ||
-      typeof fields.instanceId !== 'string') {
-    return readonlyQuery(null);
-  }
-  const model = stage2QueryModel();
-  const instance = equipmentInstance(model, fields.instanceId);
-  const resolved = instance
-    ? equipmentBootstrap.Equipment.resolve(instance)
-    : null;
-  if (!resolved) return readonlyQuery(null);
-  const loadout = equipmentLoadout(model, fields.loadoutId);
-  let current = null;
-  const beforeItems = Object.keys(loadout && loadout.equipment || {}).map(
-    function (slot) {
-      const candidate = equipmentInstance(model, loadout.equipment[slot]);
-      if (candidate &&
-          equipmentBootstrap.Equipment.resolve(candidate).slot ===
-            resolved.slot) {
-        current = candidate;
-      }
-      return candidate;
-    }
-  ).filter(Boolean);
-  const afterItems = beforeItems.filter(function (candidate) {
-    return equipmentBootstrap.Equipment.resolve(candidate).slot !==
-      resolved.slot;
-  }).concat([instance]);
-  const beforeAggregate = equipmentBootstrap.Equipment.aggregate(beforeItems);
-  const afterAggregate = equipmentBootstrap.Equipment.aggregate(afterItems);
-  const references = equipmentReferences(model, instance.instanceId);
-  return readonlyQuery(Object.assign({}, resolved, {
-    comparison: {
-      currentInstanceId: current ? current.instanceId : null,
-      currentName: current
-        ? equipmentBootstrap.Equipment.resolve(current).name
-        : null,
-      flat: numericDelta(afterAggregate.flat, beforeAggregate.flat),
-      percent: numericDelta(
-        afterAggregate.percent,
-        beforeAggregate.percent
-      )
-    },
-    resonanceBefore: beforeAggregate.resonance,
-    resonanceAfter: afterAggregate.resonance,
-    references: references,
-    permissions: {
-      canEquip: !!loadout,
-      canEnhance: instance.enhancementLevel < 15,
-      canReforge: instance.affixes.length > 0,
-      canSell: !instance.favorite && references.length === 0,
-      canSalvage: !instance.favorite && references.length === 0
-    }
-  }));
-}
-
-function queryBreakModal() {
-  return readonlyQuery(getBreakInfo());
-}
-
-function querySkillPage(navName) {
-  if (useStage2Runtime) {
-    const page = STAGE2_PRODUCTION_PAGES[navName];
-    if (!page) return readonlyQuery(null);
-    const model = stage2QueryModel();
-    if (!model.player) return readonlyQuery(null);
-    const progress = stage2Progress(model.player, page.skillId);
-    const bonuses = stage2ProductionBonuses(model, page.skillId);
-    const recipes = stage2RecipeCards(model, page, bonuses);
-    return readonlyQuery({
-      title: page.title,
-      skillId: page.skillId,
-      skill: page.skillId,
-      description: page.desc,
-      desc: page.desc,
-      level: progress.level,
-      lv: progress.level,
-      xp: progress.xp,
-      nextXp: stage2Bootstrap.SkillProgression.skillXpNeed(
-        progress.level
-      ),
-      xpNeed: stage2Bootstrap.SkillProgression.skillXpNeed(
-        progress.level
-      ),
-      bonuses,
-      recipes,
-      actions: recipes.map(function (recipe) {
-        return {
-          key: recipe.actionKey,
-          name: recipe.name,
-          icon: recipe.name.charAt(0),
-          skill: page.skillId,
-          lv: progress.level,
-          needLv: recipe.unlockLevel,
-          time: recipe.durationSeconds,
-          xp: recipe.skillXp,
-          out: recipe.output.name + ' ×' + recipe.output.quantity,
-          locked: !recipe.unlocked,
-          active: recipe.active,
-          stalled: recipe.stalled,
-          progress: recipe.progress
-        };
-      })
-    });
-  }
-  return readonlyQuery(getSkillPageInfo(navName));
-}
-
-function queryGatherPage(navName) {
-  if (useStage2Runtime) {
-    const skillId = STAGE2_GATHER_PAGES[navName];
-    const content = skillId &&
-      stage2Bootstrap.GatheringContent.GATHERING[skillId];
-    if (!content) return readonlyQuery(null);
-    const model = stage2QueryModel();
-    if (!model.player) return readonlyQuery(null);
-    const progress = stage2Progress(model.player, skillId);
-    const formations = stage2Bootstrap.Formations.effects(model);
-    const beast = stage2ScopedBeastEffects(
-      model,
-      skillId === 'fishing' ? 'fishing' : 'gathering',
-      skillId
-    );
-    const bonuses = {
-      skillSpeedBonus:
-        stage2Bootstrap.SkillProgression.skillSpeedBonus(
-          progress.level
-        ),
-      gatheringExtraYieldChance:
-        (Number.isFinite(formations.gatheringExtraYieldChance)
-          ? formations.gatheringExtraYieldChance
-          : 0) +
-        (Number.isFinite(beast.gatheringExtraYieldChance)
-          ? beast.gatheringExtraYieldChance
-          : 0),
-      gatheringDurationReduction:
-        Number.isFinite(beast.gatheringDurationReduction)
-          ? beast.gatheringDurationReduction
-          : 0,
-      fishRecoveryReduction:
-        (Number.isFinite(formations.fishRecoveryReduction)
-          ? formations.fishRecoveryReduction
-          : 0) +
-        (Number.isFinite(beast.fishRecoveryReduction)
-          ? beast.fishRecoveryReduction
-          : 0)
-    };
-    const explore = content.explore
-      ? (function () {
-          const key = 'gather:explore:' + skillId;
-          const duration = stage2GatherDuration(
-            model,
-            skillId,
-            content.explore.masteryId,
-            content.explore.time
-          );
-          const action = stage2ActionView(model, key, duration);
-          return {
-            actionKey: key,
-            name: content.explore.name,
-            durationSeconds: duration,
-            skillXp: content.explore.skillXp,
-            masteryXp: content.explore.masteryXp,
-            active: action.active,
-            stalled: action.stalled,
-            progress: action.progress
-          };
-        })()
-      : null;
-    let resource = null;
-    const spotState = model.systems.gathering.spots[skillId];
-    if (skillId !== 'fishing' && spotState) {
-      const entry = stage2Bootstrap.GatheringContent.getEntry(
-        skillId,
-        spotState.entryId
-      );
-      if (entry) {
-        const mastery = stage2Mastery(
-          model.player,
-          skillId,
-          entry.masteryId
-        );
-        const key = 'gather:collect:' + skillId + ':' + entry.id;
-        const duration = stage2GatherDuration(
-          model,
-          skillId,
-          entry.masteryId,
-          entry.time
-        );
-        const action = stage2ActionView(model, key, duration);
-        resource = {
-          instanceId: spotState.instanceId,
-          entryId: entry.id,
-          name: entry.name,
-          quality: spotState.quality,
-          remaining: spotState.remaining,
-          capacity: spotState.capacity,
-          unlockLevel: entry.unlockLevel,
-          durationSeconds: duration,
-          skillXp: entry.xp,
-          mastery: {
-            level: mastery.level,
-            xp: mastery.xp,
-            nextXp:
-              stage2Bootstrap.SkillProgression.masteryXpNeed(
-                mastery.level
-              ),
-            speedBonus:
-              stage2Bootstrap.SkillProgression.masterySpeedBonus(
-                mastery.level
-              ),
-            extraYieldChance:
-              stage2Bootstrap.SkillProgression
-                .masteryYieldOrRetentionChance(mastery.level)
-          },
-          drops: stage2DropRows(entry.drops),
-          actionKey: key,
-          active: action.active,
-          stalled: action.stalled,
-          progress: action.progress
-        };
-      }
-    }
-    const spots = skillId === 'fishing'
-      ? content.spots.map(function (spot) {
-          const primary = spot.drops[0] && spot.drops[0].itemId;
-          const duration = stage2GatherDuration(
-            model,
-            skillId,
-            primary ? 'fishing:' + primary : '',
-            spot.time
-          );
-          const key = 'fish:' + spot.id;
-          const action = stage2ActionView(model, key, duration);
-          const unlocks = model.systems.gathering.fishingUnlocks || {};
-          const flagLocked = !!(spot.unlockFlag && unlocks[spot.unlockFlag] !== true);
-          return {
-            spotId: spot.id,
-            name: spot.name,
-            unlockLevel: spot.unlockLevel,
-            unlockFlag: spot.unlockFlag || null,
-            unlocked: progress.level >= spot.unlockLevel && !flagLocked,
-            flagLocked: flagLocked,
-            fishChance: spot.fishChance,
-            junkChance: spot.junkChance,
-            specialChance: spot.specialChance,
-            durationSeconds: duration,
-            skillXp: spot.xp,
-            actionKey: key,
-            species: spot.drops.map(function (drop) {
-              const species =
-                stage2Bootstrap.GatheringContent
-                  .FISH_SPECIES[drop.itemId];
-              const mastery = stage2Mastery(
-                model.player,
-                skillId,
-                species ? species.masteryId : ''
-              );
-              return {
-                speciesId: drop.itemId,
-                name: species ? species.name : drop.itemId,
-                weight: drop.w,
-                quantity: drop.q,
-                stock:
-                  model.systems.gathering.fishStocks[drop.itemId] || 0,
-                maxStock: species ? species.maxStock : 0,
-                mastery: {
-                  level: mastery.level,
-                  xp: mastery.xp,
-                  nextXp:
-                    stage2Bootstrap.SkillProgression.masteryXpNeed(
-                      mastery.level
-                    ),
-                  speedBonus:
-                    stage2Bootstrap.SkillProgression.masterySpeedBonus(
-                      mastery.level
-                    ),
-                  extraYieldChance:
-                    stage2Bootstrap.SkillProgression
-                      .masteryYieldOrRetentionChance(mastery.level)
-                }
-              };
-            }),
-            active: action.active,
-            stalled: action.stalled,
-            progress: action.progress
-          };
-        })
-      : [];
-    const cards = [];
-    if (explore) {
-      cards.push({
-        type: 'explore',
-        id: 'explore',
-        name: explore.name,
-        active: explore.active,
-        stalled: explore.stalled,
-        progress: explore.progress
-      });
-    }
-    if (resource) {
-      cards.push({
-        type: 'entry',
-        id: resource.entryId,
-        name: resource.name,
-        unlockLv: resource.unlockLevel,
-        time: resource.durationSeconds,
-        xp: resource.skillXp,
-        left: resource.remaining,
-        cap: resource.capacity,
-        active: resource.active,
-        stalled: resource.stalled,
-        progress: resource.progress
-      });
-    }
-    spots.forEach(function (spot) {
-      const stocks = spot.species.map(function (species) {
-        return species.stock;
-      });
-      cards.push({
-        type: 'entry',
-        id: spot.spotId,
-        name: spot.name,
-        unlockLv: spot.unlockLevel,
-        time: spot.durationSeconds,
-        xp: spot.skillXp,
-        left: stocks.length ? Math.min.apply(Math, stocks) : 0,
-        cap: spot.species.length
-          ? spot.species[0].maxStock
-          : 0,
-        active: spot.active,
-        stalled: spot.stalled,
-        progress: spot.progress,
-        locked: !spot.unlocked
-      });
-    });
-    return readonlyQuery({
-      title: content.title,
-      skillId,
-      skill: skillId,
-      description: '探索并采集' + content.title + '资源',
-      desc: '探索并采集' + content.title + '资源',
-      level: progress.level,
-      lv: progress.level,
-      xp: progress.xp,
-      nextXp: stage2Bootstrap.SkillProgression.skillXpNeed(
-        progress.level
-      ),
-      xpNeed: stage2Bootstrap.SkillProgression.skillXpNeed(
-        progress.level
-      ),
-      bonuses,
-      explore,
-      resource,
-      spots,
-      cards,
-      noSpotHint: skillId !== 'fishing' && resource === null
-    });
-  }
-  return readonlyQuery(getGatherPageInfo(navName));
-}
-
-function queryHomestead(moduleId) {
-  if (!useStage2Runtime) {
-    return readonlyQuery({ implemented: false });
-  }
-  const model = stage2QueryModel();
-  if (moduleId === 'farm') {
-    return readonlyQuery(stage2Bootstrap.Farm.query(model));
-  }
-  if (moduleId === 'formations') {
-    return readonlyQuery(stage2Bootstrap.Formations.query(model));
-  }
-  if (moduleId === 'inheritance') {
-    return queryInheritanceHall({ section: 'overview' });
-  }
-  if (moduleId === 'meetingHall') {
-    return readonlyQuery({ implemented: false });
-  }
-  if (moduleId !== 'beasts') return readonlyQuery(null);
-  const base = stage2Bootstrap.SpiritBeasts.query(model);
-  const content = stage2Bootstrap.HomesteadContent;
-  const activeId = base.activeIds.length ? base.activeIds[0] : null;
-  return readonlyQuery({
-    encounters: base.encounters.map(function (encounter) {
-      const species = content.getBeast(encounter.speciesId);
-      const actionKey = 'beast:tame:' + encounter.id;
-      const duration = stage2RuntimeActionDuration(model, actionKey);
-      const action = stage2ActionView(model, actionKey, duration);
-      return {
-        id: encounter.id,
-        speciesId: encounter.speciesId,
-        speciesName: species ? species.name : encounter.speciesId,
-        sourceSkillId: encounter.sourceSkillId,
-        tame: {
-          actionKey,
-          itemId: species ? species.tamingItemId : null,
-          durationSeconds: duration,
-          active: action.active,
-          stalled: action.stalled,
-          progress: action.progress
-        }
-      };
-    }),
-    roster: base.roster.map(function (beast) {
-      const species = content.getBeast(beast.speciesId);
-      const trait = content.TRAITS[beast.traitId];
-      const growth = content.GROWTH_TENDENCIES[beast.growthId];
-      const actionKey = 'beast:train:' + beast.id;
-      const duration = stage2RuntimeActionDuration(model, actionKey);
-      const action = stage2ActionView(model, actionKey, duration);
-      return {
-        id: beast.id,
-        speciesId: beast.speciesId,
-        speciesName: species ? species.name : beast.speciesId,
-        level: beast.level,
-        xp: beast.xp,
-        traitId: beast.traitId,
-        traitName: trait ? trait.name : beast.traitId,
-        growthId: beast.growthId,
-        growthName: growth ? growth.name : beast.growthId,
-        active: activeId === beast.id,
-        training: {
-          actionKey,
-          itemId: species ? species.trainingItemId : null,
-          durationSeconds: duration,
-          active: action.active,
-          stalled: action.stalled,
-          progress: action.progress
-        },
-        assistant: {
-          beastId: beast.id,
-          active: activeId === beast.id,
-          effect: species ? species.assistance : null
-        }
-      };
-    }),
-    activeIds: base.activeIds,
-    effects: base.effects
-  });
-}
-
-function queryInheritanceHall(input) {
-  const model = useStage5Runtime ? stage4Model() : null;
-  if (!model) return readonlyQuery({ implemented: false });
-  // 防御：传承殿依赖 npc 档案 / 血脉 / 角色生命周期；老存档或新档未初始化这些
-  // 子系统时不应抛错（否则每帧 renderGame 崩溃、主循环卡死）。缺失则视为未实装。
-  const npcs = model.systems && model.systems.npcs;
-  const lineage = model.systems && model.systems.lineage;
-  if (!npcs || !npcs.records || !lineage || !model.player ||
-      !model.player.lifecycle) {
-    return readonlyQuery({ implemented: false });
-  }
-  const section = input && typeof input.section === 'string'
-    ? input.section
-    : 'overview';
-  const hall = stage5Bootstrap.InheritanceHall.view(model);
-  const records = npcs.records;
-  const descendants = Object.keys(lineage.descendants).sort().map(
-    function (npcId) {
-      const person = records[npcId];
-      const row = lineage.descendants[npcId];
-      return {
-        npcId,
-        name: person && person.identity
-          ? person.identity.name
-          : npcId,
-        gender: person && person.identity
-          ? person.identity.gender
-          : 'female',
-        ageYears: person ? person.ageYears : 0,
-        lifeStage: person ? person.lifeStage : 'child',
-        status: person ? person.status : 'living',
-        partnerNpcId: row.partnerNpcId,
-        bornAt: row.bornAt,
-        adultAt: row.adultAt,
-        heirEligible: stage5Bootstrap.Lineage
-          .adultHeirs(model).includes(npcId)
-      };
-    }
-  );
-  return readonlyQuery({
-    implemented: true,
-    section,
-    overview: hall,
-    lifespan: {
-      ageYears: model.player.lifecycle.ageYears,
-      remainingYears: model.player.shouyuan,
-      maximumYears: model.player.shouMax,
-      status: model.player.lifecycle.status
-    },
-    plan: hall.plan,
-    descendants,
-    rituals: lineage.rituals,
-    lives: lineage.lives
-  });
-}
-
-function queryLegacyTransition() {
-  const model = useStage5Runtime ? stage4Model() : null;
-  return readonlyQuery(model
-    ? Object.assign(
-      { implemented: true },
-      stage5Bootstrap.LegacyTransition.view(model)
-    )
-    : { implemented: false, pending: null, eligibleHeirIds: [] });
-}
-
-function queryCharm() {
-  if (!useStage2Runtime) {
-    return readonlyQuery({
-      level: 1,
-      xp: 0,
-      nextXp: skillXpNeed(1),
-      benefits: {
-        positiveRelationMultiplier: 1,
-        misunderstandingReduction: 0
-      },
-      text: '通过社交互动自然提升'
-    });
-  }
-  const model = stage2QueryModel();
-  const progress = stage2Progress(model.player, 'charm');
-  return readonlyQuery({
-    level: progress.level,
-    xp: progress.xp,
-    nextXp: stage2Bootstrap.SkillProgression.skillXpNeed(
-      progress.level
-    ),
-    benefits: stage2Bootstrap.SkillProgression.charmBenefits(
-      progress.level
-    ),
-    text: '通过社交互动自然提升'
-  });
-}
-
-function queryOffline() {
-  const model = useStage2Runtime ? stage2QueryModel() : null;
-  const reports = state.pendingOfflineReports
-    .map(function (report) { return reportView(report, model); })
-    .filter(Boolean);
-  return readonlyQuery({
-    visible: !!state.showOffline,
-    reports,
-    summary: Object.assign(
-      offlineSummaryView(state.pendingOfflineReports, model),
-      {
-        world: SimulationReport.summarize(
-          state.pendingOfflineReports
-        ).world
-      }
-    )
-  });
-}
-
-const STAGE4_RELATION_KEYS = Object.freeze([
-  'affection',
-  'trust',
-  'romanticAttachment',
-  'desire',
-  'dependence',
-  'loyalty',
-  'jealousy',
-  'resentment'
-]);
-const stage4ReadState = {
-  summary: new Set(),
-  pending: new Set(),
-  world: new Set()
-};
-
-function stage4Model() {
-  return useStage4Runtime ? stage2QueryModel() : null;
-}
-
-function stage4Person(model, npcId) {
-  return model && model.systems && model.systems.npcs &&
-    model.systems.npcs.records &&
-    model.systems.npcs.records[npcId] || null;
-}
-
-function stage4Region(regionId) {
-  return stage4Bootstrap.RegionContent &&
-    stage4Bootstrap.RegionContent.get(regionId);
-}
-
-function stage4Sect(sectId) {
-  return stage4Bootstrap.SectContent &&
-    stage4Bootstrap.SectContent.get(sectId);
-}
-
-function stage4CursorOffset(cursor) {
-  const matched = typeof cursor === 'string'
-    ? /^offset:([0-9]+)$/.exec(cursor)
-    : null;
-  return matched ? Math.max(0, Number(matched[1]) || 0) : 0;
-}
-
-function stage4Paged(rows, cursor, size) {
-  const offset = stage4CursorOffset(cursor);
-  const pageSize = size || 20;
-  const items = rows.slice(offset, offset + pageSize);
-  return {
-    items,
-    nextCursor: offset + items.length < rows.length
-      ? 'offset:' + (offset + items.length)
-      : null
-  };
-}
-
-function stage4HistoryTime(entry) {
-  const source = entry || {};
-  return Number(source.at) || Number(source.createdAt) ||
-    Number(source.resolvedAt) || Number(source.fromMs) / 1000 || 0;
-}
-
-function stage4HistoryRow(entry, prefix) {
-  const source = entry || {};
-  return {
-    id: String(source.id || prefix + '-' + stage4HistoryTime(source)),
-    kind: String(source.category || source.source || prefix),
-    title: String(source.title || source.label || '修仙界动态'),
-    at: stage4HistoryTime(source),
-    npcId: typeof source.npcId === 'string' ? source.npcId : null,
-    sectId: typeof source.sectId === 'string' ? source.sectId : null,
-    scope: source.scope === 'nearby' ? 'nearby' : 'all'
-  };
-}
-
-function stage4EventRows(model, section, filter) {
-  const systems = model && model.systems;
-  const events = systems && systems.events;
-  if (!events) return [];
-  if (section === 'pending') {
-    return events.pending.slice().sort(function (left, right) {
-      return stage4HistoryTime(right) - stage4HistoryTime(left);
-    }).map(function (event) {
-      return {
-        id: event.id,
-        kind: event.templateId || 'event',
-        title: event.title,
-        body: event.body,
-        at: event.createdAt,
-        participants: event.participants.map(function (npcId) {
-          const person = stage4Person(model, npcId);
-          return {
-            npcId,
-            name: person && person.identity
-              ? person.identity.name
-              : '一位修士'
-          };
-        }),
-        options: event.options.map(function (option) {
-          return {
-            id: option.id,
-            label: option.label,
-            preview: option.preview
-          };
-        })
-      };
-    });
-  }
-  if (section === 'world') {
-    return events.evolution.slice().reverse()
-      .map(function (entry) {
-        return stage4HistoryRow(entry, 'world');
-      })
-      .filter(function (entry) {
-        return filter !== 'nearby' || entry.scope === 'nearby';
-      });
-  }
-  const seen = new Set();
-  const rows = [];
-  state.reportArchive.slice().reverse().forEach(function (report) {
-    const view = reportView(report, model);
-    if (!view || seen.has('report:' + report.id)) return;
-    seen.add('report:' + report.id);
-    rows.push({
-      id: 'report:' + report.id,
-      kind: 'offline',
-      title: view.title || '离线结算',
-      at: Number(report.toMs) / 1000 || 0,
-      report: view
-    });
-  });
-  events.summaries.slice().reverse().forEach(function (entry) {
-    const row = stage4HistoryRow(entry, 'summary');
-    if (seen.has(row.id)) return;
-    seen.add(row.id);
-    rows.push(row);
-  });
-  return rows.sort(function (left, right) {
-    return right.at - left.at || left.id.localeCompare(right.id);
-  });
-}
-
-function queryEvents(input) {
-  const model = stage4Model();
-  if (!model) {
-    const legacyModel = useStage2Runtime ? stage2QueryModel() : null;
-    return readonlyQuery({
-      stage4Available: false,
-      section: 'summary',
-      filter: 'all',
-      counts: { summary: state.reportArchive.length, pending: 0, world: 0 },
-      unreadCounts: { summary: state.reportArchive.length, pending: 0, world: 0 },
-      items: state.reportArchive.slice().reverse().map(function (report) {
-        return {
-          id: 'report:' + report.id,
-          kind: 'offline',
-          title: '离线结算',
-          at: Number(report.toMs) / 1000 || 0,
-          report: reportView(report, legacyModel)
-        };
-      }),
-      nextCursor: null,
-      offlineReports: state.reportArchive.slice().reverse()
-        .map(function (report) { return reportView(report, legacyModel); })
-        .filter(Boolean)
-    });
-  }
-  const requested = input && typeof input === 'object' ? input : {};
-  const section = ['summary', 'pending', 'world'].indexOf(
-    requested.section
-  ) >= 0 ? requested.section : 'summary';
-  const filter = requested.filter === 'nearby' ? 'nearby' : 'all';
-  const summary = stage4EventRows(model, 'summary', 'all');
-  const pending = stage4EventRows(model, 'pending', 'all');
-  const world = stage4EventRows(model, 'world', filter);
-  const allRows = { summary, pending, world };
-  const counts = {
-    summary: summary.length,
-    pending: pending.length,
-    world: stage4EventRows(model, 'world', 'all').length
-  };
-  const unreadCounts = {};
-  Object.keys(allRows).forEach(function (key) {
-    unreadCounts[key] = allRows[key].filter(function (row) {
-      return !stage4ReadState[key].has(row.id);
-    }).length;
-  });
-  const page = stage4Paged(allRows[section], requested.cursor, 20);
-  return readonlyQuery({
-    stage4Available: true,
-    section,
-    filter,
-    tabs: [
-      { id: 'summary', label: '事件摘要' },
-      { id: 'pending', label: '待决策' },
-      { id: 'world', label: '世界演变' }
-    ],
-    counts,
-    unreadCounts,
-    items: page.items,
-    nextCursor: page.nextCursor,
-    offlineReports: summary.filter(function (row) {
-      return row.kind === 'offline';
-    }).map(function (row) { return row.report; })
-  });
-}
-
-function stage4Pair(model, npcId) {
-  return stage4Bootstrap.Relationships.queryPair(
-    model,
-    'player',
-    npcId
-  );
-}
-
-function stage4PersonRow(model, npcId) {
-  const person = stage4Person(model, npcId);
-  if (!person || person.status !== 'living') return null;
-  const pair = stage4Pair(model, npcId);
-  const region = stage4Region(person.regionId);
-  const sect = stage4Sect(person.sectId);
-  return {
-    npcId,
-    name: person.identity.name,
-    gender: person.identity.gender,
-    pronoun: person.identity.gender === 'male' ? '他' : '她',
-    realm: REALM_TABLE[person.realmStage]
-      ? REALM_TABLE[person.realmStage].name
-      : '练气一层',
-    regionId: person.regionId,
-    regionName: region ? region.name : '行踪不明',
-    sectId: person.sectId,
-    sectName: sect ? sect.name : '散修',
-    affection: pair ? pair.firstToSecond.affection : 0,
-    trust: pair ? pair.firstToSecond.trust : 0,
-    recentAt: pair ? Math.max(
-      pair.firstToSecond.lastChangedAt,
-      pair.secondToFirst.lastChangedAt,
-      pair.bond.changedAt
-    ) : 0,
-    bondStage: pair ? pair.bond.stage : 'stranger'
-  };
-}
-
-function queryRelationships(input) {
-  const model = stage4Model();
-  if (!model) return readonlyQuery({ people: [], total: 0 });
-  const requested = input && typeof input === 'object' ? input : {};
-  const search = typeof requested.search === 'string'
-    ? requested.search.trim().toLowerCase()
-    : '';
-  const sort = ['recent', 'affection', 'trust', 'name'].indexOf(
-    requested.sort
-  ) >= 0 ? requested.sort : 'recent';
-  const npcs = model.systems.npcs;
-  const ids = npcs.activeIds.slice();
-  const connected = new Set();
-  Object.keys(model.systems.relationships.edges).forEach(function (key) {
-    const parts = key.split('>');
-    if (parts[0] === 'player' && parts[1]) connected.add(parts[1]);
-    if (parts[1] === 'player' && parts[0]) connected.add(parts[0]);
-  });
-  npcs.backgroundIds.forEach(function (npcId) {
-    if (connected.has(npcId) && ids.indexOf(npcId) < 0) ids.push(npcId);
-  });
-  let people = ids.map(function (npcId) {
-    return stage4PersonRow(model, npcId);
-  }).filter(Boolean);
-  if (search) {
-    people = people.filter(function (person) {
-      return [
-        person.name,
-        person.regionName,
-        person.sectName,
-        person.realm
-      ].join('|').toLowerCase().indexOf(search) >= 0;
-    });
-  }
-  people.sort(function (left, right) {
-    if (sort === 'name') return left.name.localeCompare(right.name);
-    const field = sort === 'affection'
-      ? 'affection'
-      : sort === 'trust' ? 'trust' : 'recentAt';
-    return right[field] - left[field] ||
-      left.name.localeCompare(right.name);
-  });
-  return readonlyQuery({ search, sort, total: people.length, people });
-}
-
-function queryRelationship(input) {
-  const model = stage4Model();
-  const npcId = input && typeof input.npcId === 'string'
-    ? input.npcId
-    : null;
-  const person = model && stage4Person(model, npcId);
-  const pair = person && stage4Pair(model, npcId);
-  if (!person || !pair) return readonlyQuery(null);
-  const profile =
-    stage4Bootstrap.NpcGenerationContent.getRomancePrinciple(
-      person.romancePrincipleId
-    );
-  const region = stage4Region(person.regionId);
-  const sect = stage4Sect(person.sectId);
-  return readonlyQuery({
-    npcId,
-    name: person.identity.name,
-    gender: person.identity.gender,
-    pronoun: person.identity.gender === 'male' ? '他' : '她',
-    appearanceTags: Object.keys(person.identity.appearance).map(function (key) {
-      return person.identity.appearance[key];
-    }),
-    ageYears: person.ageYears,
-    realm: REALM_TABLE[person.realmStage]
-      ? REALM_TABLE[person.realmStage].name
-      : '练气一层',
-    region: region ? { id: region.id, name: region.name } : null,
-    sect: sect ? { id: sect.id, name: sect.name } : null,
-    biography: person.biography.slice(),
-    bond: pair.bond,
-    romanceEligible: pair.romanceEligible,
-    romancePrinciple: profile ? {
-      id: profile.id,
-      name: profile.name,
-      summary: profile.summary
-    } : null,
-    metrics: STAGE4_RELATION_KEYS.map(function (key) {
-      return {
-        id: key,
-        playerToPerson: pair.firstToSecond[key],
-        personToPlayer: pair.secondToFirst[key]
-      };
-    })
-  });
-}
-
-function stage4GiftChoices(model, npcId) {
-  const stacks = model.player && model.player.inventory &&
-    model.player.inventory.stacks || {};
-  return Object.keys(stacks).filter(function (itemId) {
-    return Number(stacks[itemId]) > 0 &&
-      stage4Bootstrap.Social.isAvailable(
-        model,
-        npcId,
-        'gift',
-        itemId,
-        {
-          Inventory: stage2Bootstrap.Inventory,
-          SocialInteractionContent:
-            stage4Bootstrap.SocialInteractionContent
-        }
-      ).ok;
-  }).map(function (itemId) {
-    const item = stage2Bootstrap.ItemContent &&
-      stage2Bootstrap.ItemContent.get(itemId);
-    return {
-      itemId,
-      name: item ? item.name : resName(itemId),
-      quantity: stacks[itemId]
-    };
-  });
-}
-
-function querySocial(input) {
-  const model = stage4Model();
-  const npcId = input && typeof input.npcId === 'string'
-    ? input.npcId
-    : null;
-  const person = model && stage4Person(model, npcId);
-  if (!person) return readonlyQuery(null);
-  const gifts = stage4GiftChoices(model, npcId);
-  const interactions = stage4Bootstrap.SocialInteractionContent.list()
-    .filter(function (entry) {
-      if (entry.id === 'gift') return gifts.length > 0;
-      return stage4Bootstrap.Social.isAvailable(
-        model,
-        npcId,
-        entry.id,
-        null,
-        {
-          Inventory: stage2Bootstrap.Inventory,
-          SocialInteractionContent:
-            stage4Bootstrap.SocialInteractionContent
-        }
-      ).ok;
-    }).map(function (entry) {
-      return {
-        id: entry.id,
-        label: entry.label.replace('某人', person.identity.name),
-        durationSeconds: entry.durationSeconds,
-        rewards: {
-          charmXp: entry.rewards.charmXp,
-          cultivation: entry.rewards.cultivation
-        },
-        requiresGift: entry.id === 'gift'
-      };
-    });
-  const current = model.current;
-  const parsed = current && stage4Bootstrap.Social.parseActionKey(current.key);
-  const currentDuration = parsed
-    ? stage4Bootstrap.Social.duration(model, parsed)
-    : 0;
-  const parallel = model.systems.parallel.jobs.filter(function (job) {
-    return job && job.kind === 'social' && job.npcId === npcId;
-  }).map(function (job) {
-    return {
-      id: job.id,
-      label: job.label,
-      remainingSeconds: job.remainingSeconds,
-      totalSeconds: job.totalSeconds,
-      progress: job.totalSeconds > 0
-        ? Math.max(0, Math.min(
-          1,
-          1 - job.remainingSeconds / job.totalSeconds
-        ))
-        : 1,
-      ready: job.ready === true
-    };
-  });
-  return readonlyQuery({
-    npcId,
-    npcName: person.identity.name,
-    mainSlotBusy: !!current && (!parsed || parsed.npcId !== npcId),
-    current: parsed && parsed.npcId === npcId ? {
-      interactionId: parsed.interactionId,
-      label: actionDisplayName(current.key, model),
-      durationSeconds: currentDuration,
-      progress: currentDuration > 0
-        ? Math.min(1, stage2Elapsed(current) / currentDuration)
-        : 0
-    } : null,
-    gifts,
-    interactions,
-    parallel
-  });
-}
-
-function querySects() {
-  const model = stage4Model();
-  if (!model) return readonlyQuery({ wandering: true, sects: [] });
-  if (!model.systems || !model.systems.sects || !model.systems.sects.records ||
-      !model.systems.sects.player) {
-    return readonlyQuery({ wandering: true, sects: [] });
-  }
-  const player = model.systems.sects.player;
-  const current = stage4Sect(player.sectId);
-  return readonlyQuery({
-    wandering: !current,
-    currentSectId: current ? current.id : null,
-    currentSectName: current ? current.name : '散修',
-    sects: stage4Bootstrap.SectContent.list().map(function (definition) {
-      const record = model.systems.sects.records[definition.id];
-      return {
-        id: definition.id,
-        name: definition.name,
-        description: definition.description,
-        traits: definition.traits.slice(),
-        favoredResources: definition.favoredResources.slice(),
-        power: record ? record.power : 1,
-        reputation: record ? record.reputation : 0,
-        joined: player.sectId === definition.id
-      };
-    })
-  });
-}
-
-function querySect(input) {
-  const model = stage4Model();
-  if (!model || !model.systems || !model.systems.sects ||
-      !model.systems.sects.records || !model.systems.sects.player ||
-      !model.systems.npcs || !model.systems.npcs.records) {
-    return readonlyQuery(null);
-  }
-  const sectId = input && typeof input.sectId === 'string'
-    ? input.sectId
-    : null;
-  const definition = stage4Sect(sectId);
-  const record = model.systems.sects.records[sectId];
-  if (!definition || !record) return readonlyQuery(null);
-  const members = Object.keys(model.systems.npcs.records).filter(
-    function (npcId) {
-      return model.systems.npcs.records[npcId].sectId === sectId &&
-        model.systems.npcs.records[npcId].status === 'living';
-    }
-  );
-  const leader = stage4Person(model, record.leaderId);
-  const player = model.systems.sects.player;
-  const pairStates = model.systems.sects.pairStates;
-  const stanceCounts = {
-    allied: 0,
-    neutral: 0,
-    competitive: 0,
-    hostile: 0
-  };
-  Object.keys(pairStates).forEach(function (key) {
-    if (key.split('|').indexOf(sectId) < 0) return;
-    const stance = pairStates[key] && pairStates[key].state;
-    if (Object.prototype.hasOwnProperty.call(stanceCounts, stance)) {
-      stanceCounts[stance]++;
-    }
-  });
-  return readonlyQuery({
-    id: sectId,
-    name: definition.name,
-    description: definition.description,
-    traits: definition.traits.slice(),
-    favoredResources: definition.favoredResources.slice(),
-    bonuses: definition.bonuses.slice(),
-    power: record.power,
-    reputation: record.reputation,
-    memberCount: members.length,
-    leader: leader ? {
-      npcId: leader.id,
-      name: leader.identity.name
-    } : null,
-    stanceCounts,
-    joined: player.sectId === sectId,
-    contribution: player.contribution[sectId] || 0,
-    playerReputation: player.reputation[sectId] || 0
-  });
-}
-
-function queryWorld(input) {
-  const model = stage4Model();
-  if (!model) {
-    return readonlyQuery({
-      scope: 'nearby',
-      regions: [],
-      people: [],
-      sects: [],
-      families: [],
-      recent: [],
-      nextCursor: null
-    });
-  }
-  if (!model.systems || !model.systems.npcs || !model.systems.npcs.records ||
-      !model.systems.sects || !model.systems.sects.records) {
-    return readonlyQuery({
-      scope: 'nearby',
-      regions: [],
-      people: [],
-      sects: [],
-      families: [],
-      recent: [],
-      nextCursor: null
-    });
-  }
-  const requested = input && typeof input === 'object' ? input : {};
-  const scope = requested.scope === 'all' ? 'all' : 'nearby';
-  const regionId = stage4Region(requested.regionId)
-    ? requested.regionId
-    : model.player.regionId;
-  const records = model.systems.npcs.records;
-  const allLiving = Object.keys(records).filter(function (npcId) {
-    return records[npcId].status === 'living';
-  });
-  const scopedIds = scope === 'nearby'
-    ? allLiving.filter(function (npcId) {
-      return records[npcId].regionId === regionId;
-    })
-    : allLiving;
-  const families = {};
-  scopedIds.forEach(function (npcId) {
-    const familyId = records[npcId].familyId || '无家族记载';
-    if (!families[familyId]) {
-      families[familyId] = { id: familyId, count: 0, names: [] };
-    }
-    families[familyId].count++;
-    if (families[familyId].names.length < 3) {
-      families[familyId].names.push(records[npcId].identity.name);
-    }
-  });
-  const recentRows = stage4EventRows(
-    model,
-    'world',
-    scope
-  );
-  const page = stage4Paged(recentRows, requested.cursor, 20);
-  return readonlyQuery({
-    scope,
-    regionId,
-    filters: {
-      scopes: [
-        { id: 'nearby', label: '身边动态' },
-        { id: 'all', label: '天下传闻' }
-      ],
-      regions: stage4Bootstrap.RegionContent.list().map(function (region) {
-        return { id: region.id, name: region.name };
-      })
-    },
-    regions: stage4Bootstrap.RegionContent.list().map(function (region) {
-      return {
-        id: region.id,
-        name: region.name,
-        type: region.type,
-        description: region.description,
-        peopleCount: allLiving.filter(function (npcId) {
-          return records[npcId].regionId === region.id;
-        }).length
-      };
-    }),
-    people: scopedIds.slice(0, 20).map(function (npcId) {
-      return stage4PersonRow(model, npcId);
-    }).filter(Boolean),
-    sects: stage4Bootstrap.SectContent.list().map(function (definition) {
-      const record = model.systems.sects.records[definition.id];
-      return {
-        id: definition.id,
-        name: definition.name,
-        power: record.power,
-        reputation: record.reputation
-      };
-    }),
-    families: Object.keys(families).sort().map(function (familyId) {
-      return families[familyId];
-    }),
-    recent: page.items,
-    nextCursor: page.nextCursor
-  });
-}
-
-function queryPersistence() {
-  const status = getPersistenceStatus();
-  const publicKind = status.kind === 'future'
-    ? 'save'
-    : status.kind;
-  return readonlyQuery({
-    locked: !!status.locked,
-    kind: publicKind || null,
-    message: status.message || '',
-    canRetry: !!status.canRetry && status.kind !== 'future'
-  });
-}
-
-const EMPTY_SECT_CONTEXT = Object.freeze({
-  sectId: null,
-  favoredTechniqueIds: Object.freeze([]),
-  favoredTags: Object.freeze([])
-});
-
-function combatBasicAttackApi() {
-  if (basicAttackContentApi) return basicAttackContentApi;
-  if (typeof BasicAttackContent !== 'undefined') return BasicAttackContent;
-  return null;
-}
-
-function combatActiveWeaponName(model) {
-  try {
-    if (stage3Bootstrap.CombatLoadouts &&
-        typeof stage3Bootstrap.CombatLoadouts.query === 'function') {
-      const viewed = stage3Bootstrap.CombatLoadouts.query(model);
-      const loadoutId = model && model.player && model.player.combat
-        ? model.player.combat.activeLoadoutId
-        : null;
-      const rows = viewed && Array.isArray(viewed.plans) ? viewed.plans : [];
-      let row = null;
-      for (let i = 0; i < rows.length; i++) {
-        if (rows[i] && rows[i].id === loadoutId) {
-          row = rows[i];
-          break;
-        }
-      }
-      if (!row) row = rows[0];
-      const slots = row && Array.isArray(row.equipment) ? row.equipment : [];
-      for (let i = 0; i < slots.length; i++) {
-        if (slots[i] && slots[i].slot === 'weapon' && slots[i].name) {
-          return slots[i].name;
-        }
-      }
-    }
-  } catch (error) {
-    return '';
-  }
-  return '';
-}
-
-function combatPlayerBasicAttack(model) {
-  const api = combatBasicAttackApi();
-  if (!api) return { id: 'basic:unarmed', name: '碎空拳', glyph: '拳' };
-  return api.playerBasicAttack(combatActiveWeaponName(model));
-}
-
-function combatEnemyBasicAttack(enemyId) {
-  const api = combatBasicAttackApi();
-  if (!api) return { id: 'basic:enemy:default', name: '扑击', glyph: '扑' };
-  return api.enemyBasicAttack(enemyId);
-}
-
-function combatCurrentActionView(session, model) {
-  try {
-    const selected = session && session.lastPlayerAction;
-    if (!selected ||
-        typeof selected.id !== 'string' ||
-        !Number.isSafeInteger(selected.tick) ||
-        selected.tick < 0) {
-      return null;
-    }
-    const basicApi = combatBasicAttackApi();
-    if (selected.id === 'normalAttack' ||
-        (basicApi && basicApi.isBasicAttackId(selected.id))) {
-      const basic = combatPlayerBasicAttack(model);
-      return {
-        id: basic.id,
-        name: basic.name,
-        slotIndex: 0,
-        tick: selected.tick
-      };
-    }
-    const technique = stage3Bootstrap.TechniqueContent.get(selected.id);
-    if (!technique ||
-        typeof technique.name !== 'string' ||
-        !Number.isSafeInteger(selected.slotIndex) ||
-        selected.slotIndex < 0) {
-      return null;
-    }
-    return {
-      id: selected.id,
-      name: technique.name,
-      slotIndex: selected.slotIndex + 1,
-      tick: selected.tick
-    };
-  } catch (error) {
-    return null;
-  }
-}
-
-function combatStatusEffectRows(statuses) {
-  const rows = [];
-  if (statuses && typeof statuses === 'object') {
-    Object.keys(statuses).forEach(function (statusId) {
-      const status = statuses[statusId];
-      const remaining = status && Number(status.remainingTicks);
-      if (Number.isFinite(remaining) && remaining > 0) {
-        rows.push({ id: statusId, remainingTicks: remaining });
-      }
-    });
-  }
-  return rows;
-}
-
-function combatTechniqueSlotRows(session, model) {
-  const snapshot = session && session.loadoutSnapshot;
-  const slots = snapshot && Array.isArray(snapshot.activeTechniques)
-    ? snapshot.activeTechniques
-    : [];
-  const player = session && session.player;
-  const cooldowns = player && player.techniqueCooldowns
-    ? player.techniqueCooldowns
-    : {};
-  const derived = snapshot && snapshot.derivedStats
-    ? snapshot.derivedStats
-    : null;
-  const cdr = derived && Number.isFinite(derived.cooldownReduction)
-    ? Math.max(0, Math.min(0.5, derived.cooldownReduction))
-    : 0;
-  function effectiveCooldown(baseTicks) {
-    if (!Number.isFinite(baseTicks) || baseTicks <= 0) return 0;
-    return Math.max(1, Math.floor(baseTicks * (1 - cdr)));
-  }
-  const basic = combatPlayerBasicAttack(model);
-  const interval = player && Number.isFinite(player.attackIntervalTicks)
-    ? player.attackIntervalTicks
-    : 8;
-  const remainingBasic = player && Number.isFinite(player.cooldownTicks)
-    ? Math.max(0, player.cooldownTicks)
-    : 0;
-  const rows = [{
-    slotIndex: 0,
-    techniqueId: basic.id,
-    name: basic.name,
-    glyph: basic.glyph,
-    qiCost: 0,
-    cooldownTicks: interval,
-    remainingCooldownTicks: remainingBasic,
-    kind: 'basic'
-  }];
-  slots.forEach(function (slot, index) {
-    const techniqueId = slot && typeof slot.techniqueId === 'string'
-      ? slot.techniqueId
-      : null;
-    if (!techniqueId) {
-      rows.push({
-        slotIndex: index + 1,
-        techniqueId: null,
-        name: null,
-        qiCost: 0,
-        cooldownTicks: 0,
-        remainingCooldownTicks: 0,
-        kind: 'technique'
-      });
-      return;
-    }
-    let technique = null;
-    try {
-      technique = stage3Bootstrap.TechniqueContent.get(techniqueId);
-    } catch (error) {
-      technique = null;
-    }
-    const baseCd = technique && Number.isFinite(technique.cooldownTicks)
-      ? technique.cooldownTicks
-      : 0;
-    rows.push({
-      slotIndex: index + 1,
-      techniqueId: techniqueId,
-      name: technique && typeof technique.name === 'string'
-        ? technique.name
-        : techniqueId,
-      qiCost: technique && Number.isFinite(technique.qiCost)
-        ? technique.qiCost
-        : 0,
-      cooldownTicks: effectiveCooldown(baseCd),
-      remainingCooldownTicks: Number(cooldowns[techniqueId]) || 0,
-      kind: 'technique'
-    });
-  });
-  return rows;
-}
-
-function combatBattleTitle(session) {
-  try {
-    if (session.mode === 'dungeon' && session.dungeonId) {
-      const dungeon = stage3Bootstrap.CombatContent.getDungeon(
-        session.dungeonId
-      );
-      if (dungeon && typeof dungeon.name === 'string') return dungeon.name;
-    }
-    if (session.regionId) {
-      const region = stage3Bootstrap.CombatContent.getRegion(
-        session.regionId
-      );
-      if (region && typeof region.name === 'string') return region.name;
-    }
-  } catch (error) {
-    return null;
-  }
-  return null;
-}
-
-function combatWavePlanView(session) {
-  if (session.mode !== 'dungeon' || !session.dungeonId) return null;
-  try {
-    const dungeon = stage3Bootstrap.CombatContent.getDungeon(
-      session.dungeonId
-    );
-    if (!dungeon || !Array.isArray(dungeon.waves)) return null;
-    const current = dungeon.waves[session.waveIndex];
-    return {
-      waveCount: dungeon.waves.length,
-      enemyTotal: current && Number.isFinite(current.count)
-        ? current.count
-        : null
-    };
-  } catch (error) {
-    return null;
-  }
-}
-
-function combatUnitTechniqueRows(unit) {
-  const techniques = unit && Array.isArray(unit.techniques)
-    ? unit.techniques
-    : [];
-  const cooldowns = unit && unit.cooldowns && typeof unit.cooldowns === 'object'
-    ? unit.cooldowns
-    : {};
-  const interval = unit && Number.isFinite(unit.actionIntervalTicks)
-    ? unit.actionIntervalTicks
-    : 8;
-  const remainingBasic = unit && Number.isFinite(unit.cooldownTicks)
-    ? Math.max(0, unit.cooldownTicks)
-    : 0;
-  let basic;
-  if (unit && unit.sourceType === 'enemy') {
-    basic = combatEnemyBasicAttack(unit.sourceId);
-  } else {
-    basic = combatPlayerBasicAttack(stage2QueryModel());
-  }
-  const rows = [{
-    slotIndex: 0,
-    techniqueId: basic.id,
-    name: basic.name,
-    glyph: basic.glyph,
-    qiCost: 0,
-    cooldownTicks: interval,
-    remainingCooldownTicks: remainingBasic,
-    kind: 'basic'
-  }];
-  techniques.slice(0, 3).forEach(function (slot, index) {
-    const techniqueId = slot && typeof slot.techniqueId === 'string'
-      ? slot.techniqueId
-      : null;
-    if (!techniqueId) {
-      rows.push({
-        slotIndex: index + 1,
-        techniqueId: null,
-        name: null,
-        qiCost: 0,
-        cooldownTicks: 0,
-        remainingCooldownTicks: 0,
-        kind: 'technique'
-      });
-      return;
-    }
-    let technique = null;
-    try {
-      technique = stage3Bootstrap.TechniqueContent
-        ? stage3Bootstrap.TechniqueContent.get(techniqueId)
-        : null;
-    } catch (error) {
-      technique = null;
-    }
-    rows.push({
-      slotIndex: index + 1,
-      techniqueId: techniqueId,
-      name: technique && typeof technique.name === 'string'
-        ? technique.name
-        : techniqueId,
-      qiCost: technique && Number.isFinite(technique.qiCost)
-        ? technique.qiCost
-        : 0,
-      cooldownTicks: technique && Number.isFinite(technique.cooldownTicks)
-        ? technique.cooldownTicks
-        : 0,
-      remainingCooldownTicks: Number(cooldowns[techniqueId]) || 0,
-      kind: 'technique'
-    });
-  });
-  return rows;
-}
-
-function combatEnemyPortraitSrc(enemyId) {
-  if (typeof enemyId !== 'string' || !enemyId) return '';
-  try {
-    const definition = stage3Bootstrap.CombatContent.getEnemy(enemyId);
-    if (definition && typeof definition.portraitSrc === 'string') {
-      return definition.portraitSrc;
-    }
-  } catch (error) {
-    // fall through
-  }
-  return '';
-}
-
-function combatUnitView(unit) {
-  let portraitSrc = '';
-  let rank = null;
-  if (unit.sourceType === 'enemy') {
-    portraitSrc = combatEnemyPortraitSrc(unit.sourceId);
-    try {
-      const definition = stage3Bootstrap.CombatContent.getEnemy(unit.sourceId);
-      if (definition && typeof definition.rank === 'string') {
-        rank = definition.rank;
-      }
-    } catch (error) {
-      rank = null;
-    }
-  }
-  return {
-    id: unit.id,
-    name: unit.name,
-    sourceType: unit.sourceType,
-    sourceId: unit.sourceId,
-    portraitSrc: portraitSrc,
-    rank: rank,
-    hp: unit.hp,
-    maxHp: unit.maxHp,
-    qi: unit.qi,
-    maxQi: unit.maxQi,
-    fallen: unit.fallen === true,
-    shield: Number.isFinite(unit.shield) ? unit.shield : 0,
-    cooldownTicks: unit.cooldownTicks,
-    actionIntervalTicks: unit.actionIntervalTicks,
-    statusEffects: combatStatusEffectRows(unit.statuses),
-    techniques: combatUnitTechniqueRows(unit),
-    cooperation: Number.isFinite(unit.cooperation) ? unit.cooperation : 1
-  };
-}
-
-function combatLootLogView(model) {
-  const combat = model && model.systems && model.systems.combat
-    ? model.systems.combat
-    : {};
-  return (combat.lootLog || []).map(function (entry) {
-    const itemContent = stage2Bootstrap && stage2Bootstrap.ItemContent;
-    const items = {};
-    Object.keys(entry.items || {}).forEach(function (itemId) {
-      const item = itemContent ? itemContent.get(itemId) : null;
-      const row = {
-        itemId: itemId,
-        count: entry.items[itemId],
-        name: item && item.name ? item.name : itemId,
-        icon: item && item.icon ? item.icon : '📦',
-        quality: item && item.quality ? item.quality : 'white',
-        category: item && item.category ? item.category : 'material',
-        description: item && item.description ? item.description : ''
-      };
-      if (item) {
-        ['iconSrc', 'iconSrc50', 'iconSrc100'].forEach(function (key) {
-          if (item[key]) row[key] = item[key];
-        });
-      }
-      items[itemId] = row;
-    });
-    return {
-      enemyId: entry.enemyId,
-      enemyName: entry.enemyName,
-      rank: entry.rank,
-      rankLabel: combatRankDisplayName(entry.rank),
-      items: items,
-      currency: entry.currency,
-      firstClear: !!entry.firstClear,
-      dungeonClear: !!entry.dungeonClear,
-      createdAtMs: entry.createdAtMs
-    };
-  });
-}
-
-function combatFxSkillName(techniqueId, skillType, side, sourceId, model) {
-  const basicApi = combatBasicAttackApi();
-  if (basicApi && basicApi.isBasicAttackId(techniqueId)) {
-    if (side === 'enemy') {
-      return combatEnemyBasicAttack(sourceId).name;
-    }
-    return combatPlayerBasicAttack(model).name;
-  }
-  if (typeof techniqueId === 'string' && techniqueId &&
-      stage3Bootstrap.TechniqueContent) {
-    try {
-      const technique = stage3Bootstrap.TechniqueContent.get(techniqueId);
-      if (technique && typeof technique.name === 'string' && technique.name) {
-        return technique.name;
-      }
-    } catch (error) {
-      // fall through
-    }
-  }
-  if (skillType === 'attack') {
-    if (side === 'enemy') return combatEnemyBasicAttack(sourceId).name;
-    return combatPlayerBasicAttack(model).name;
-  }
-  return null;
-}
-
-function combatFxActionsView(model) {
-  const combat = model && model.systems && model.systems.combat
-    ? model.systems.combat
-    : null;
-  const rows = combat && Array.isArray(combat.fxActions)
-    ? combat.fxActions
-    : [];
-  return rows.map(function (row) {
-    const skillType = typeof row.skillType === 'string'
-      ? row.skillType
-      : 'other';
-    return {
-      id: Number(row.id) || 0,
-      side: row.side === 'enemy' ? 'enemy' : 'player',
-      targetSide: row.targetSide === 'enemy' ? 'enemy' : 'player',
-      sourceId: typeof row.sourceId === 'string' ? row.sourceId : '',
-      targetId: typeof row.targetId === 'string' ? row.targetId : '',
-      skillName: combatFxSkillName(
-        row.techniqueId,
-        skillType,
-        row.side === 'enemy' ? 'enemy' : 'player',
-        typeof row.sourceId === 'string' ? row.sourceId : '',
-        model
-      ),
-      skillType: skillType,
-      hit: row.hit === true,
-      damage: Math.max(0, Math.floor(Number(row.damage) || 0)),
-      heal: Math.max(0, Math.floor(Number(row.heal) || 0)),
-      critical: row.critical === true
-    };
-  });
-}
-
-function combatActiveView(model) {
-  const session = model && model.systems && model.systems.combat
-    ? model.systems.combat.session
-    : null;
-  if (!session) return null;
-  const actions = combatFxActionsView(model);
-  if (session.teams && Array.isArray(session.teams.allies) &&
-      Array.isArray(session.teams.enemies)) {
-    return {
-      layout: 'vertical-team',
-      mode: session.mode,
-      actionKey: session.actionKey,
-      title: combatBattleTitle(session),
-      dangerLevel: session.dangerLevel || 'safe',
-      allies: session.teams.allies.map(combatUnitView),
-      enemies: session.teams.enemies.map(combatUnitView),
-      wave: {
-        index: session.waveIndex,
-        number: session.waveIndex + 1,
-        defeated: session.waveDefeated,
-        intermissionTicks: session.intermissionTicks || 0
-      },
-      lootLog: combatLootLogView(model),
-      actions: actions
-    };
-  }
-  const player = session.player || {};
-  const enemy = session.enemy || null;
-  let enemyName = null;
-  let enemyRank = null;
-  let enemyPortraitSrc = '';
-  if (enemy) {
-    try {
-      const definition = stage3Bootstrap.CombatContent.getEnemy(enemy.id);
-      if (definition) {
-        enemyName = typeof definition.name === 'string'
-          ? definition.name
-          : null;
-        enemyRank = typeof definition.rank === 'string'
-          ? definition.rank
-          : null;
-        enemyPortraitSrc = typeof definition.portraitSrc === 'string'
-          ? definition.portraitSrc
-          : '';
-      }
-    } catch (error) {
-      enemyName = null;
-    }
-  }
-  const wavePlan = combatWavePlanView(session);
-  return {
-    mode: session.mode,
-    actionKey: session.actionKey,
-    loadoutId: session.loadoutId,
-    title: combatBattleTitle(session),
-    currentAction: combatCurrentActionView(session, model),
-    techniques: combatTechniqueSlotRows(session, model),
-    unlockedActiveSlots: unlockedActiveSlotCount(model),
-    player: {
-      hp: player.hp,
-      maxHp: player.maxHp,
-      qi: player.qi,
-      maxQi: player.maxQi,
-      cooldownTicks: player.cooldownTicks,
-      attackIntervalTicks: player.attackIntervalTicks,
-      shield: Number.isFinite(player.shield) ? player.shield : 0,
-      statusEffects: combatStatusEffectRows(player.statuses),
-      techniqueCooldowns: Object.assign(
-        {},
-        player.techniqueCooldowns || {}
-      )
-    },
-    enemy: enemy
-      ? {
-        id: enemy.id,
-        name: enemyName || enemy.id,
-        rank: enemyRank,
-        rankLabel: combatRankDisplayName(enemyRank),
-        portraitSrc: enemyPortraitSrc,
-        hp: enemy.hp,
-        maxHp: enemy.maxHp,
-        cooldownTicks: enemy.cooldownTicks,
-        attackIntervalTicks: enemy.attackIntervalTicks,
-        statusEffects: combatStatusEffectRows(enemy.statuses),
-        phase: enemy.phase
-      }
-      : null,
-    wave: {
-      index: session.waveIndex,
-      number: session.waveIndex + 1,
-      defeated: session.waveDefeated,
-      intermissionTicks: session.intermissionTicks,
-      waveCount: wavePlan ? wavePlan.waveCount : null,
-      enemyTotal: wavePlan ? wavePlan.enemyTotal : null
-    },
-    lootLog: combatLootLogView(model),
-    actions: actions,
-    phase: {
-      index: session.bossPhase,
-      number: session.bossPhase + 1
-    }
-  };
-}
-
-function combatPendingLootView(model) {
-  try {
-    const pending = stage3Bootstrap.CombatRewards.queryPending(model);
-    if (!pending) return null;
-    const claim = stage3Bootstrap.CombatRewards.claimPending(model);
-    if (!claim ||
-        (claim.ok !== true && claim.code !== 'inventory_full')) {
-      return null;
-    }
-    const inventory = stage2Bootstrap.Inventory.query(
-      model.player.inventory,
-      { category: 'all', search: '' }
-    );
-    if (!inventory ||
-        !Number.isSafeInteger(inventory.free) ||
-        inventory.free < 0 ||
-        !Array.isArray(inventory.items)) {
-      return null;
-    }
-    const occupied = {};
-    inventory.items.forEach(function (item) {
-      if (item && typeof item.itemId === 'string') {
-        occupied[item.itemId] = true;
-      }
-    });
-    const additionalSlots = Object.keys(pending.items).reduce(
-      function (total, itemId) {
-        return total + (occupied[itemId] ? 0 : 1);
-      },
-      0
-    );
-    return {
-      id: pending.id,
-      source: pending.source,
-      items: pending.items,
-      itemRows: displayCountRows(pending.items, stage3ItemDisplayName),
-      currency: pending.currency,
-      createdAtMs: pending.createdAtMs,
-      requiredFreeSlots: Math.max(0, additionalSlots - inventory.free),
-      canClaim: claim.ok === true
-    };
-  } catch (error) {
-    return null;
-  }
-}
-
-function combatInjuryView(model) {
-  try {
-    const injury = model &&
-      model.player &&
-      model.player.combat &&
-      model.player.combat.injury;
-    if (!injury ||
-        injury.id !== 'severe-injury' ||
-        !Number.isFinite(injury.remainingSeconds) ||
-        injury.remainingSeconds < 0) {
-      return null;
-    }
-    const owned = stage2Bootstrap.Inventory.availableQuantity(
-      model.player.inventory,
-      'healingPill'
-    );
-    if (!Number.isSafeInteger(owned) || owned < 0) return null;
-    return {
-      id: injury.id,
-      remainingSeconds: injury.remainingSeconds,
-      treatment: {
-        itemId: 'healingPill',
-        owned: owned,
-        available: owned > 0
-      }
-    };
-  } catch (error) {
-    return null;
-  }
-}
-
-function combatStatusView(model) {
-  return {
-    pendingLoot: combatPendingLootView(model),
-    injury: combatInjuryView(model)
-  };
-}
-
-function combatDropPreviewView(row) {
-  const itemIds = Array.isArray(row.itemIds) ? row.itemIds.slice() : [];
-  const names = row.itemId
-    ? [stage3ItemDisplayName(row.itemId)]
-    : itemIds.map(stage3ItemDisplayName);
-  return {
-    itemId: row.itemId,
-    itemIds,
-    name: names.join(' / ') || '未知战利品',
-    min: row.min,
-    max: row.max,
-    chance: row.chance
-  };
-}
-
-function combatDropPreviewRows(rows) {
-  return Array.isArray(rows)
-    ? rows.map(combatDropPreviewView)
-    : [];
-}
-
-const COMBAT_RANK_LABELS = Object.freeze({
-  normal: '普通',
-  elite: '精英',
-  boss: '首领'
-});
-
-function combatRankDisplayName(rank) {
-  return COMBAT_RANK_LABELS[rank] || '未知';
-}
-
-function unlockedActiveSlotCount(model) {
-  const realmId = model && model.player && model.player.breakthrough
-    ? model.player.breakthrough.realmId
-    : null;
-  let index = 0;
-  try {
-    const realm = stage3Bootstrap.RealmContent.getRealm(realmId);
-    if (realm && Number.isFinite(realm.index) && realm.index > 0) {
-      index = realm.index;
-    }
-  } catch (error) {
-    index = 0;
-  }
-  if (stage3Bootstrap.RealmContent &&
-      typeof stage3Bootstrap.RealmContent.unlockedActiveTechniqueSlots ===
-        'function') {
-    return stage3Bootstrap.RealmContent.unlockedActiveTechniqueSlots(index);
-  }
-  return Math.min(3, Math.max(1, index >= 10 ? 3 : (index >= 9 ? 2 : 1)));
-}
-
-function unlockedPassiveSlotCount(model) {
-  const realmId = model && model.player && model.player.breakthrough
-    ? model.player.breakthrough.realmId
-    : null;
-  let index = 0;
-  try {
-    const realm = stage3Bootstrap.RealmContent.getRealm(realmId);
-    if (realm && Number.isFinite(realm.index) && realm.index > 0) {
-      index = realm.index;
-    }
-  } catch (error) {
-    index = 0;
-  }
-  if (stage3Bootstrap.RealmContent &&
-      typeof stage3Bootstrap.RealmContent.unlockedPassiveTechniqueSlots ===
-        'function') {
-    return stage3Bootstrap.RealmContent.unlockedPassiveTechniqueSlots(index);
-  }
-  if (index >= 12) return 5;
-  if (index >= 11) return 4;
-  if (index >= 10) return 3;
-  if (index >= 9) return 2;
-  return 1;
-}
-
-function combatRegionViewRows(rows) {
-  return rows.map(function (region) {
-    return Object.assign({}, region, {
-      enemies: region.enemies.map(function (enemy) {
-        const basic = combatEnemyBasicAttack(enemy.id);
-        return Object.assign({}, enemy, {
-          rankLabel: combatRankDisplayName(enemy.rank),
-          drops: combatDropPreviewRows(enemy.drops),
-          basicAttack: {
-            id: basic.id,
-            name: basic.name,
-            glyph: basic.glyph
-          }
-        });
-      })
-    });
-  });
-}
-
-function combatDungeonViewRows(rows) {
-  return rows.map(function (dungeon) {
-    const firstClear = dungeon.firstClear || {};
-    const prerequisites = dungeon.prerequisites || {};
-    return Object.assign({}, dungeon, {
-      waves: (dungeon.waves || []).map(function (wave) {
-        return Object.assign({}, wave, {
-          rankLabel: combatRankDisplayName(wave.rank)
-        });
-      }),
-      prerequisites: Object.assign({}, prerequisites, {
-        items: (prerequisites.items || []).map(function (item) {
-          return Object.assign({}, item, {
-            name: stage3ItemDisplayName(item.itemId)
-          });
-        })
-      }),
-      firstClear: Object.assign({}, firstClear, {
-        rewardRows: displayCountRows(
-          firstClear.rewards || {},
-          stage3ItemDisplayName
-        )
-      }),
-      repeatDrops: combatDropPreviewRows(dungeon.repeatDrops)
-    });
-  });
-}
-
-function queryCombat(input) {
-  if (!useStage3Runtime) return readonlyQuery(null);
-  const fields = safeInputFields(input, ['tab']);
-  if (!fields || typeof fields.tab !== 'string') {
-    return readonlyQuery(null);
-  }
-  const model = stage2QueryModel();
-  const active = combatActiveView(model);
-  const status = combatStatusView(model);
-  if (fields.tab === 'regions') {
-    const view = stage3Bootstrap.CombatProgress.queryRegions(model);
-    return readonlyQuery({
-      tab: 'regions',
-      regions: combatRegionViewRows(view.regions),
-      active,
-      pendingLoot: status.pendingLoot,
-      injury: status.injury
-    });
-  }
-  if (fields.tab === 'dungeons') {
-    const view = stage3Bootstrap.CombatProgress.queryDungeons(model);
-    return readonlyQuery({
-      tab: 'dungeons',
-      dungeons: combatDungeonViewRows(view.dungeons),
-      active,
-      pendingLoot: status.pendingLoot,
-      injury: status.injury
-    });
-  }
-  return readonlyQuery(null);
-}
-
-function combatLoadoutOption(row, selected) {
-  const optionId = row.instanceId || row.itemId;
-  const option = {
-    itemId: optionId,
-    name: row.name,
-    quantity: row.quantity,
-    bound: row.bound,
-    available: row.available,
-    selected: optionId === selected
-  };
-  if (row.instanceId) option.instanceId = row.instanceId;
-  if (row.baseId) option.baseId = row.baseId;
-  if (row.slot) option.slot = row.slot;
-  if (row.quality) option.quality = row.quality;
-  if (Number.isFinite(Number(row.enhancementLevel))) {
-    option.enhancementLevel = Number(row.enhancementLevel) || 0;
-  }
-  ['iconSrc', 'iconSrc50', 'iconSrc100'].forEach(function (key) {
-    if (typeof row[key] === 'string' && row[key]) option[key] = row[key];
-  });
-  return option;
-}
-
-function combatLoadoutSelectedOption(itemId, name, extra) {
-  const option = {
-    itemId: itemId,
-    name: name || itemId,
-    quantity: 0,
-    bound: 0,
-    available: 0,
-    selected: true
-  };
-  if (extra && typeof extra === 'object') {
-    if (extra.instanceId) option.instanceId = extra.instanceId;
-    if (extra.slot) option.slot = extra.slot;
-    if (extra.quality) option.quality = extra.quality;
-    if (Number.isFinite(Number(extra.enhancementLevel))) {
-      option.enhancementLevel = Number(extra.enhancementLevel) || 0;
-    }
-    ['iconSrc', 'iconSrc50', 'iconSrc100'].forEach(function (key) {
-      if (typeof extra[key] === 'string' && extra[key]) {
-        option[key] = extra[key];
-      }
-    });
-  }
-  return option;
-}
-
-const STAGE3_CONDITION_OPTIONS = Object.freeze({
-  enemyHasStatus: Object.freeze([
-    Object.freeze({ id: 'shock', label: '震慑' }),
-    Object.freeze({ id: 'slow', label: '迟缓' }),
-    Object.freeze({ id: 'burn', label: '灼烧' }),
-    Object.freeze({ id: 'poison', label: '中毒' })
-  ]),
-  enemyMissingStatus: Object.freeze([
-    Object.freeze({ id: 'shock', label: '震慑' }),
-    Object.freeze({ id: 'slow', label: '迟缓' }),
-    Object.freeze({ id: 'burn', label: '灼烧' }),
-    Object.freeze({ id: 'poison', label: '中毒' }),
-    Object.freeze({ id: 'weaken', label: '虚弱' })
-  ]),
-  selfMissingBuff: Object.freeze([
-    Object.freeze({ id: 'haste', label: '迅捷' }),
-    Object.freeze({ id: 'shield', label: '护盾' }),
-    Object.freeze({ id: 'inspire', label: '鼓舞' }),
-    Object.freeze({ id: 'guard', label: '替伤' })
-  ])
-});
-
-function combatConditionOptionsView(available) {
-  const source = available ? STAGE3_CONDITION_OPTIONS : {
-    enemyHasStatus: [],
-    enemyMissingStatus: [],
-    selfMissingBuff: []
-  };
-  return {
-    enemyHasStatus: source.enemyHasStatus.map(function (row) {
-      return { id: row.id, label: row.label };
-    }),
-    enemyMissingStatus: (source.enemyMissingStatus || []).map(function (row) {
-      return { id: row.id, label: row.label };
-    }),
-    selfMissingBuff: source.selfMissingBuff.map(function (row) {
-      return { id: row.id, label: row.label };
-    })
-  };
-}
-
-function validEnumeratedCombatCondition(condition) {
-  try {
-    if (!condition || typeof condition !== 'object') return true;
-    const type = condition.type;
-    if (type !== 'enemyHasStatus' && type !== 'enemyMissingStatus' &&
-        type !== 'selfMissingBuff') {
-      return true;
-    }
-    const field = type === 'selfMissingBuff' ? 'buffId' : 'statusId';
-    const options = STAGE3_CONDITION_OPTIONS[type] || [];
-    const value = condition[field];
-    return options.some(function (row) {
-      return row.id === value;
-    });
-  } catch (error) {
-    return false;
-  }
-}
-
-function combatLoadoutPlans(model, plans) {
-  let inventory;
-  try {
-    inventory = stage2Bootstrap.Inventory.query(
-      model.player.inventory,
-      { category: 'all', search: '' }
-    );
-  } catch (error) {
-    inventory = null;
-  }
-  const inventoryRows = inventory && Array.isArray(inventory.items)
-    ? inventory.items
-    : [];
-  const referencedEquipment = {};
-  plans.forEach(function (plan) {
-    plan.equipment.forEach(function (row) {
-      if (row.itemId) referencedEquipment[row.itemId] = true;
-    });
-  });
-
-  function equipmentOptions(slot, selected) {
-    const options = [];
-    const seen = {};
-    inventoryRows.forEach(function (row) {
-      if (!row) return;
-      if (row.instanceId && row.slot === slot) {
-        if (
-          row.available > 0 ||
-          row.instanceId === selected ||
-          referencedEquipment[row.instanceId] === true
-        ) {
-          if (!seen[row.instanceId]) {
-            seen[row.instanceId] = true;
-            options.push(combatLoadoutOption(row, selected));
-          }
-        }
-        return;
-      }
-      if (row.instanceId) return;
-      try {
-        const definition =
-          stage3Bootstrap.CombatContent.getEquipment(row.itemId);
-        if (
-          definition &&
-          definition.slot === slot &&
-          (
-            row.available > 0 ||
-            row.itemId === selected ||
-            referencedEquipment[row.itemId] === true
-          ) &&
-          !seen[row.itemId]
-        ) {
-          seen[row.itemId] = true;
-          options.push(combatLoadoutOption(row, selected));
-        }
-      } catch (error) {}
-    });
-    if (selected && !options.some(function (option) {
-      return option.itemId === selected ||
-        option.instanceId === selected;
-    })) {
-      try {
-        if (useEquipmentRuntime && equipmentBootstrap.Equipment) {
-          const instance = equipmentInstance(model, selected);
-          const resolved = instance
-            ? equipmentBootstrap.Equipment.resolve(instance)
-            : null;
-          if (resolved && resolved.slot === slot) {
-            options.push(combatLoadoutSelectedOption(
-              selected,
-              resolved.name,
-              {
-                instanceId: selected,
-                slot: resolved.slot,
-                quality: resolved.quality,
-                enhancementLevel: resolved.enhancementLevel,
-                iconSrc50: resolved.iconSrc50,
-                iconSrc100: resolved.iconSrc100
-              }
-            ));
-            return options;
-          }
-        }
-        const definition =
-          stage3Bootstrap.CombatContent.getEquipment(selected);
-        if (definition && definition.slot === slot) {
-          options.push(combatLoadoutSelectedOption(
-            selected,
-            definition.name
-          ));
-        }
-      } catch (error) {}
-    }
-    return options;
-  }
-
-  function supplyOptions(slot, selected) {
-    const options = inventoryRows.filter(function (row) {
-      if (!row || row.instanceId) return false;
-      try {
-        const definition =
-          stage3Bootstrap.CombatContent.getSupply(row.itemId);
-        return definition &&
-          definition.type === slot &&
-          (row.available > 0 || row.itemId === selected);
-      } catch (error) {
-        return false;
-      }
-    }).map(function (row) {
-      return combatLoadoutOption(row, selected);
-    });
-    if (selected && !options.some(function (option) {
-      return option.itemId === selected;
-    })) {
-      try {
-        const definition =
-          stage3Bootstrap.CombatContent.getSupply(selected);
-        const item = stage2Bootstrap.ItemContent.get(selected);
-        if (definition && definition.type === slot) {
-          const extra = {};
-          ['iconSrc', 'iconSrc50', 'iconSrc100'].forEach(function (key) {
-            if (item && typeof item[key] === 'string' && item[key]) {
-              extra[key] = item[key];
-            }
-          });
-          options.push(combatLoadoutSelectedOption(
-            selected,
-            item ? item.name : selected,
-            extra
-          ));
-        }
-      } catch (error) {}
-    }
-    return options;
-  }
-
-  return plans.map(function (plan) {
-    return Object.assign({}, plan, {
-      equipment: plan.equipment.map(function (row) {
-        return Object.assign({}, row, {
-          options: equipmentOptions(row.slot, row.itemId)
-        });
-      }),
-      supplies: plan.supplies.map(function (row) {
-        const item = row.itemId && stage2Bootstrap.ItemContent
-          ? stage2Bootstrap.ItemContent.get(row.itemId)
-          : null;
-        const enriched = {
-          name: row.itemId ? stage3ItemDisplayName(row.itemId) : null,
-          options: supplyOptions(row.slot, row.itemId)
-        };
-        if (item) {
-          ['iconSrc', 'iconSrc50', 'iconSrc100'].forEach(function (key) {
-            if (typeof item[key] === 'string' && item[key]) {
-              enriched[key] = item[key];
-            }
-          });
-        }
-        return Object.assign({}, row, enriched);
-      })
-    });
-  });
-}
-
-function queryCombatLoadouts() {
-  if (!useStage3Runtime) {
-    return readonlyQuery({
-      activeLoadoutId: null,
-      activeSessionLoadoutId: null,
-      maxLoadouts: 5,
-      canCreate: false,
-      tabs: [],
-      plans: [],
-      conditionOptions: combatConditionOptionsView(false),
-      currentDerivedStats: null
-    });
-  }
-  const model = stage2QueryModel();
-  const view = stage3Bootstrap.CombatLoadouts.query(model);
-  const plans = combatLoadoutPlans(model, view.loadouts);
-  return readonlyQuery({
-    activeLoadoutId: view.activeLoadoutId,
-    activeSessionLoadoutId: view.activeSessionLoadoutId,
-    maxLoadouts: view.maxLoadouts,
-    canCreate: view.canCreate,
-    tabs: view.tabs,
-    plans: plans,
-    conditionOptions: combatConditionOptionsView(true),
-    unlockedActiveSlots: unlockedActiveSlotCount(model),
-    unlockedPassiveSlots: unlockedPassiveSlotCount(model),
-    currentDerivedStats: view.activeLoadoutId
-      ? stage3Bootstrap.CombatStats.derive(model, view.activeLoadoutId)
-      : null
-  });
-}
-
-const STAGE3_TECHNIQUE_TAG_LABELS = Object.freeze({
-  sword: '剑诀',
-  fist: '拳法',
-  spirit: '灵力',
-  healing: '疗愈',
-  qi: '真气',
-  thunder: '雷法',
-  talisman: '符法',
-  beast: '御兽',
-  array: '阵法',
-  body: '炼体',
-  movement: '身法',
-  pill: '丹道',
-  music: '音律'
-});
-
-function techniquePercent(value) {
-  return Math.round((Number(value) || 0) * 100) + '%';
-}
-
-function techniqueStatusDisplayName(statusId) {
-  if (statusId === 'shock') return '震慑';
-  if (statusId === 'binding' || statusId === 'slow') return '迟缓';
-  if (statusId === 'burn') return '灼烧';
-  if (statusId === 'poison') return '中毒';
-  if (statusId === 'haste') return '迅捷';
-  if (statusId === 'weaken') return '虚弱';
-  if (statusId === 'inspire') return '鼓舞';
-  if (statusId === 'silence') return '禁言';
-  if (statusId === 'vulnerable') return '易伤';
-  return '状态';
-}
-
-function stage3TechniqueEffectText(effect) {
-  if (!effect || typeof effect !== 'object') return '无';
-  if (effect.type === 'attack' || effect.type === 'aoeAttack') {
-    const damage = '造成 ' + techniquePercent(effect.multiplier) +
-      ' 攻击伤害';
-    const parts = [
-      effect.type === 'aoeAttack'
-        ? '群体' + damage
-        : (effect.hits > 1 ? '连续 ' + effect.hits + ' 次' + damage : damage)
-    ];
-    if (effect.defenseIgnore) {
-      parts.push('无视 ' + techniquePercent(effect.defenseIgnore) + ' 防御');
-    }
-    if (effect.status) {
-      const status = effect.status;
-      const duration = Math.round((Number(status.durationTicks) || 0) / 4);
-      parts.push(
-        (status.chance
-          ? techniquePercent(status.chance) + ' 概率施加'
-          : '施加') +
-        techniqueStatusDisplayName(status.id) +
-        (duration > 0 ? ' ' + duration + ' 秒' : '')
-      );
-    }
-    if (effect.activeBeastMultiplier) {
-      parts.push(
-        '灵兽出战时效果提升至 ' +
-        techniquePercent(effect.activeBeastMultiplier)
-      );
-    }
-    return parts.join(' · ');
-  }
-  if (effect.type === 'heal') {
-    const parts = [];
-    if (effect.attackFactor || effect.maxHpRatio) {
-      parts.push(
-        '恢复 攻击×' + techniquePercent(effect.attackFactor || 0) +
-        '＋最大气血×' + techniquePercent(effect.maxHpRatio || 0)
-      );
-    }
-    if (effect.purge) parts.push('净化一个减益');
-    return parts.length ? parts.join(' · ') : '无';
-  }
-  if (effect.type === 'restoreQi') {
-    if (effect.maxQiRatio) {
-      return '恢复 ' + techniquePercent(effect.maxQiRatio) + ' 真气上限';
-    }
-    return '恢复 ' + (effect.amount || 0) + ' 点真气';
-  }
-  if (effect.type === 'shield') {
-    return '获得 防御×' + techniquePercent(effect.defenseFactor || 0) +
-      '＋最大气血×' + techniquePercent(effect.maxHpRatio || 0) + ' 护盾';
-  }
-  if (effect.type === 'guard') {
-    return '出战灵兽拦截下一次单体攻击（至多 ' +
-      Math.round((Number(effect.durationTicks) || 0) / 4) + ' 秒）';
-  }
-  if (effect.type === 'beastAttack') {
-    return '出战灵兽造成 ' + techniquePercent(effect.multiplier) + ' 攻击伤害';
-  }
-  if (effect.type === 'partyDamageBuff') {
-    return '伤害提高 ' + techniquePercent(effect.damageBonus || 0) +
-      '（约 ' + Math.round((Number(effect.durationTicks) || 0) / 4) + ' 秒）';
-  }
-  if (effect.type === 'purge') {
-    return '净化一个减益';
-  }
-  if (effect.maxQiPercent) {
-    return '真气上限 +' + techniquePercent(effect.maxQiPercent);
-  }
-  if (effect.defensePercent) {
-    return '防御 +' + techniquePercent(effect.defensePercent);
-  }
-  if (effect.accuracyFlat) {
-    return '命中 +' + Math.round(Number(effect.accuracyFlat) || 0);
-  }
-  if (effect.attackIntervalReduction) {
-    return '攻击间隔 -' + techniquePercent(effect.attackIntervalReduction);
-  }
-  if (effect.cooldownReduction) {
-    return '冷却减缩 +' + techniquePercent(effect.cooldownReduction);
-  }
-  if (effect.incomingHealBonus) {
-    return '受到治疗 +' + techniquePercent(effect.incomingHealBonus);
-  }
-  if (effect.critChanceBonus) {
-    return '暴击率 +' + techniquePercent(effect.critChanceBonus);
-  }
-  if (effect.healPowerBonus) {
-    return '治疗强度 +' + techniquePercent(effect.healPowerBonus);
-  }
-  if (effect.shieldPowerBonus) {
-    return '护盾强度 +' + techniquePercent(effect.shieldPowerBonus);
-  }
-  if (effect.selfAndBeastMaxHpPercent) {
-    return '自身与出战灵兽气血上限 +' +
-      techniquePercent(effect.selfAndBeastMaxHpPercent);
-  }
-  if (effect.controlResistBonus) {
-    return '控制抗性 +' + techniquePercent(effect.controlResistBonus);
-  }
-  if (effect.affinityTeamBonus) {
-    return '好感协作增益 +' + techniquePercent(effect.affinityTeamBonus);
-  }
-  if (effect.taggedDamageBonus) {
-    const tag = Object.keys(effect.taggedDamageBonus)[0];
-    return (STAGE3_TECHNIQUE_TAG_LABELS[tag] || '对应功法') +
-      '伤害 +' + techniquePercent(effect.taggedDamageBonus[tag]);
-  }
-  if (effect.supplyHealingBonus) {
-    return '补给治疗效果 +' + techniquePercent(effect.supplyHealingBonus);
-  }
-  if (effect.activeBeastEffectBonus) {
-    return '出战灵兽效果 +' +
-      techniquePercent(effect.activeBeastEffectBonus);
-  }
-  if (effect.normalAttackBonus) {
-    return '普攻伤害 +' + techniquePercent(effect.normalAttackBonus);
-  }
-  if (effect.qiRegenBonus) {
-    return '真气回复 +' + techniquePercent(effect.qiRegenBonus);
-  }
-  if (effect.lowHpDamageReduction || effect.lowHpIncomingHealBonus) {
-    const parts = [];
-    if (effect.lowHpDamageReduction) {
-      parts.push(
-        '减伤 ' + techniquePercent(effect.lowHpDamageReduction)
-      );
-    }
-    if (effect.lowHpIncomingHealBonus) {
-      parts.push(
-        '受疗 +' + techniquePercent(effect.lowHpIncomingHealBonus)
-      );
-    }
-    return '低血（低于 ' +
-      techniquePercent(effect.lowHpThreshold || 0.3) +
-      '）时' + parts.join(' · ');
-  }
-  if (effect.maxHpPercent) {
-    return '气血上限 +' + techniquePercent(effect.maxHpPercent);
-  }
-  if (effect.ailmentPowerBonus) {
-    return '异常状态强度 +' + techniquePercent(effect.ailmentPowerBonus);
-  }
-  if (effect.overflowHealToShield) {
-    return '过量治疗转护盾 ' +
-      techniquePercent(effect.overflowHealToShield) +
-      '（上限 ' + techniquePercent(effect.overflowShieldCap || 0) + '）';
-  }
-  if (effect.buffDurationBonus) {
-    return '增益持续时间 +' + techniquePercent(effect.buffDurationBonus);
-  }
-  if (effect.damageReduction && !effect.type) {
-    return '减伤 +' + techniquePercent(effect.damageReduction);
-  }
-  return '无';
-}
-
-function stage3TechniqueViewRow(row) {
-  return Object.assign({}, row, {
-    tagLabels: (row.tags || []).map(function (tag) {
-      return STAGE3_TECHNIQUE_TAG_LABELS[tag] || '其他';
-    }),
-    effectText: stage3TechniqueEffectText(row.effect)
-  });
-}
-
-function queryTechniques() {
-  if (!useStage3Runtime) {
-    return readonlyQuery({
-      learned: [],
-      unlearned: [],
-      techniques: []
-    });
-  }
-  const view = stage3Bootstrap.Techniques.queryLibrary(
-    stage2QueryModel(),
-    EMPTY_SECT_CONTEXT
-  );
-  const techniques = view.techniques.map(stage3TechniqueViewRow);
-  return readonlyQuery({
-    learned: techniques.filter(function (row) {
-      return row.learned;
-    }),
-    unlearned: techniques.filter(function (row) {
-      return !row.learned;
-    }),
-    techniques
-  });
-}
-
-function breakthroughGateProgress(model, view) {
-  if (!view || !view.gate) return view;
-  let current = 0;
-  if (view.gate.type === 'enemyKills') {
-    const regions = stage3Bootstrap.CombatProgress.queryRegions(model);
-    regions.regions.some(function (region) {
-      const enemy = region.enemies.find(function (row) {
-        return row.id === view.gate.targetId;
-      });
-      if (!enemy) return false;
-      current = enemy.killCount;
-      return true;
-    });
-  } else if (view.gate.type === 'dungeonClears') {
-    const dungeons = stage3Bootstrap.CombatProgress.queryDungeons(model);
-    const dungeon = dungeons.dungeons.find(function (row) {
-      return row.id === view.gate.targetId;
-    });
-    current = dungeon ? dungeon.clearCount : 0;
-  }
-  if (view.gate.completed) current = view.gate.count;
-  view.gate.progress = {
-    current: Math.min(view.gate.count, Math.max(0, current)),
-    required: view.gate.count
-  };
-  return view;
-}
-
-function queryBreakthrough(input) {
-  if (!useStage3Runtime) {
-    return readonlyQuery({
-      ok: false,
-      code: 'stage3_unavailable'
-    });
-  }
-  try {
-    const model = stage2QueryModel();
-    let selected = [];
-    if (input !== undefined) {
-      const fields = safeInputFields(
-        input,
-        ['pillItemId', 'quantity']
-      );
-      if (!fields ||
-          (fields.pillItemId !== null &&
-           typeof fields.pillItemId !== 'string') ||
-          !Number.isSafeInteger(fields.quantity) ||
-          fields.quantity < 0 ||
-          fields.quantity > 2) {
-        return readonlyQuery({
-          ok: false,
-          code: 'invalid_argument'
-        });
-      }
-      const base = stage3Bootstrap.Breakthrough.query(model, []);
-      const expectedItemId = base && base.pill
-        ? base.pill.itemId
-        : null;
-      if ((fields.quantity === 0 && fields.pillItemId !== null) ||
-          (fields.quantity > 0 &&
-           fields.pillItemId !== expectedItemId) ||
-          fields.quantity > (
-            base && base.pill ? base.pill.maxSelectable : 0
-          )) {
-        return readonlyQuery({
-          ok: false,
-          code: 'invalid_argument'
-        });
-      }
-      for (let index = 0; index < fields.quantity; index++) {
-        selected.push(expectedItemId);
-      }
-    }
-    const view = cloneRuntimeState(
-      stage3Bootstrap.Breakthrough.query(model, selected)
-    );
-    if (view && view.pill && view.pill.itemId) {
-      view.pill.name = stage3ItemDisplayName(view.pill.itemId);
-    }
-    return readonlyQuery(breakthroughGateProgress(model, view));
-  } catch (error) {
-    return readonlyQuery({
-      ok: false,
-      code: 'invalid_argument'
-    });
-  }
-}
-
-function commandRandomizeAppearance() {
-  if (isPersistenceLocked()) {
-    return commandResult(
-      false,
-      'persistence_locked',
-      false,
-      persistenceRecovery.message(),
-      null
-    );
-  }
-  for (const category of CATS) {
-    const count = NIE[state.gender][category].length;
-    state.parts[category] = count > 0
-      ? Math.floor(gameRandom() * count)
-      : 0;
-  }
-  state.dirty = true;
-  return commandResult(true, 'ok', true, null, {
-    indices: normalizeParts(state.parts)
-  });
-}
-
-function commandStepAppearance(input) {
-  if (isPersistenceLocked()) {
-    return commandResult(
-      false,
-      'persistence_locked',
-      false,
-      persistenceRecovery.message(),
-      null
-    );
-  }
-  const part = input && input.part;
-  const delta = input && Number(input.delta);
-  if (!CATS.includes(part) || !Number.isFinite(delta) || delta === 0) {
-    return commandResult(
-      false,
-      'invalid_argument',
-      false,
-      '无效的形象调整参数',
-      null
-    );
-  }
-  const list = NIE[state.gender][part];
-  if (!Array.isArray(list) || list.length === 0) {
-    return commandResult(true, 'no_change', false, null, null);
-  }
-  const offset = Math.trunc(delta);
-  let next = (state.parts[part] + offset) % list.length;
-  if (next < 0) next += list.length;
-  if (next === state.parts[part]) {
-    return commandResult(true, 'no_change', false, null, null);
-  }
-  state.parts[part] = next;
-  state.dirty = true;
-  return commandResult(true, 'ok', true, null, {
-    part,
-    index: next
-  });
-}
-
-function commandConfirmCreate() {
-  const result = commitModel(function (candidate) {
-    candidate.created = true;
-    candidate.player = defaultPlayer();
-    candidate.current = null;
-    return commandResult(
-      true,
-      'ok',
-      true,
-      '角色创建成功，开始修行',
-      null
-    );
-  }, Date.now(), {
-    kind: 'save',
-    message: '角色创建保存失败，请重试',
-    successMessage: '角色创建成功，开始修行',
-    onSuccess: 'appearance'
-  });
-  if (result.ok) {
-    state.phase = 'game';
-    state.navIndex = NAV_HOME;
-    state.dirty = true;
-    toast(result.message);
-  }
-  return result;
-}
-
-function commandSaveAppearance() {
-  const result = commitModel(function () {
-    return commandResult(true, 'ok', true, '形象已更新', null);
-  }, Date.now(), {
-    kind: 'save',
-    message: '形象保存失败，请重试',
-    successMessage: '形象已更新',
-    onSuccess: 'appearance'
-  });
-  if (result.ok) {
-    state.phase = 'game';
-    state.navIndex = NAV_HOME;
-    state.dirty = true;
-    toast(result.message);
-  }
-  return result;
-}
-
-function commandSwitchNav(input) {
-  const index = input && Number(input.index);
-  if (!Number.isInteger(index) || index < 0 || index >= NAV.length) {
-    return commandResult(
-      false,
-      'invalid_argument',
-      false,
-      '无效的导航位置',
-      null
-    );
-  }
-  const label = NAV[index];
-  const changed = label === '设置'
-    ? state.phase !== 'edit'
-    : state.navIndex !== index;
-  if (label === '设置') {
-    state.phase = 'edit';
-    state.dirty = true;
-  } else {
-    state.navIndex = index;
-  }
-  return commandResult(
-    true,
-    changed ? 'ok' : 'no_change',
-    changed,
-    null,
-    { index, label }
-  );
-}
-
-function commandOpenBreak() {
-  if (state.showBreak) {
-    return commandResult(true, 'no_change', false, null, null);
-  }
-  state.showBreak = true;
-  return commandResult(true, 'ok', true, null, null);
-}
-
-function commandCloseLifespanBuffer() {
-  if (!state.showLifespanBuffer) {
-    return commandResult(true, 'no_change', false, null, null);
-  }
-  state.showLifespanBuffer = false;
-  return commandResult(true, 'ok', true, null, null);
-}
-
-function commandCloseBreak() {
-  if (!state.showBreak) {
-    return commandResult(true, 'no_change', false, null, null);
-  }
-  state.showBreak = false;
-  return commandResult(true, 'ok', true, null, null);
-}
-
-function commandAttemptBreak() {
-  if (useStage3Runtime) {
-    const result = commandAttemptBreakthrough({
-      pillItemId: null,
-      quantity: 0
-    });
-    if (result.ok &&
-        result.changed &&
-        result.data &&
-        result.data.result === 'success') {
-      state.showBreak = false;
-    }
-    return result;
-  }
-  const result = commitModel(function (candidate) {
-    const player = candidate.player;
-    if (!candidate.created || !player) {
-      return commandResult(
-        false,
-        'not_created',
-        false,
-        '尚未创建角色',
-        null
-      );
-    }
-    const stage = player.realmStage || 0;
-    const currentRealm = REALM_TABLE[stage];
-    if (!currentRealm || stage >= REALM_TABLE.length - 1) {
-      return commandResult(
-        true,
-        'no_change',
-        false,
-        '已是最高境界',
-        null
-      );
-    }
-    if (player.xiwei < currentRealm.need) {
-      return commandResult(
-        false,
-        'requirements_missing',
-        false,
-        '修为不足，需 ' + currentRealm.need,
-        null
-      );
-    }
-    if (currentRealm.dan &&
-        (player.inventory.stacks[currentRealm.dan] || 0) < 1) {
-      return commandResult(
-        false,
-        'requirements_missing',
-        false,
-        '需' + (DAN_NAME[currentRealm.dan] || '突破丹') + '×1',
-        null
-      );
-    }
-
-    let succeeded = true;
-    if (currentRealm.tier === 'major') {
-      const nextRandom = GameRandom.next(candidate.rngState);
-      candidate.rngState = nextRandom.seed;
-      succeeded = nextRandom.value < breakthroughRate(player, stage);
-    }
-    player.xiwei = 0;
-    if (succeeded) {
-      if (currentRealm.dan) player.inventory.stacks[currentRealm.dan] -= 1;
-      player.realmStage = stage + 1;
-      applyRealm(player);
-      player.jingqi = Math.min(200, player.jingqi + 30);
-    }
-    return commandResult(true, 'ok', true, succeeded
-      ? '突破成功 → ' + REALM_TABLE[stage + 1].name + '！'
-      : '渡劫失败，修为散尽', {
-        succeeded,
-        realm: player.realm
-      });
-  }, Date.now(), {
-    kind: 'save',
-    message: '突破结果保存失败，请重试'
-  });
-  if (result.ok && result.changed) {
-    state.showBreak = false;
-    toast(result.message);
-  }
-  return result;
-}
-
-function startActionFailureMessage(code, key) {
-  if (code === 'requirements_invalid' || code === 'requirements_missing') {
-    if (typeof key === 'string' && key.indexOf('gather:collect:') === 0) {
-      return '请先探索发现资源点，再开始采集';
-    }
-    if (typeof key === 'string' && key.indexOf('produce:') === 0) {
-      return '制作条件未满足（技能等级或材料）';
-    }
-  }
-  const messages = {
-    invalid_action: '未知行动',
-    lifespan_buffer: '寿元不足，请先完成传承或开启新身份',
-    injured: '重伤恢复中，暂时无法开战',
-    pending_loot_exists: '有待领取战利品，请先领取后再行动',
-    realm_locked: '境界不足，尚未解锁该区域/秘境',
-    required_dungeon_not_cleared: '需先通关前置秘境',
-    required_item_missing: '缺少进入所需物品',
-    invalid_state: '战斗数据异常，请先撤退或领取待处理战利品',
-    requirements_invalid: '行动条件尚未满足',
-    invalid_timestamp: '时间状态异常，请刷新后重试'
-  };
-  return messages[code] || '行动条件尚未满足';
-}
-
-function candidateStartAction(candidate, key, now) {
-  const directHarness = typeof globalThis === 'object' &&
-    globalThis !== null &&
-    globalThis.__GAME_TEST_HARNESS_REQUEST__ === true;
-  if ((!candidate.created && !directHarness) || !candidate.player) {
-    return commandResult(
-      false,
-      'not_created',
-      false,
-      '尚未创建角色',
-      null
-    );
-  }
-  if (useStage2Runtime) {
-    const started = simulationRuntime.rules.start(candidate, key, now);
-    if (!started.ok) {
-      const code = started.code || 'requirements_invalid';
-      const invalid = code === 'invalid_action';
-      return commandResult(
-        false,
-        invalid ? 'invalid_action' : (code || 'requirements_missing'),
-        false,
-        startActionFailureMessage(code, key),
-        null
-      );
-    }
-    if (started.code === 'no_change') {
-      return commandResult(true, 'no_change', false, null, { key });
-    }
-    Object.keys(candidate).forEach(function (field) {
-      delete candidate[field];
-    });
-    Object.keys(started.state).forEach(function (field) {
-      candidate[field] = started.state[field];
-    });
-    return commandResult(
-      true,
-      'ok',
-      true,
-      '开始：' + actionDisplayName(key, started.state || candidate),
-      { key }
-    );
-  }
-  let nextAction;
-  let label;
-  if (key.indexOf('gather:') === 0) {
-    const parsed = parseGatherKey(key);
-    const data = GATHERING_DATA[parsed.skill];
-    if (!data) {
-      return commandResult(
-        false,
-        'invalid_action',
-        false,
-        '未知行动',
-        null
-      );
-    }
-    if (parsed.mode === 'explore') {
-      if (!data.explore) {
-        return commandResult(
-          false,
-          'invalid_action',
-          false,
-          '未知行动',
-          null
-        );
-      }
-      nextAction = finiteAction(key, 1);
-      label = data.explore.name;
-    } else {
-      const entry = data.entries.find(function (item) {
-        return item.id === parsed.entryId;
-      });
-      if (!entry) {
-        return commandResult(
-          false,
-          'invalid_action',
-          false,
-          '未知行动',
-          null
-        );
-      }
-      const skillKey = GATHER_SKILL_KEY[parsed.skill];
-      const level = (candidate.player.skills[skillKey] || { lv: 1 }).lv;
-      if (entry.unlockLv > level) {
-        return commandResult(
-          false,
-          'requirements_missing',
-          false,
-          '需 ' + GATHER_TITLE[parsed.skill] + ' Lv' + entry.unlockLv,
-          null
-        );
-      }
-      if (parsed.skill !== 'fishing') {
-        const spot = candidate.systems.gathering.spots[parsed.skill];
-        if (!spot || spot.id !== entry.id) {
-          return commandResult(
-            false,
-            'requirements_missing',
-            false,
-            '请先探索 ' + entry.name,
-            null
-          );
-        }
-      }
-      nextAction = repeatAction(key);
-      label = entry.name;
-    }
-  } else {
-    const action = ACTIONS[key];
-    if (!action) {
-      return commandResult(
-        false,
-        'invalid_action',
-        false,
-        '未知行动',
-        null
-      );
-    }
-    const skill = candidate.player.skills[action.skill] || { lv: 1 };
-    if (action.needLv && skill.lv < action.needLv) {
-      return commandResult(
-        false,
-        'requirements_missing',
-        false,
-        '需 ' + (SKILL_TITLE[action.skill] || action.skill) +
-          ' Lv' + action.needLv + ' 解锁',
-        null
-      );
-    }
-    nextAction = repeatAction(key);
-    label = action.name;
-  }
-
-  const previous = candidate.current;
-  if (previous && previous.key === key &&
-      previous.mode === nextAction.mode) {
-    return commandResult(true, 'no_change', false, null, {
-      key,
-      label
-    });
-  }
-  if (previous) {
-    candidate.lastActionStop = {
-      key: previous.key,
-      reason: 'switched',
-      atMs: now
-    };
-    // 修复：从战斗切换到其它行动时，必须同步清空战斗会话。
-    // 否则同样会留下「悬空 session」，导致下次启动误弹离线结算弹窗。
-    if (typeof previous.key === 'string' &&
-        previous.key.indexOf('combat:') === 0 &&
-        candidate.systems && candidate.systems.combat) {
-      candidate.systems.combat.session = null;
-    }
-  }
-  candidate.current = nextAction;
-  return commandResult(true, 'ok', true, '开始：' + label, {
-    key,
-    label
-  });
-}
-
-function commandStartAction(input) {
-  const key = input && input.key;
-  if (typeof key !== 'string' || key.length === 0) {
-    return commandResult(
-      false,
-      'invalid_argument',
-      false,
-      '行动参数无效',
-      null
-    );
-  }
-  const actionKey = useStage3Runtime
-    ? (stage3Bootstrap.Stage3State.normalizeActionKey(key) || key)
-    : useStage2Runtime
-      ? (stage2Bootstrap.Stage2State.normalizeActionKey(key) || key)
-    : key;
-  const directHarness = typeof globalThis === 'object' &&
-    globalThis !== null &&
-    globalThis.__GAME_TEST_HARNESS_REQUEST__ === true;
-  const now = Date.now();
-  const result = commitModel(function (candidate) {
-    return candidateStartAction(candidate, actionKey, now);
-  }, now, {
-    kind: actionKey.indexOf('gather:explore:') === 0 ? 'save' : 'save',
-    message: '行动保存失败，请重试'
-  }, {
-    settleToTimestamp: !directHarness
-  });
-  if (result.ok && result.changed) toast(result.message);
-  return result;
-}
-
-function commandStopAction() {
-  const now = Date.now();
-  const result = commitModel(function (candidate) {
-    if (!candidate.current) {
-      return commandResult(true, 'no_change', false, null, null);
-    }
-    candidate.lastActionStop = {
-      key: candidate.current.key,
-      reason: 'manual',
-      atMs: now
-    };
-    candidate.current = null;
-    // 修复：手动停止（撤离）战斗时必须同步清空战斗会话。
-    // 否则会留下「悬空 session」，下次启动 normalize 命中 recovered 分支，
-    // 误把上局战斗当作离线恢复、弹「离线结算」弹窗。
-    if (candidate.systems && candidate.systems.combat) {
-      candidate.systems.combat.session = null;
-    }
-    return commandResult(true, 'ok', true, '已停止当前行动', null);
-  }, now, {
-    kind: 'save',
-    message: '停止行动保存失败，请重试'
-  }, {
-    settleToTimestamp: true
-  });
-  if (result.ok && result.changed) toast(result.message);
-  return result;
-}
-
-function stage2UnavailableCommand() {
-  return commandResult(
-    false,
-    'stage2_unavailable',
-    false,
-    '当前版本暂不支持该操作',
-    null
-  );
-}
-
-function stage3UnavailableCommand() {
-  return commandResult(
-    false,
-    'stage3_unavailable',
-    false,
-    '当前版本暂不支持该操作',
-    null
-  );
-}
-
-function invalidStage3Argument(message) {
-  return commandResult(
-    false,
-    'invalid_argument',
-    false,
-    message || '操作参数无效',
-    null
-  );
-}
-
-function stage3ModelCommand(options) {
-  if (!useStage3Runtime) return stage3UnavailableCommand();
-  const now = Date.now();
-  const result = commitModel(function (candidate) {
-    const seedBefore = candidate.rngState;
-    let domain;
-    try {
-      domain = options.operation(candidate);
-    } catch (error) {
-      return stage3Failure('invalid_state', options.failureMessage);
-    }
-    if (!domain || domain.ok !== true || !domain.state) {
-      return stage3Failure(
-        domain && domain.code,
-        options.failureMessage
-      );
-    }
-    replaceCandidateModel(candidate, domain.state);
-    const gains = typeof options.gains === 'function'
-      ? options.gains(domain, candidate)
-      : null;
-    const costs = typeof options.costs === 'function'
-      ? options.costs(domain, candidate)
-      : null;
-    const report = archiveImmediateReport(
-      candidate,
-      options.key,
-      gains,
-      costs,
-      seedBefore,
-      now
-    );
-    let data = typeof options.data === 'function'
-      ? options.data(domain, candidate)
-      : null;
-    data = data && typeof data === 'object'
-      ? Object.assign({}, data)
-      : {};
-    data.reportId = report.id;
-    return commandResult(
-      true,
-      'ok',
-      true,
-      options.successMessage || null,
-      data
-    );
-  }, now, {
-    kind: 'save',
-    message: options.saveFailureMessage || '操作结果保存失败，请重试'
-  });
-  if (result.ok && result.changed && result.message) {
-    toast(result.message);
-  }
-  return result;
-}
-
-function commandConsumeTechniqueBook(input) {
-  const fields = safeInputFields(input, ['itemId']);
-  if (!fields) return invalidStage3Argument('功法书参数无效');
-  const definition = useStage3Runtime &&
-    typeof fields.itemId === 'string'
-    ? stage3Bootstrap.TechniqueContent.getByBookItemId(fields.itemId)
-    : null;
-  return stage3ModelCommand({
-    key: 'consumeTechniqueBook',
-    operation: function (candidate) {
-      return stage3Bootstrap.Techniques.consumeBook(
-        candidate,
-        fields.itemId,
-        EMPTY_SECT_CONTEXT
-      );
-    },
-    successMessage: '功法书已研读',
-    failureMessage: '研读功法书失败',
-    saveFailureMessage: '功法研读结果保存失败，请重试',
-    data: function (domain) {
-      return {
-        itemId: fields.itemId,
-        techniqueId: definition ? definition.id : null,
-        gainedXp: domain.gainedXp,
-        levelsGained: domain.levelsGained,
-        capped: domain.capped
-      };
-    },
-    gains: function (domain) {
-      if (!definition || domain.gainedXp <= 0) return null;
-      const techniqueXp = {};
-      techniqueXp[definition.id] = domain.gainedXp;
-      return { techniqueXp };
-    },
-    costs: function () {
-      const items = {};
-      items[fields.itemId] = 1;
-      return { items };
-    }
-  });
-}
-
-function commandCreateCombatLoadout(input) {
-  const fields = safeInputFields(input, ['name']);
-  if (!fields) return invalidStage3Argument('方案参数无效');
-  return stage3ModelCommand({
-    key: 'createCombatLoadout',
-    operation: function (candidate) {
-      return stage3Bootstrap.CombatLoadouts.create(
-        candidate,
-        fields.name
-      );
-    },
-    successMessage: '战斗方案已创建',
-    failureMessage: '创建战斗方案失败',
-    data: function (domain) { return domain.result; }
-  });
-}
-
-function commandRenameCombatLoadout(input) {
-  const fields = safeInputFields(input, ['loadoutId', 'name']);
-  if (!fields) return invalidStage3Argument('方案参数无效');
-  return stage3ModelCommand({
-    key: 'renameCombatLoadout',
-    operation: function (candidate) {
-      return stage3Bootstrap.CombatLoadouts.rename(
-        candidate,
-        fields.loadoutId,
-        fields.name
-      );
-    },
-    successMessage: '战斗方案已重命名',
-    failureMessage: '重命名战斗方案失败',
-    data: function (domain) { return domain.result; }
-  });
-}
-
-function commandDeleteCombatLoadout(input) {
-  const fields = safeInputFields(input, ['loadoutId']);
-  if (!fields) return invalidStage3Argument('方案参数无效');
-  return stage3ModelCommand({
-    key: 'deleteCombatLoadout',
-    operation: function (candidate) {
-      return stage3Bootstrap.CombatLoadouts.remove(
-        candidate,
-        fields.loadoutId
-      );
-    },
-    successMessage: '战斗方案已删除',
-    failureMessage: '删除战斗方案失败',
-    data: function (domain) { return domain.result; }
-  });
-}
-
-function commandSetActiveCombatLoadout(input) {
-  const fields = safeInputFields(input, ['loadoutId']);
-  if (!fields) return invalidStage3Argument('方案参数无效');
-  return stage3ModelCommand({
-    key: 'setActiveCombatLoadout',
-    operation: function (candidate) {
-      return stage3Bootstrap.CombatLoadouts.setActive(
-        candidate,
-        fields.loadoutId
-      );
-    },
-    successMessage: '当前战斗方案已更新',
-    failureMessage: '设置当前战斗方案失败',
-    data: function (domain) { return domain.result; }
-  });
-}
-
-function commandSetEquipment(input) {
-  const fields = safeInputFields(
-    input,
-    ['loadoutId', 'slot', 'itemId']
-  );
-  if (!fields) return invalidStage3Argument('装备参数无效');
-  return stage3ModelCommand({
-    key: 'setEquipment',
-    operation: function (candidate) {
-      return stage3Bootstrap.CombatLoadouts.setEquipment(
-        candidate,
-        fields.loadoutId,
-        fields.slot,
-        fields.itemId
-      );
-    },
-    successMessage: '战斗装备已更新',
-    failureMessage: '设置战斗装备失败',
-    data: function (domain) { return domain.result; }
-  });
-}
-
-function equipmentCommandFailure(code, message) {
-  const messages = {
-    equipment_not_found: '未找到该装备',
-    equipment_favorite: '收藏装备不能出售或分解',
-    equipment_referenced: '装备仍被战斗方案引用',
-    equipment_slot_locked: '该装备槽尚未解锁',
-    equipment_type_mismatch: '装备类型不匹配',
-    enhancement_max: '装备已强化至上限',
-    insufficient_material: '强化或重铸材料不足',
-    invalid_locked_affix: '锁定词条无效',
-    invalid_equipment: '装备数据异常'
-  };
-  return commandResult(
-    false,
-    code || 'equipment_operation_failed',
-    false,
-    messages[code] || message || '装备操作失败',
-    null
-  );
-}
-
-function commandEquipEquipment(input) {
-  const fields = safeOptionalInputFields(
-    input,
-    ['instanceId', 'loadoutId'],
-    ['instanceId']
-  );
-  if (!useEquipmentRuntime || !fields ||
-      typeof fields.instanceId !== 'string') {
-    return equipmentCommandFailure('invalid_equipment');
-  }
-  return commitModel(function (candidate) {
-    const instance = equipmentInstance(candidate, fields.instanceId);
-    const resolved = instance
-      ? equipmentBootstrap.Equipment.resolve(instance)
-      : null;
-    const loadout = equipmentLoadout(candidate, fields.loadoutId);
-    if (!resolved) return equipmentCommandFailure('equipment_not_found');
-    if (!loadout) return equipmentCommandFailure('loadout_not_found');
-    const domain = stage3Bootstrap.CombatLoadouts.setEquipment(
-      candidate,
-      loadout.id,
-      resolved.slot,
-      instance.instanceId
-    );
-    if (!domain.ok) {
-      return equipmentCommandFailure(domain.code);
-    }
-    replaceCandidateModel(candidate, domain.state);
-    return commandResult(true, 'ok', true, '装备已穿戴', {
-      instanceId: instance.instanceId,
-      loadoutId: loadout.id,
-      slot: resolved.slot,
-      replacedInstanceId: loadout.equipment[resolved.slot] || null,
-      effectiveNextBattle: !!(
-        candidate.systems &&
-        candidate.systems.combat &&
-        candidate.systems.combat.session
-      )
-    });
-  }, Date.now(), {
-    kind: 'save',
-    message: '装备结果保存失败，请重试'
-  });
-}
-
-function commandUnequipEquipment(input) {
-  const fields = safeOptionalInputFields(
-    input,
-    ['slot', 'loadoutId'],
-    ['slot']
-  );
-  if (!useEquipmentRuntime || !fields ||
-      equipmentBootstrap.EquipmentContent.SLOTS.indexOf(fields.slot) < 0) {
-    return equipmentCommandFailure('invalid_equipment');
-  }
-  return commitModel(function (candidate) {
-    const loadout = equipmentLoadout(candidate, fields.loadoutId);
-    if (!loadout) return equipmentCommandFailure('loadout_not_found');
-    const previous = loadout.equipment[fields.slot];
-    if (!previous) {
-      return commandResult(true, 'no_change', false, null, {
-        slot: fields.slot
-      });
-    }
-    const domain = stage3Bootstrap.CombatLoadouts.setEquipment(
-      candidate,
-      loadout.id,
-      fields.slot,
-      null
-    );
-    if (!domain.ok) return equipmentCommandFailure(domain.code);
-    replaceCandidateModel(candidate, domain.state);
-    return commandResult(true, 'ok', true, '装备已卸下', {
-      instanceId: previous,
-      loadoutId: loadout.id,
-      slot: fields.slot,
-      effectiveNextBattle: !!(
-        candidate.systems &&
-        candidate.systems.combat &&
-        candidate.systems.combat.session
-      )
-    });
-  }, Date.now(), {
-    kind: 'save',
-    message: '卸下装备保存失败，请重试'
-  });
-}
-
-function commandEnhanceEquipment(input) {
-  const fields = safeOptionalInputFields(
-    input,
-    ['instanceId', 'useProtection'],
-    ['instanceId']
-  );
-  if (!useEquipmentRuntime || !fields ||
-      typeof fields.instanceId !== 'string' ||
-      (
-        typeof fields.useProtection !== 'undefined' &&
-        typeof fields.useProtection !== 'boolean'
-      )) {
-    return equipmentCommandFailure('invalid_equipment');
-  }
-  return commitModel(function (candidate) {
-    const instance = equipmentInstance(candidate, fields.instanceId);
-    if (!instance) return equipmentCommandFailure('equipment_not_found');
-    const materialCost = Math.max(
-      1,
-      Math.ceil((instance.enhancementLevel + 1) / 3)
-    );
-    const delta = { ironOre: -materialCost };
-    if (fields.useProtection === true) delta.wardTalisman = -1;
-    const paid = stage2Bootstrap.Inventory.apply(
-      candidate.player.inventory,
-      delta
-    );
-    if (!paid.ok) {
-      return equipmentCommandFailure('insufficient_material');
-    }
-    const enhanced = equipmentBootstrap.Equipment.enhance(instance, {
-      materialAvailable: true,
-      protectionBonus: fields.useProtection === true ? 0.1 : 0,
-      rngState: candidate.rngState
-    });
-    if (!enhanced.ok) return equipmentCommandFailure(enhanced.code);
-    const replaced = stage2Bootstrap.Inventory.replaceEquipment(
-      paid.value,
-      enhanced.instance
-    );
-    if (!replaced.ok) return equipmentCommandFailure(replaced.code);
-    candidate.player.inventory = replaced.value;
-    candidate.rngState = enhanced.rngState;
-    return commandResult(
-      true,
-      'ok',
-      true,
-      enhanced.success ? '强化成功' : '强化失败，保底进度增加',
-      {
-        instanceId: instance.instanceId,
-        success: enhanced.success,
-        guaranteed: enhanced.guaranteed,
-        level: enhanced.instance.enhancementLevel,
-        pity: enhanced.instance.enhancementPity,
-        materialCost: materialCost,
-        effectiveNextBattle: !!(
-          candidate.systems &&
-          candidate.systems.combat &&
-          candidate.systems.combat.session
-        )
-      }
-    );
-  }, Date.now(), {
-    kind: 'save',
-    message: '强化结果保存失败，请重试'
-  });
-}
-
-function commandReforgeEquipment(input) {
-  const fields = safeOptionalInputFields(
-    input,
-    ['instanceId', 'lockedAffixIndex'],
-    ['instanceId']
-  );
-  if (!useEquipmentRuntime || !fields ||
-      typeof fields.instanceId !== 'string') {
-    return equipmentCommandFailure('invalid_equipment');
-  }
-  return commitModel(function (candidate) {
-    const instance = equipmentInstance(candidate, fields.instanceId);
-    if (!instance) return equipmentCommandFailure('equipment_not_found');
-    const paid = stage2Bootstrap.Inventory.apply(
-      candidate.player.inventory,
-      { spiritEssence: -1 }
-    );
-    if (!paid.ok) {
-      return equipmentCommandFailure('insufficient_material');
-    }
-    const reforged = equipmentBootstrap.Equipment.reforge(instance, {
-      lockedAffixIndex: fields.lockedAffixIndex,
-      rngState: candidate.rngState
-    });
-    if (!reforged.ok) return equipmentCommandFailure(reforged.code);
-    const replaced = stage2Bootstrap.Inventory.replaceEquipment(
-      paid.value,
-      reforged.instance
-    );
-    if (!replaced.ok) return equipmentCommandFailure(replaced.code);
-    candidate.player.inventory = replaced.value;
-    candidate.rngState = reforged.rngState;
-    return commandResult(true, 'ok', true, '词条已重铸', {
-      instanceId: instance.instanceId,
-      affixes: equipmentBootstrap.Equipment.resolve(
-        reforged.instance
-      ).affixes,
-      effectiveNextBattle: !!(
-        candidate.systems &&
-        candidate.systems.combat &&
-        candidate.systems.combat.session
-      )
-    });
-  }, Date.now(), {
-    kind: 'save',
-    message: '重铸结果保存失败，请重试'
-  });
-}
-
-function commandSetEquipmentFavorite(input) {
-  const fields = safeOptionalInputFields(
-    input,
-    ['instanceId', 'favorite'],
-    ['instanceId', 'favorite']
-  );
-  if (!useEquipmentRuntime || !fields ||
-      typeof fields.instanceId !== 'string' ||
-      typeof fields.favorite !== 'boolean') {
-    return equipmentCommandFailure('invalid_equipment');
-  }
-  return commitModel(function (candidate) {
-    const instance = equipmentInstance(candidate, fields.instanceId);
-    if (!instance) return equipmentCommandFailure('equipment_not_found');
-    if (instance.favorite === fields.favorite) {
-      return commandResult(true, 'no_change', false, null, {
-        instanceId: instance.instanceId,
-        favorite: instance.favorite
-      });
-    }
-    const changed = equipmentBootstrap.Equipment.normalizeInstance(
-      Object.assign({}, instance, { favorite: fields.favorite })
-    );
-    const replaced = stage2Bootstrap.Inventory.replaceEquipment(
-      candidate.player.inventory,
-      changed
-    );
-    if (!replaced.ok) return equipmentCommandFailure(replaced.code);
-    candidate.player.inventory = replaced.value;
-    return commandResult(true, 'ok', true, fields.favorite
-      ? '已收藏装备'
-      : '已取消收藏', {
-        instanceId: instance.instanceId,
-        favorite: fields.favorite
-      });
-  }, Date.now(), {
-    kind: 'save',
-    message: '收藏状态保存失败，请重试'
-  });
-}
-
-function equipmentRemovalBlock(candidate, instance) {
-  if (instance.favorite) return 'equipment_favorite';
-  if (equipmentReferences(candidate, instance.instanceId).length) {
-    return 'equipment_referenced';
-  }
-  return null;
-}
-
-function commandSellEquipment(input) {
-  const fields = safeOptionalInputFields(
-    input,
-    ['instanceId'],
-    ['instanceId']
-  );
-  if (!useEquipmentRuntime || !fields ||
-      typeof fields.instanceId !== 'string') {
-    return equipmentCommandFailure('invalid_equipment');
-  }
-  return commitModel(function (candidate) {
-    const instance = equipmentInstance(candidate, fields.instanceId);
-    if (!instance) return equipmentCommandFailure('equipment_not_found');
-    const blocked = equipmentRemovalBlock(candidate, instance);
-    if (blocked) return equipmentCommandFailure(blocked);
-    const resolved = equipmentBootstrap.Equipment.resolve(instance);
-    const quality = equipmentBootstrap.EquipmentContent.QUALITIES[
-      instance.quality
-    ];
-    const price = Math.max(
-      1,
-      (quality.order + 1) * resolved.realmOrder * 12
-    );
-    const removed = stage2Bootstrap.Inventory.removeEquipment(
-      candidate.player.inventory,
-      instance.instanceId
-    );
-    if (!removed.ok) return equipmentCommandFailure(removed.code);
-    candidate.player.inventory = removed.value;
-    candidate.player.lingshi = (Number(candidate.player.lingshi) || 0) +
-      price;
-    return commandResult(true, 'ok', true, '装备已出售', {
-      instanceId: instance.instanceId,
-      price: price
-    });
-  }, Date.now(), {
-    kind: 'save',
-    message: '出售装备保存失败，请重试'
-  });
-}
-
-function commandSalvageEquipment(input) {
-  const fields = safeOptionalInputFields(
-    input,
-    ['instanceIds'],
-    ['instanceIds']
-  );
-  if (!useEquipmentRuntime || !fields ||
-      !Array.isArray(fields.instanceIds) ||
-      fields.instanceIds.length < 1) {
-    return equipmentCommandFailure('invalid_equipment');
-  }
-  return commitModel(function (candidate) {
-    const ids = Array.from(new Set(fields.instanceIds));
-    const instances = ids.map(function (instanceId) {
-      return equipmentInstance(candidate, instanceId);
-    });
-    if (instances.some(function (instance) { return !instance; })) {
-      return equipmentCommandFailure('equipment_not_found');
-    }
-    for (let index = 0; index < instances.length; index++) {
-      const blocked = equipmentRemovalBlock(candidate, instances[index]);
-      if (blocked) return equipmentCommandFailure(blocked);
-    }
-    let inventory = candidate.player.inventory;
-    let materialCount = 0;
-    instances.forEach(function (instance) {
-      const quality = equipmentBootstrap.EquipmentContent.QUALITIES[
-        instance.quality
-      ];
-      materialCount += Math.max(1, quality.order + 1);
-      inventory = stage2Bootstrap.Inventory.removeEquipment(
-        inventory,
-        instance.instanceId
-      ).value;
-    });
-    const granted = stage2Bootstrap.Inventory.apply(
-      inventory,
-      { ironOre: materialCount }
-    );
-    if (!granted.ok) {
-      return equipmentCommandFailure('inventory_full');
-    }
-    candidate.player.inventory = granted.value;
-    return commandResult(true, 'ok', true, '装备已分解', {
-      instanceIds: ids,
-      materials: { ironOre: materialCount }
-    });
-  }, Date.now(), {
-    kind: 'save',
-    message: '分解装备保存失败，请重试'
-  });
-}
-
-function commandSetSupply(input) {
-  const fields = safeInputFields(
-    input,
-    ['loadoutId', 'slot', 'config']
-  );
-  if (!fields) return invalidStage3Argument('补给参数无效');
-  return stage3ModelCommand({
-    key: 'setSupply',
-    operation: function (candidate) {
-      return stage3Bootstrap.CombatLoadouts.setSupply(
-        candidate,
-        fields.loadoutId,
-        fields.slot,
-        fields.config
-      );
-    },
-    successMessage: '战斗补给已更新',
-    failureMessage: '设置战斗补给失败',
-    data: function (domain) { return domain.result; }
-  });
-}
-
-function commandSetActiveTechnique(input) {
-  // 释放条件已取消：仍接受旧客户端传入的 condition，但一律写入 always。
-  const fields = safeInputFields(input, [
-    'loadoutId',
-    'slotIndex',
-    'techniqueId',
-    'condition'
-  ]) || safeInputFields(input, [
-    'loadoutId',
-    'slotIndex',
-    'techniqueId'
-  ]);
-  if (!fields) {
-    return invalidStage3Argument('主动功法参数无效');
-  }
-  const maxSlot = unlockedActiveSlotCount(stage2QueryModel()) - 1;
-  if (!Number.isFinite(fields.slotIndex) ||
-      fields.slotIndex < 0 ||
-      fields.slotIndex > maxSlot) {
-    return invalidStage3Argument('该功法槽位尚未解锁');
-  }
-  return stage3ModelCommand({
-    key: 'setActiveTechnique',
-    operation: function (candidate) {
-      return stage3Bootstrap.CombatLoadouts.setActiveTechnique(
-        candidate,
-        fields.loadoutId,
-        fields.slotIndex,
-        fields.techniqueId,
-        { type: 'always' }
-      );
-    },
-    successMessage: '主动功法已更新',
-    failureMessage: '设置主动功法失败',
-    data: function (domain) { return domain.result; }
-  });
-}
-
-function commandSetPassiveTechnique(input) {
-  const fields = safeInputFields(input, [
-    'loadoutId',
-    'slotIndex',
-    'techniqueId'
-  ]);
-  if (!fields) return invalidStage3Argument('被动功法参数无效');
-  const maxSlot = unlockedPassiveSlotCount(stage2QueryModel()) - 1;
-  if (!Number.isFinite(fields.slotIndex) ||
-      fields.slotIndex < 0 ||
-      fields.slotIndex > maxSlot) {
-    return invalidStage3Argument('该被动功法槽位尚未解锁');
-  }
-  return stage3ModelCommand({
-    key: 'setPassiveTechnique',
-    operation: function (candidate) {
-      return stage3Bootstrap.CombatLoadouts.setPassiveTechnique(
-        candidate,
-        fields.loadoutId,
-        fields.slotIndex,
-        fields.techniqueId
-      );
-    },
-    successMessage: '被动功法已更新',
-    failureMessage: '设置被动功法失败',
-    data: function (domain) { return domain.result; }
-  });
-}
-
-function commandClaimCombatLoot() {
-  return stage3ModelCommand({
-    key: 'claimCombatLoot',
-    operation: function (candidate) {
-      return stage3Bootstrap.CombatRewards.claimPending(candidate);
-    },
-    successMessage: '战利品已领取',
-    failureMessage: '领取战利品失败',
-    data: function (domain) { return domain.result; },
-    gains: function (domain) {
-      const items = Object.assign({}, domain.result.items || {});
-      if (domain.result.currency > 0) {
-        items.lingshi = domain.result.currency;
-      }
-      return { items };
-    }
-  });
-}
-
-function commandTreatInjury() {
-  return stage3ModelCommand({
-    key: 'treatInjury',
-    operation: function (candidate) {
-      return stage3Bootstrap.CombatProgress.treatInjury(candidate);
-    },
-    successMessage: '重伤已治疗',
-    failureMessage: '治疗重伤失败',
-    data: function (domain) { return domain.result; },
-    costs: function (domain) {
-      const items = {};
-      items[domain.result.itemId] = domain.result.consumed;
-      return { items };
-    }
-  });
-}
-
-function commandAttemptBreakthrough(input) {
-  const fields = safeInputFields(input, ['pillItemId', 'quantity']);
-  if (!fields ||
-      (fields.pillItemId !== null &&
-       typeof fields.pillItemId !== 'string') ||
-      typeof fields.quantity !== 'number' ||
-      !Number.isSafeInteger(fields.quantity) ||
-      fields.quantity < 0 ||
-      fields.quantity > 2) {
-    return invalidStage3Argument('突破丹参数无效');
-  }
-  return stage3ModelCommand({
-    key: 'attemptBreakthrough',
-    operation: function (candidate) {
-      const view = stage3Bootstrap.Breakthrough.query(candidate, []);
-      if (!view.ok) {
-        return {
-          ok: false,
-          code: view.code,
-          state: candidate
-        };
-      }
-      const expectedItemId = view.pill ? view.pill.itemId : null;
-      if ((fields.quantity > 0 &&
-           fields.pillItemId !== expectedItemId) ||
-          (fields.quantity === 0 &&
-           fields.pillItemId !== null &&
-           fields.pillItemId !== expectedItemId) ||
-          (!expectedItemId &&
-           (fields.quantity !== 0 || fields.pillItemId !== null))) {
-        return {
-          ok: false,
-          code: 'pill_mismatch',
-          state: candidate
-        };
-      }
-      if (view.pill && fields.quantity > view.pill.maxSelectable) {
-        return {
-          ok: false,
-          code: 'insufficient_items',
-          state: candidate
-        };
-      }
-      const selected = [];
-      for (let index = 0; index < fields.quantity; index++) {
-        selected.push(expectedItemId);
-      }
-      return stage3Bootstrap.Breakthrough.attempt(candidate, selected);
-    },
-    successMessage: '突破尝试已结算',
-    failureMessage: '突破条件尚未满足',
-    saveFailureMessage: '突破结果保存失败，请重试',
-    data: function (domain) {
-      return {
-        chance: domain.chance,
-        roll: domain.roll,
-        result: domain.code,
-        gate: domain.gateId,
-        consumed: domain.consumed,
-        realmBefore: domain.realmBefore,
-        realmAfter: domain.realmAfter
-      };
-    },
-    costs: function (domain) {
-      return { items: domain.consumed.items };
-    }
-  });
-}
-
-function commandSellItem(input) {
-  if (!useStage2Runtime) return stage2UnavailableCommand();
-  const itemId = input && input.itemId;
-  const quantity = input && input.quantity;
-  if (typeof itemId !== 'string' ||
-      typeof quantity !== 'number' ||
-      !Number.isSafeInteger(quantity) ||
-      quantity <= 0) {
-    return commandResult(
-      false,
-      'invalid_argument',
-      false,
-      '出售参数无效',
-      null
-    );
-  }
-  const now = Date.now();
-  const result = commitModel(function (candidate) {
-    if (!candidate.player) {
-      return commandResult(
-        false,
-        'not_created',
-        false,
-        '尚未创建角色',
-        null
-      );
-    }
-    if (useStage3Runtime) {
-      const minimum = stage3Bootstrap.CombatLoadouts
-        .minimumSellRemainder(candidate, itemId);
-      const stacks = candidate.player.inventory &&
-        candidate.player.inventory.stacks;
-      const owned = stacks &&
-        Number.isSafeInteger(stacks[itemId])
-        ? stacks[itemId]
-        : 0;
-      if (!Number.isSafeInteger(minimum) ||
-          minimum < 0 ||
-          owned - quantity < minimum) {
-        return commandResult(
-          false,
-          'item_in_combat_plan',
-          false,
-          '战斗方案至少需要保留一件该补给',
-          null
-        );
-      }
-    }
-    const sold = stage2Bootstrap.Inventory.sell(
-      candidate.player.inventory,
-      itemId,
-      quantity
-    );
-    if (!sold.ok) {
-      return stage2Failure('inventory', sold.code, '出售失败');
-    }
-    const nextCurrency = candidate.player.lingshi + sold.currency;
-    if (!Number.isSafeInteger(nextCurrency)) {
-      return stage2Failure(
-        'inventory',
-        'invalid_inventory',
-        '灵石数量异常'
-      );
-    }
-    const seedBefore = candidate.rngState;
-    candidate.player.inventory = sold.value;
-    candidate.player.lingshi = nextCurrency;
-    const currencyGains = { items: { lingshi: sold.currency } };
-    const itemCosts = { items: {} };
-    itemCosts.items[itemId] = quantity;
-    const report = archiveImmediateReport(
-      candidate,
-      'sellItem',
-      currencyGains,
-      itemCosts,
-      seedBefore,
-      now
-    );
-    return commandResult(true, 'ok', true, '出售成功', {
-      itemId,
-      quantity,
-      currency: sold.currency,
-      reportId: report.id
-    });
-  }, now, {
-    kind: 'save',
-    message: '出售结果保存失败，请重试'
-  });
-  if (result.ok && result.changed) toast(result.message);
-  return result;
-}
-
-function commandUseItem(input) {
-  const itemId = input && input.itemId;
-  const quantity = (input && Number.isSafeInteger(input.quantity) && input.quantity > 0)
-    ? input.quantity
-    : 1;
-  if (typeof itemId !== 'string' || !itemId) {
-    return commandResult(false, 'invalid_argument', false, '使用参数无效', null);
-  }
-  const item = (stage2Bootstrap && stage2Bootstrap.ItemContent)
-    ? stage2Bootstrap.ItemContent.get(itemId)
-    : null;
-  if (!item) {
-    return commandResult(false, 'unknown_item', false, '未知物品', null);
-  }
-  const category = item.category;
-
-  // 功法书：研读领悟
-  if (category === 'technique') {
-    if (!useStage3Runtime) {
-      return commandResult(
-        false,
-        'unavailable',
-        true,
-        '功法书请在「装备」界面研读',
-        null
-      );
-    }
-    return commandConsumeTechniqueBook({ itemId: itemId });
-  }
-
-  // 消耗品：背包内直接消耗 1 个
-  if (category === 'consumable') {
-    if (!useStage2Runtime) {
-      return commandResult(
-        false,
-        'unavailable',
-        true,
-        '当前版本暂不支持直接使用该道具',
-        null
-      );
-    }
-    const now = Date.now();
-    return commitModel(function (candidate) {
-      const inv = candidate.player && candidate.player.inventory;
-      if (!inv) {
-        return commandResult(false, 'not_created', false, '尚未创建角色', null);
-      }
-      const available = stage2Bootstrap.Inventory.availableQuantity(inv, itemId);
-      if (available < 1) {
-        return commandResult(
-          false,
-          'item_bound',
-          false,
-          '该道具已绑定，无法使用',
-          null
-        );
-      }
-      const delta = {};
-      delta[itemId] = -quantity;
-      const applied = stage2Bootstrap.Inventory.apply(inv, delta);
-      if (!applied.ok) {
-        return stage2Failure('inventory', applied.code, '使用失败');
-      }
-      candidate.player.inventory = applied.value;
-      return commandResult(
-        true,
-        'ok',
-        true,
-        '使用了 ' + item.name + ' ×' + quantity,
-        { itemId: itemId, quantity: quantity }
-      );
-    }, now, {
-      kind: 'save',
-      message: '使用结果保存失败，请重试'
-    });
-  }
-
-  // 钓鱼宝匣 / 解锁物
-  if (item.useAction && useStage2Runtime) {
-    const FishingLootApi = (typeof FishingLoot !== 'undefined')
-      ? FishingLoot
-      : (stage2Bootstrap && stage2Bootstrap.FishingLoot) || null;
-    if (FishingLootApi) {
-      const now = Date.now();
-      return commitModel(function (candidate) {
-        const inv = candidate.player && candidate.player.inventory;
-        if (!inv) {
-          return commandResult(false, 'not_created', false, '尚未创建角色', null);
-        }
-        const available = stage2Bootstrap.Inventory.availableQuantity(inv, itemId);
-        if (available < 1) {
-          return commandResult(false, 'missing_item', false, '物品不足', null);
-        }
-        const consume = {};
-        consume[itemId] = -1;
-        const spent = stage2Bootstrap.Inventory.apply(inv, consume);
-        if (!spent.ok) {
-          return stage2Failure('inventory', spent.code, '使用失败');
-        }
-        candidate.player.inventory = spent.value;
-
-        let lootResult = null;
-        if (item.useAction === 'openSunkenCasket' &&
-            typeof FishingLootApi.openSunkenCasket === 'function') {
-          lootResult = FishingLootApi.openSunkenCasket(
-            candidate,
-            candidate.rngState || 0
-          );
-        } else if (item.useAction === 'openLostTackleBox' &&
-            typeof FishingLootApi.openLostTackleBox === 'function') {
-          lootResult = FishingLootApi.openLostTackleBox(
-            candidate,
-            candidate.rngState || 0
-          );
-        } else if (item.useAction === 'unlockSecretCove' &&
-            typeof FishingLootApi.unlockSecretCove === 'function') {
-          lootResult = FishingLootApi.unlockSecretCove(candidate);
-        } else if (item.useAction === 'unlockBerserkShoal' &&
-            typeof FishingLootApi.unlockBerserkShoal === 'function') {
-          lootResult = FishingLootApi.unlockBerserkShoal(candidate);
-        } else {
-          return commandResult(false, 'no_use_action', false, '无法使用', null);
-        }
-
-        if (!lootResult || lootResult.ok !== true) {
-          return commandResult(
-            false,
-            lootResult && lootResult.code ? lootResult.code : 'use_failed',
-            false,
-            '使用失败',
-            null
-          );
-        }
-        if (Number.isSafeInteger(lootResult.rngState)) {
-          candidate.rngState = lootResult.rngState;
-        }
-        let message = '使用了 ' + item.name;
-        if (lootResult.granted && lootResult.granted.itemId) {
-          const grantedItem = stage2Bootstrap.ItemContent.get(
-            lootResult.granted.itemId
-          );
-          message += '，获得 ' +
-            (grantedItem ? grantedItem.name : lootResult.granted.itemId) +
-            ' ×' + lootResult.granted.quantity;
-        }
-        if (lootResult.flag) {
-          message += '，解锁新钓点';
-        }
-        return commandResult(true, 'ok', true, message, {
-          itemId: itemId,
-          granted: lootResult.granted || null,
-          flag: lootResult.flag || null
-        });
-      }, now, {
-        kind: 'save',
-        message: '使用结果保存失败，请重试'
-      });
-    }
-  }
-
-  // 装备 / 材料 / 任务物品：需在特定系统中使用，背包不误删
-  return commandResult(
-    false,
-    'no_use_action',
-    true,
-    item.name + ' 需在对应系统（如战斗装备 / 炼制）中使用，背包暂不支持直接使用',
-    null
-  );
-}
-
-function commandExpandInventory(input) {
-  if (!useStage2Runtime) return stage2UnavailableCommand();
-  const fields = safeInputFields(input, ['amount', 'cost']);
-  if (!fields ||
-      !Number.isSafeInteger(fields.amount) ||
-      fields.amount <= 0 ||
-      !Number.isSafeInteger(fields.cost) ||
-      fields.cost < 0) {
-    return commandResult(
-      false,
-      'invalid_argument',
-      false,
-      '拓展参数无效',
-      null
-    );
-  }
-  const now = Date.now();
-  const result = commitModel(function (candidate) {
-    if (!candidate.player) {
-      return commandResult(false, 'not_created', false, '尚未创建角色', null);
-    }
-    const inv = candidate.player.inventory;
-    if (!inv) {
-      return commandResult(false, 'not_created', false, '背包数据缺失', null);
-    }
-    const lingshi = candidate.player.lingshi || 0;
-    if (lingshi < fields.cost) {
-      return commandResult(
-        false,
-        'insufficient_lingshi',
-        false,
-        '灵石不足，无法拓展',
-        null
-      );
-    }
-    const granted = stage2Bootstrap.Inventory.grantCapacity(
-      inv,
-      fields.amount,
-      'shop'
-    );
-    if (!granted.ok) {
-      return stage2Failure('inventory', granted.code, '拓展失败');
-    }
-    candidate.player.inventory = granted.value;
-    candidate.player.lingshi = lingshi - fields.cost;
-    return commandResult(
-      true,
-      'ok',
-      true,
-      '背包已拓展 ' + fields.amount + ' 格',
-      {
-        amount: fields.amount,
-        capacity: granted.value.capacity,
-        cost: fields.cost
-      }
-    );
-  }, now, {
-    kind: 'save',
-    message: '拓展结果保存失败，请重试'
-  });
-  if (result.ok && result.changed) toast(result.message);
-  return result;
-}
-
-function commandPlant(input) {
-  if (!useStage2Runtime) return stage2UnavailableCommand();
-  const plotId = input && input.plotId;
-  const cropId = input && input.cropId;
-  if (typeof plotId !== 'string' || typeof cropId !== 'string') {
-    return commandResult(
-      false,
-      'invalid_argument',
-      false,
-      '播种参数无效',
-      null
-    );
-  }
-  const now = Date.now();
-  const result = commitModel(function (candidate) {
-    const seedBefore = candidate.rngState;
-    const planted = stage2Bootstrap.Farm.plant(
-      candidate,
-      plotId,
-      cropId,
-      stage2Bootstrap.Formations.effects(candidate)
-    );
-    if (!planted.ok) {
-      return stage2Failure('farm', planted.code, '播种失败');
-    }
-    replaceCandidateModel(candidate, planted.state);
-    const report = archiveImmediateReport(
-      candidate,
-      'plant',
-      null,
-      planted.costs,
-      seedBefore,
-      now
-    );
-    return commandResult(true, 'ok', true, '播种成功', {
-      plotId: planted.result.plotId,
-      cropId: planted.result.cropId,
-      totalSeconds: planted.result.totalSeconds,
-      reportId: report.id
-    });
-  }, now, {
-    kind: 'save',
-    message: '播种结果保存失败，请重试'
-  });
-  if (result.ok && result.changed) toast(result.message);
-  return result;
-}
-
-function queryCombatParty() {
-  const model = stage4Model();
-  if (!model || !stage4Bootstrap.CombatParty) {
-    return readonlyQuery({ slots: [], eligible: [] });
-  }
-  return readonlyQuery(stage4Bootstrap.CombatParty.query(model));
-}
-
-function bulkPlantAssignments(input) {
-  if (!input || typeof input !== 'object' ||
-      !Array.isArray(input.assignments)) {
-    return null;
-  }
-  const result = [];
-  const seen = {};
-  for (let index = 0; index < input.assignments.length; index++) {
-    const assignment = input.assignments[index];
-    if (!assignment || typeof assignment !== 'object' ||
-        Array.isArray(assignment) ||
-        typeof assignment.plotId !== 'string' ||
-        typeof assignment.cropId !== 'string' ||
-        seen[assignment.plotId]) {
-      return null;
-    }
-    seen[assignment.plotId] = true;
-    result.push({
-      plotId: assignment.plotId,
-      cropId: assignment.cropId
-    });
-  }
-  return result;
-}
-
-function mergeItemCosts(target, costs) {
-  const items = costs && costs.items;
-  if (!items || typeof items !== 'object') return;
-  Object.keys(items).forEach(function (itemId) {
-    const quantity = items[itemId];
-    if (!Number.isFinite(quantity) || quantity <= 0) return;
-    target[itemId] = (target[itemId] || 0) + quantity;
-  });
-}
-
-function commandPlantAll(input) {
-  if (!useStage2Runtime) return stage2UnavailableCommand();
-  const assignments = bulkPlantAssignments(input);
-  if (!assignments) {
-    return commandResult(
-      false,
-      'invalid_argument',
-      false,
-      '批量播种参数无效',
-      null
-    );
-  }
-  if (!assignments.length) {
-    return commandResult(
-      true,
-      'no_change',
-      false,
-      '没有可播种的空田',
-      { planted: 0 }
-    );
-  }
-  const now = Date.now();
-  const result = commitModel(function (candidate) {
-    const seedBefore = candidate.rngState;
-    const combinedItems = {};
-    const plantedPlots = [];
-    for (let index = 0; index < assignments.length; index++) {
-      const assignment = assignments[index];
-      const planted = stage2Bootstrap.Farm.plant(
-        candidate,
-        assignment.plotId,
-        assignment.cropId,
-        stage2Bootstrap.Formations.effects(candidate)
-      );
-      if (!planted.ok) {
-        return stage2Failure('farm', planted.code, '批量播种失败');
-      }
-      replaceCandidateModel(candidate, planted.state);
-      mergeItemCosts(combinedItems, planted.costs);
-      plantedPlots.push({
-        plotId: planted.result.plotId,
-        cropId: planted.result.cropId,
-        totalSeconds: planted.result.totalSeconds
-      });
-    }
-    const report = archiveImmediateReport(
-      candidate,
-      'plantAll',
-      null,
-      { items: combinedItems },
-      seedBefore,
-      now
-    );
-    return commandResult(true, 'ok', true, '全部播种成功', {
-      planted: plantedPlots.length,
-      plots: plantedPlots,
-      reportId: report.id
-    });
-  }, now, {
-    kind: 'save',
-    message: '播种结果保存失败，请重试'
-  });
-  if (result.ok && result.changed) toast(result.message);
-  return result;
-}
-
-function commandHarvest(input) {
-  if (!useStage2Runtime) return stage2UnavailableCommand();
-  const plotId = input && input.plotId;
-  if (typeof plotId !== 'string') {
-    return commandResult(
-      false,
-      'invalid_argument',
-      false,
-      '采收参数无效',
-      null
-    );
-  }
-  const now = Date.now();
-  const result = commitModel(function (candidate) {
-    const seedBefore = candidate.rngState;
-    const harvested = stage2Bootstrap.Farm.harvest(
-      candidate,
-      plotId,
-      candidate.rngState,
-      {}
-    );
-    if (!harvested.ok) {
-      const sampled = Number.isSafeInteger(harvested.rngState) &&
-        harvested.rngState >= 0 &&
-        harvested.rngState <= 0xFFFFFFFF &&
-        harvested.rngState !== seedBefore;
-      if (sampled) candidate.rngState = harvested.rngState;
-      return stage2Failure(
-        'farm',
-        harvested.code,
-        '采收失败',
-        sampled
-      );
-    }
-    replaceCandidateModel(candidate, harvested.state);
-    candidate.rngState = harvested.rngState;
-    const report = archiveImmediateReport(
-      candidate,
-      'harvest',
-      harvested.gains,
-      null,
-      seedBefore,
-      now
-    );
-    return commandResult(true, 'ok', true, '采收成功', {
-      plotId: harvested.result.plotId,
-      cropId: harvested.result.cropId,
-      quantity: harvested.result.quantity,
-      extraYield: harvested.result.extraYield,
-      reportId: report.id
-    });
-  }, now, {
-    kind: 'save',
-    message: '采收结果保存失败，请重试'
-  });
-  if (result.ok && result.changed) toast(result.message);
-  return result;
-}
-
-function resolveFormationByItemId(itemId) {
-  if (typeof itemId !== 'string' || itemId.length === 0) {
-    return { ok: false, code: 'unknown_formation_item' };
-  }
-  const matches = Object.keys(
-    stage2Bootstrap.HomesteadContent.FORMATIONS
-  ).filter(function (formationId) {
-    const definition =
-      stage2Bootstrap.HomesteadContent.FORMATIONS[formationId];
-    return definition && definition.itemId === itemId;
-  });
-  if (matches.length === 0) {
-    return { ok: false, code: 'unknown_formation_item' };
-  }
-  if (matches.length !== 1) {
-    return { ok: false, code: 'ambiguous_formation_item' };
-  }
-  return { ok: true, formationId: matches[0] };
-}
-
-function commandEquipFormation(input) {
-  if (!useStage2Runtime) return stage2UnavailableCommand();
-  const slotIndex = input && input.slotIndex;
-  const itemId = input && input.itemId;
-  if (typeof slotIndex !== 'number' ||
-      !Number.isSafeInteger(slotIndex) ||
-      slotIndex < 0) {
-    return commandResult(
-      false,
-      'invalid_argument',
-      false,
-      '阵位参数无效',
-      null
-    );
-  }
-  const resolved = resolveFormationByItemId(itemId);
-  if (!resolved.ok) {
-    return commandResult(
-      false,
-      resolved.code,
-      false,
-      resolved.code === 'ambiguous_formation_item'
-        ? '阵法物品对应多个定义'
-        : '未知阵法物品',
-      null
-    );
-  }
-  const now = Date.now();
-  const result = commitModel(function (candidate) {
-    const seedBefore = candidate.rngState;
-    const equipped = stage2Bootstrap.Formations.equip(
-      candidate,
-      slotIndex,
-      resolved.formationId
-    );
-    if (!equipped.ok) {
-      return stage2Failure(
-        'formation',
-        equipped.code,
-        '装备阵法失败'
-      );
-    }
-    replaceCandidateModel(candidate, equipped.state);
-    const report = archiveImmediateReport(
-      candidate,
-      'equipFormation',
-      null,
-      null,
-      seedBefore,
-      now
-    );
-    return commandResult(true, 'ok', true, '阵法已装备', {
-      slotIndex,
-      itemId,
-      formationId: resolved.formationId,
-      reportId: report.id
-    });
-  }, now, {
-    kind: 'save',
-    message: '阵法结果保存失败，请重试'
-  });
-  if (result.ok && result.changed) toast(result.message);
-  return result;
-}
-
-function commandUnequipFormation(input) {
-  if (!useStage2Runtime) return stage2UnavailableCommand();
-  const slotIndex = input && input.slotIndex;
-  if (typeof slotIndex !== 'number' ||
-      !Number.isSafeInteger(slotIndex) ||
-      slotIndex < 0) {
-    return commandResult(
-      false,
-      'invalid_argument',
-      false,
-      '阵位参数无效',
-      null
-    );
-  }
-  const now = Date.now();
-  const result = commitModel(function (candidate) {
-    const slots = candidate.systems &&
-      candidate.systems.homestead &&
-      candidate.systems.homestead.formations &&
-      candidate.systems.homestead.formations.slots;
-    const formationId = Array.isArray(slots)
-      ? slots[slotIndex]
-      : null;
-    const seedBefore = candidate.rngState;
-    const unequipped = stage2Bootstrap.Formations.unequip(
-      candidate,
-      slotIndex
-    );
-    if (!unequipped.ok) {
-      return stage2Failure(
-        'formation',
-        unequipped.code,
-        '卸下阵法失败'
-      );
-    }
-    replaceCandidateModel(candidate, unequipped.state);
-    const report = archiveImmediateReport(
-      candidate,
-      'unequipFormation',
-      null,
-      null,
-      seedBefore,
-      now
-    );
-    return commandResult(true, 'ok', true, '阵法已卸下', {
-      slotIndex,
-      formationId,
-      reportId: report.id
-    });
-  }, now, {
-    kind: 'save',
-    message: '阵法结果保存失败，请重试'
-  });
-  if (result.ok && result.changed) toast(result.message);
-  return result;
-}
-
-function commandSetActiveBeast(input) {
-  if (!useStage2Runtime) return stage2UnavailableCommand();
-  if (!input || !Object.prototype.hasOwnProperty.call(input, 'beastId')) {
-    return commandResult(
-      false,
-      'invalid_argument',
-      false,
-      '灵兽参数无效',
-      null
-    );
-  }
-  const beastId = input.beastId;
-  if (beastId !== null && typeof beastId !== 'string') {
-    return commandResult(
-      false,
-      'invalid_argument',
-      false,
-      '灵兽参数无效',
-      null
-    );
-  }
-  const now = Date.now();
-  const result = commitModel(function (candidate) {
-    const selected = stage2Bootstrap.SpiritBeasts.setActive(
-      candidate,
-      beastId
-    );
-    if (!selected.ok) {
-      return stage2Failure('beast', selected.code, '设置灵兽失败');
-    }
-    replaceCandidateModel(candidate, selected.state);
-    return commandResult(
-      true,
-      'ok',
-      true,
-      beastId === null ? '已取消助阵灵兽' : '助阵灵兽已更新',
-      { beastId }
-    );
-  }, now, {
-    kind: 'save',
-    message: '灵兽设置保存失败，请重试'
-  });
-  if (result.ok && result.changed) toast(result.message);
-  return result;
-}
-
-function commandAcknowledgeOffline(input) {
-  const reportIds = input && input.reportIds;
-  if (!Array.isArray(reportIds) ||
-      reportIds.some(function (id) {
-        return typeof id !== 'string' || id.length === 0;
-      })) {
-    return commandResult(
-      false,
-      'invalid_argument',
-      false,
-      '离线报告参数无效',
-      null
-    );
-  }
-  const uniqueIds = new Set(reportIds);
-  const result = commitModel(function (candidate) {
-    const selected = candidate.pendingOfflineReports.filter(
-      function (report) {
-        return uniqueIds.has(report.id);
-      }
-    );
-    if (!selected.length) {
-      return commandResult(true, 'no_change', false, null, null);
-    }
-    candidate.reportArchive = SimulationReport.archive(
-      candidate.reportArchive,
-      selected,
-      50
-    );
-    candidate.pendingOfflineReports =
-      candidate.pendingOfflineReports.filter(function (report) {
-        return !uniqueIds.has(report.id);
-      });
-    return commandResult(true, 'ok', true, '离线收益已领取', {
-      reportIds: selected.map(function (report) {
-        return report.id;
-      })
-    });
-  }, Date.now(), {
-    kind: 'closeOffline',
-    message: '保存失败，离线收益仍待领取',
-    successMessage: '离线收益已领取'
-  });
-  if (result.ok && result.changed) toast(result.message);
-  return result;
-}
-
-function commandEnterLegacyRebirth() {
-  const result = commitModel(function (candidate) {
-    if (!candidate.created) {
-      return commandResult(
-        false,
-        'not_created',
-        false,
-        '尚未创建角色',
-        null
-      );
-    }
-    candidate.player = defaultPlayer();
-    candidate.current = null;
-    candidate.lastActionStop = null;
-    return commandResult(
-      true,
-      'ok',
-      true,
-      '入轮回，重生于练气一层',
-      null
-    );
-  }, Date.now(), {
-    kind: 'save',
-    message: '轮回结果保存失败，请重试'
-  });
-  if (result.ok) {
-    state.showLunhui = false;
-    state.navIndex = NAV_HOME;
-    toast(result.message);
-  }
-  return result;
-}
-
-function commandStartSocial(input) {
-  if (!useStage4Runtime) {
-    return stage4Failure('interaction_locked', '人物世界尚未开放');
-  }
-  let npcId;
-  let interactionId;
-  let itemId = null;
-  try {
-    npcId = input && typeof input.npcId === 'string'
-      ? input.npcId
-      : null;
-    interactionId = input && typeof input.interactionId === 'string'
-      ? input.interactionId
-      : null;
-    itemId = input && typeof input.itemId === 'string' &&
-      input.itemId.length > 0 ? input.itemId : null;
-  } catch (error) {
-    return stage4Failure('person_not_found');
-  }
-  if (!npcId) return stage4Failure('person_not_found');
-  if (!interactionId) return stage4Failure('interaction_locked');
-  const key = interactionId === 'gift'
-    ? 'social:' + npcId + ':gift:' + (itemId || '')
-    : 'social:' + npcId + ':' + interactionId;
-  const now = Date.now();
-  const result = commitModel(function (candidate) {
-    const started = simulationRuntime.rules.start(candidate, key, now);
-    if (!started || !started.ok) {
-      return stage4Failure(started && started.code);
-    }
-    if (started.code === 'no_change') {
-      return commandResult(true, 'no_change', false, null, {
-        npcId,
-        interactionId
-      });
-    }
-    replaceCandidateModel(candidate, started.state);
-    return commandResult(true, 'ok', true, '开始：' +
-      actionDisplayName(key, candidate), {
-        npcId,
-        interactionId,
-        actionKey: key
-      });
-  }, now, {
-    kind: 'save',
-    message: '互动保存失败，请重试'
-  }, {
-    settleToTimestamp: true
-  });
-  if (result.ok && result.changed) toast(result.message);
-  return result;
-}
-
-function commandChooseEvent(input) {
-  if (!useStage4Runtime) {
-    return stage4Failure('event_not_found');
-  }
-  let eventId;
-  let optionId;
-  try {
-    eventId = input && typeof input.eventId === 'string'
-      ? input.eventId
-      : null;
-    optionId = input && typeof input.optionId === 'string'
-      ? input.optionId
-      : null;
-  } catch (error) {
-    return stage4Failure('event_not_found');
-  }
-  if (!eventId) return stage4Failure('event_not_found');
-  if (!optionId) return stage4Failure('option_not_found');
-  const now = Date.now();
-  const result = commitModel(function (candidate) {
-    const resolved = stage4Bootstrap.EventEngine.resolve(
-      candidate,
-      eventId,
-      optionId,
-      {
-        nowSeconds: function () { return now / 1000; }
-      }
-    );
-    if (!resolved || !resolved.ok) {
-      return stage4Failure(resolved && resolved.code);
-    }
-    if (resolved.code === 'already_resolved') {
-      return commandResult(
-        true,
-        'no_change',
-        false,
-        '这件事已经处理过了',
-        { eventId, optionId }
-      );
-    }
-    replaceCandidateModel(candidate, resolved.state);
-    return commandResult(
-      true,
-      'ok',
-      true,
-      '选择已记下，后续会在事件中展开',
-      { eventId, optionId }
-    );
-  }, now, {
-    kind: 'save',
-    message: '事件选择保存失败，请重试'
-  }, {
-    settleToTimestamp: true
-  });
-  if (result.ok && result.changed) toast(result.message);
-  return result;
-}
-
-function commandSetCombatCompanion(input) {
-  if (!useStage4Runtime || !stage4Bootstrap.CombatParty) {
-    return stage4Failure('interaction_locked', '人物世界尚未开放');
-  }
-  const fields = safeInputFields(input, ['slotIndex', 'npcId']);
-  if (!fields ||
-      !Number.isSafeInteger(fields.slotIndex) ||
-      fields.slotIndex < 0 ||
-      fields.slotIndex > 2 ||
-      (fields.npcId !== null && typeof fields.npcId !== 'string')) {
-    return invalidStage3Argument('队伍参数无效');
-  }
-  const now = Date.now();
-  const result = commitModel(function (candidate) {
-    const selected = stage4Bootstrap.CombatParty.setCompanion(
-      candidate,
-      fields.slotIndex,
-      fields.npcId,
-      now
-    );
-    if (!selected || !selected.ok) {
-      return stage4Failure(selected && selected.code, '设置同行队伍失败');
-    }
-    replaceCandidateModel(candidate, selected.state);
-    return commandResult(
-      true,
-      'ok',
-      true,
-      '同行队伍已更新',
-      selected.result
-    );
-  }, now, {
-    kind: 'save',
-    message: '同行队伍保存失败，请重试'
-  });
-  if (result.ok && result.changed) toast(result.message);
-  return result;
-}
-
-function commandMarkEventSectionRead(input) {
-  let section;
-  let ids;
-  try {
-    section = input && typeof input.section === 'string'
-      ? input.section
-      : null;
-    ids = input && Array.isArray(input.ids)
-      ? input.ids.filter(function (id) {
-        return typeof id === 'string' && id.length > 0;
-      })
-      : [];
-  } catch (error) {
-    return commandResult(
-      false,
-      'invalid_argument',
-      false,
-      '事件分区参数无效',
-      null
-    );
-  }
-  if (!stage4ReadState[section]) {
-    return commandResult(
-      false,
-      'invalid_argument',
-      false,
-      '事件分区参数无效',
-      null
-    );
-  }
-  if (ids.length === 0) {
-    ids = queryEvents({ section, filter: 'all' }).items.map(function (row) {
-      return row.id;
-    });
-  }
-  let changed = false;
-  ids.forEach(function (id) {
-    if (!stage4ReadState[section].has(id)) {
-      stage4ReadState[section].add(id);
-      changed = true;
-    }
-  });
-  return commandResult(
-    true,
-    changed ? 'ok' : 'no_change',
-    changed,
-    null,
-    { section, readCount: ids.length }
-  );
-}
-
-const STAGE5_MESSAGES = Object.freeze({
-  unknown_partner: '未找到这位正式伴侣',
-  partner_unavailable: '对方当前无法参与传承仪式',
-  formal_partner_required: '只有正式伴侣可以共同筹备传承仪式',
-  ritual_in_progress: '已有一场传承仪式正在筹备',
-  invalid_plan: '传承方案超出当前传承殿容量',
-  invalid_cause: '无法开始这次人生转换',
-  lifespan_not_ready: '当前尚未进入寿元安全缓冲',
-  no_pending_transition: '当前没有待确认的人生转换',
-  invalid_heir: '该后代目前不能继承',
-  invalid_route: '请选择后代继承或创建新身份',
-  new_identity_not_selected: '请先选择创建新身份',
-  invalid_draft: '新身份资料不完整',
-  invalid_name: '请输入有效的新名字',
-  route_required: '请先选择人生路线',
-  draft_required: '请先完成新身份资料',
-  transition_required: '寿元将尽时必须完成传承或轮回'
-});
-
-function stage5Failure(code) {
-  return commandResult(
-    false,
-    code || 'stage5_failure',
-    false,
-    STAGE5_MESSAGES[code] || '操作未完成',
-    null
-  );
-}
-
-function commandProposeLineageRitual(input) {
-  if (!useStage5Runtime) return stage5Failure('unknown_partner');
-  const npcId = input && typeof input.partnerNpcId === 'string'
-    ? input.partnerNpcId
-    : null;
-  if (!npcId) return stage5Failure('unknown_partner');
-  const now = Date.now();
-  const response = commitModel(function (candidate) {
-    const domain = stage5Bootstrap.Lineage.propose(
-      candidate,
-      npcId,
-      now / 1000
-    );
-    if (!domain.ok) return stage5Failure(domain.code);
-    replaceCandidateModel(candidate, domain.state);
-    return commandResult(true, 'ok', true, '开始与对方筹备传承仪式', {
-      ritualId: domain.value.id,
-      partnerNpcId: npcId
-    });
-  }, now, {
-    kind: 'save',
-    message: '传承仪式保存失败，请重试'
-  }, {
-    settleToTimestamp: true
-  });
-  if (response.ok && response.changed) toast(response.message);
-  return response;
-}
-
-function commandSetInheritancePlan(input) {
-  if (!useStage5Runtime) return stage5Failure('invalid_plan');
-  const now = Date.now();
-  return commitModel(function (candidate) {
-    const domain = stage5Bootstrap.InheritanceHall.setPlan(
-      candidate,
-      input
-    );
-    if (!domain.ok) return stage5Failure(domain.code);
-    replaceCandidateModel(candidate, domain.state);
-    return commandResult(true, 'ok', true, '传承方案已保存', domain.value);
-  }, now, {
-    kind: 'save',
-    message: '传承方案保存失败，请重试'
-  });
-}
-
-function commandBeginLegacyTransition(input) {
-  if (!useStage5Runtime) return stage5Failure('invalid_cause');
-  const cause = input && typeof input.cause === 'string'
-    ? input.cause
-    : null;
-  const now = Date.now();
-  return commitModel(function (candidate) {
-    const domain = stage5Bootstrap.LegacyTransition.begin(
-      candidate,
-      cause,
-      now / 1000
-    );
-    if (!domain.ok) return stage5Failure(domain.code);
-    replaceCandidateModel(candidate, domain.state);
-    const pending = domain.value;
-    const noHeirAuto = pending &&
-      pending.route === 'newIdentity' &&
-      !(pending.heirNpcId);
-    return commandResult(
-      true,
-      domain.code,
-      domain.code !== 'already_pending',
-      domain.code === 'already_pending'
-        ? '人生转换已在进行中'
-        : (noHeirAuto
-          ? '已开始人生转换：当前无继承人，请确认新身份'
-          : '已开始人生转换，请选择后代继承或创建新身份'),
-      domain.value
-    );
-  }, now, {
-    kind: 'save',
-    message: '人生转换准备保存失败，请重试'
-  }, {
-    settleToTimestamp: true
-  });
-}
-
-function commandChooseLegacyRoute(input) {
-  if (!useStage5Runtime) return stage5Failure('invalid_route');
-  const route = input && input.route;
-  const heirNpcId = input && input.heirNpcId;
-  return commitModel(function (candidate) {
-    const domain = stage5Bootstrap.LegacyTransition.chooseRoute(
-      candidate,
-      route,
-      heirNpcId
-    );
-    if (!domain.ok) return stage5Failure(domain.code);
-    replaceCandidateModel(candidate, domain.state);
-    return commandResult(true, 'ok', true, null, domain.value);
-  }, Date.now(), {
-    kind: 'save',
-    message: '人生路线保存失败，请重试'
-  });
-}
-
-function commandUpdateNewIdentityDraft(input) {
-  if (!useStage5Runtime) return stage5Failure('invalid_draft');
-  return commitModel(function (candidate) {
-    const domain = stage5Bootstrap.LegacyTransition.updateDraft(
-      candidate,
-      input
-    );
-    if (!domain.ok) return stage5Failure(domain.code);
-    replaceCandidateModel(candidate, domain.state);
-    return commandResult(true, 'ok', true, null, domain.value);
-  }, Date.now(), {
-    kind: 'save',
-    message: '新身份资料保存失败，请重试'
-  });
-}
-
-function commandConfirmLegacyTransition() {
-  if (!useStage5Runtime) return stage5Failure('route_required');
-  const now = Date.now();
-  const response = commitModel(function (candidate) {
-    const domain = stage5Bootstrap.LegacyTransition.confirm(
-      candidate,
-      now / 1000
-    );
-    if (!domain.ok) return stage5Failure(domain.code);
-    replaceCandidateModel(candidate, domain.state);
-    return commandResult(
-      true,
-      'ok',
-      true,
-      domain.value.source === 'descendant'
-        ? '已由后代接续传承'
-        : '已进入新的轮回',
-      domain.value
-    );
-  }, now, {
-    kind: 'save',
-    message: '人生转换保存失败，请重试'
-  });
-  if (response.ok) {
-    state.navIndex = NAV_HOME;
-    toast(response.message);
-  }
-  return response;
-}
-
-function commandCancelLegacyTransition() {
-  if (!useStage5Runtime) return stage5Failure('no_pending_transition');
-  return commitModel(function (candidate) {
-    const domain = stage5Bootstrap.LegacyTransition.cancel(candidate);
-    if (!domain.ok) return stage5Failure(domain.code);
-    replaceCandidateModel(candidate, domain.state);
-    return commandResult(true, 'ok', true, null, null);
-  }, Date.now(), {
-    kind: 'save',
-    message: '取消人生转换保存失败，请重试'
-  });
-}
-
-function commandRetryPersistence() {
-  if (!isPersistenceLocked()) {
-    return commandResult(true, 'no_change', false, null, null);
-  }
-  if (state._persistenceIssue &&
-      state._persistenceIssue.kind === 'future') {
-    return commandResult(
-      false,
-      'persistence_locked',
-      false,
-      persistenceRecovery.message(),
-      null
-    );
-  }
-  let recovered = false;
-  try {
-    recovered = persistenceRecovery.retry() === true;
-  } catch (error) {
-    recovered = false;
-  }
-  if (!recovered || isPersistenceLocked()) {
-    return commandResult(
-      false,
-      'save_failed',
-      false,
-      persistenceRecovery.message(),
-      { retryable: true }
-    );
-  }
-  return commandResult(true, 'ok', true, null, null);
-}
-
-const queries = Object.freeze({
-  app: queryApp,
-  navigation: queryNavigation,
-  top: queryTop,
-  home: queryHome,
-  inventory: queryInventory,
-  itemInfo: queryItemInfo,
-  equipmentInfo: queryEquipmentInfo,
-  breakModal: queryBreakModal,
-  skillPage: querySkillPage,
-  gatherPage: queryGatherPage,
-  homestead: queryHomestead,
-  inheritanceHall: queryInheritanceHall,
-  legacyTransition: queryLegacyTransition,
-  charm: queryCharm,
-  offline: queryOffline,
-  events: queryEvents,
-  relationships: queryRelationships,
-  combatParty: queryCombatParty,
-  relationship: queryRelationship,
-  social: querySocial,
-  sects: querySects,
-  sect: querySect,
-  world: queryWorld,
-  persistence: queryPersistence,
-  combat: queryCombat,
-  combatLoadouts: queryCombatLoadouts,
-  techniques: queryTechniques,
-  breakthrough: queryBreakthrough
-});
-
-const commands = Object.freeze({
-  randomizeAppearance: commandRandomizeAppearance,
-  stepAppearance: commandStepAppearance,
-  confirmCreate: commandConfirmCreate,
-  saveAppearance: commandSaveAppearance,
-  switchNav: commandSwitchNav,
-  openBreak: commandOpenBreak,
-  closeBreak: commandCloseBreak,
-  closeLifespanBuffer: commandCloseLifespanBuffer,
-  attemptBreak: commandAttemptBreak,
-  startAction: commandStartAction,
-  stopAction: commandStopAction,
-  sellItem: commandSellItem,
-  useItem: commandUseItem,
-  expandInventory: commandExpandInventory,
-  plant: commandPlant,
-  plantAll: commandPlantAll,
-  harvest: commandHarvest,
-  equipFormation: commandEquipFormation,
-  unequipFormation: commandUnequipFormation,
-  setActiveBeast: commandSetActiveBeast,
-  consumeTechniqueBook: commandConsumeTechniqueBook,
-  createCombatLoadout: commandCreateCombatLoadout,
-  renameCombatLoadout: commandRenameCombatLoadout,
-  deleteCombatLoadout: commandDeleteCombatLoadout,
-  setActiveCombatLoadout: commandSetActiveCombatLoadout,
-  setEquipment: commandSetEquipment,
-  equipEquipment: commandEquipEquipment,
-  unequipEquipment: commandUnequipEquipment,
-  enhanceEquipment: commandEnhanceEquipment,
-  reforgeEquipment: commandReforgeEquipment,
-  setEquipmentFavorite: commandSetEquipmentFavorite,
-  sellEquipment: commandSellEquipment,
-  salvageEquipment: commandSalvageEquipment,
-  setSupply: commandSetSupply,
-  setActiveTechnique: commandSetActiveTechnique,
-  setPassiveTechnique: commandSetPassiveTechnique,
-  claimCombatLoot: commandClaimCombatLoot,
-  treatInjury: commandTreatInjury,
-  attemptBreakthrough: commandAttemptBreakthrough,
-  startSocial: commandStartSocial,
-  chooseEvent: commandChooseEvent,
-  setCombatCompanion: commandSetCombatCompanion,
-  markEventSectionRead: commandMarkEventSectionRead,
-  proposeLineageRitual: commandProposeLineageRitual,
-  setInheritancePlan: commandSetInheritancePlan,
-  beginLegacyTransition: commandBeginLegacyTransition,
-  chooseLegacyRoute: commandChooseLegacyRoute,
-  updateNewIdentityDraft: commandUpdateNewIdentityDraft,
-  confirmLegacyTransition: commandConfirmLegacyTransition,
-  cancelLegacyTransition: commandCancelLegacyTransition,
-  acknowledgeOffline: commandAcknowledgeOffline,
-  enterLegacyRebirth: commandEnterLegacyRebirth,
-  retryPersistence: commandRetryPersistence
-});
-
-const renderApi = Object.freeze({
-  drawCharacter
-});
-
-window.GameAPI = Object.freeze({
-  queries,
-  commands,
-  render: renderApi
-});
-
-if (runtimeRoot &&
-    runtimeRoot.window !== runtimeRoot &&
-    runtimeRoot.__GAME_TEST_HARNESS_REQUEST__ === true) {
-  runtimeRoot.__GameTestHarness = Object.freeze({
-    ACTIONS,
-    SKILL_PAGES,
-    NAV,
-    GATHERING_DATA,
-    defaultPlayer,
-    ensurePlayer,
-    setCurrent,
-    closeOffline,
-    addSkillXp,
-    skillXpNeed,
-    resName,
-    state,
-    REALM_TABLE,
-    breakthroughRate,
-    tryBreakthrough,
-    enterLunhui,
-    confirmCreate,
-    randomize,
-    stepPart,
-    navIndexOfAction,
-    persist,
-    save,
-    queries: Object.freeze({
-      persistence: getPersistenceStatus
-    }),
-    commands: Object.freeze({
-      retryPersistence,
-      stopAction: commandStopAction,
-      startAction: commandStartAction
-    }),
-    gameRandom,
-    simulationRuntime,
-    getLastSimulationReport,
-    getToastMessage: function () { return toastMsg; },
-    getRegions: function () { return regions; },
-    setShowBreak: function (value) { state.showBreak = value; },
-    getShowBreak: function () { return state.showBreak; },
-    __test: Object.freeze({
-      snapshotModel: function () {
-        return StateModel.fromRuntime(state, state.processedThroughMs);
-      },
-      replaceModel: function (model) {
-        return StateModel.applyToRuntime(state, model);
-      },
-      advanceRuntime,
-      advanceGameplay,
-      advanceHidden,
-      settleStartupOffline,
-      acknowledgeOffline,
-      runRuntimeFrame,
-      handleVisibilityChange,
-      flushLifecycle,
-      recoverySnapshot: function () {
-        return persistenceRecovery.testSnapshot();
-      }
-    })
-  });
-}
-})(typeof globalThis !== 'undefined' ? globalThis : this);

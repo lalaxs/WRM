@@ -4,13 +4,10 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 
-const ui = fs.readFileSync(path.join(__dirname, '..', 'ui.js'), 'utf8');
+const ui = require('./ui_scripts').readUiSource();
 const styles = fs.readFileSync(path.join(__dirname, '..', 'styles.css'), 'utf8');
 const all = fs.readFileSync(path.join(__dirname, 'selftest_all.js'), 'utf8');
-const status = fs.readFileSync(
-  path.join(__dirname, '..', 'docs', 'BASELINE_IMPLEMENTATION_STATUS.md'),
-  'utf8'
-);
+const docsReadme = fs.readFileSync(path.join(__dirname, '..', 'docs', 'README.md'), 'utf8');
 
 let passed = 0;
 function ok(condition, label) {
@@ -85,11 +82,10 @@ ok(
   '全量自测已纳入 Stage 5 UI 静态测试'
 );
 ok(
-  /Stage 5 基础.*已实现/.test(status) &&
-    /NPC 死亡、转世与飞升/.test(status) &&
-    /传承殿 2–5 级/.test(status) &&
-    /浏览器验收/.test(status),
-  '状态文档记录 Stage 5 基础完成项与延期项'
+  docsReadme.includes('2026-07-24-xiuxian-idle-core-design.md') &&
+    docsReadme.includes('team-combat-foundation-design.md') &&
+    docsReadme.includes('不具有执行优先级'),
+  '文档入口列出核心规格且声明未列入者不执行'
 );
 
 console.log('Stage 5 UI static self-test passed:', passed);

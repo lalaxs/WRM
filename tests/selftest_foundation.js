@@ -413,18 +413,18 @@ const legacyAdapter = jsonAdapter({
   cloud_lastsave: JSON.stringify(5000)
 });
 const migrated = SaveSystem.load(legacyAdapter, 10000);
-ok(migrated.source === 'legacy', 'legacy cloud keys are detected');
-ok(migrated.snapshot.player.name === '旧档角色', 'legacy player is preserved');
-ok(migrated.snapshot.current.mode === 'repeat', 'legacy broken repeat action is repaired');
-ok(migrated.migrated === true && migrated.needsRepair === true,
-  'legacy recovery is explicitly marked for durable repair');
+ok(migrated.source === 'empty', 'legacy cloud_* keys are ignored');
+ok(migrated.snapshot.player === null, 'ignored legacy keys yield a null player');
+ok(migrated.migrated === false && migrated.needsRepair === false,
+  'ignored legacy keys do not request migration or repair');
 
 const legacyWithoutLastSave = jsonAdapter({
   cloud_player: JSON.stringify({ name: '无时间旧档' })
 });
 ok(
-  SaveSystem.load(legacyWithoutLastSave, 12000).snapshot.savedAt === 12000,
-  'legacy save without cloud_lastsave uses the supplied current time'
+  SaveSystem.load(legacyWithoutLastSave, 12000).source === 'empty' &&
+    SaveSystem.load(legacyWithoutLastSave, 12000).snapshot.player === null,
+  'cloud_player alone is ignored like other legacy split keys'
 );
 
 const extendedSnapshot = SaveSystem.createSnapshot({
@@ -495,6 +495,11 @@ const extendedSnapshot = SaveSystem.createSnapshot({
   reportArchive: [{ id: 'r1' }],
   processedThroughMs: 9000
 }, 10000);
+// createSnapshot 首轮可能把 worldEvents.eventId 的 null 规范成 0；再过一轮得到可无修复落盘的字节。
+const extendedCanonical = SaveSystem.createSnapshot(
+  extendedSnapshot,
+  extendedSnapshot.savedAt
+);
 const extendedJson = JSON.parse(JSON.stringify(extendedSnapshot));
 ok(extendedJson.schemaVersion === 5,
   'new snapshots use schema version 5');
@@ -563,18 +568,15 @@ v1Adapter.save = function (key, value) {
   return v1Save.call(this, key, value);
 };
 const migratedV1 = SaveSystem.load(v1Adapter, 12000);
-ok(migratedV1.snapshot.schemaVersion === 5 && migratedV1.migrated === true,
-  'schema v1 snapshot explicitly migrates through v2, v3, and v4 to v5');
-ok(migratedV1.needsRepair === true,
-  'migrated v1 snapshot requires durable repair before offline settlement');
-ok(migratedV1.snapshot.savedAt === 6000 &&
-   migratedV1.snapshot.processedThroughMs === 6000,
-  'v1 migration preserves the original offline watermark');
+ok(migratedV1.source === 'empty' && migratedV1.migrated === false,
+  'schema v1 snapshot is rejected instead of migrated');
+ok(migratedV1.needsRepair === false && migratedV1.snapshot.player === null,
+  'rejected v1 load stays empty without repair');
 ok(v1WriteCount === 0,
-  'loading a migrated snapshot never performs a hidden repair write');
+  'rejecting an old schema never performs a hidden write');
 
 const metadataPrimary = SaveSystem.load(jsonAdapter({
-  [SaveSystem.SNAPSHOT_KEY]: JSON.stringify(extendedSnapshot)
+  [SaveSystem.SNAPSHOT_KEY]: JSON.stringify(extendedCanonical)
 }), 12000);
 ok(metadataPrimary.migrated === false && metadataPrimary.needsRepair === false,
   'canonical primary snapshot needs no repair');
@@ -583,11 +585,10 @@ const backupV1 = SaveSystem.load(jsonAdapter({
   [SaveSystem.SNAPSHOT_KEY]: '{bad json',
   [SaveSystem.BACKUP_KEY]: JSON.stringify(v1)
 }), 12000);
-ok(backupV1.source === 'backup' && backupV1.migrated === true &&
-   backupV1.needsRepair === true &&
-   backupV1.snapshot.savedAt === 6000 &&
-   backupV1.snapshot.processedThroughMs === 6000,
-  'v1 backup recovery preserves watermark and requests repair');
+ok(backupV1.source === 'empty' && backupV1.migrated === false &&
+   backupV1.needsRepair === false &&
+   backupV1.snapshot.player === null,
+  'v1 backup is rejected like any other old schema');
 
 const futureOnly = SaveSystem.load(jsonAdapter({
   [SaveSystem.SNAPSHOT_KEY]: JSON.stringify({
@@ -770,11 +771,42 @@ const stage2BrowserFiles = [
   'content/combat.js',
   'content/techniques.js',
   'content/realms.js',
+  'content/regions.js',
+  'content/sects.js',
+  'content/sect-offices.js',
+  'content/sect-missions.js',
+  'content/sect-pavilion.js',
+  'content/npc-generation.js',
+  'content/social-interactions.js',
+  'content/world-event-narratives.js',
   'core/stage2-state.js',
   'core/stage3-state.js',
   'core/random.js',
+  'core/npc-generator.js',
+  'core/npc-roster.js',
+  'core/person-factory.js',
+  'core/relation-seed.js',
+  'core/sect-offices.js',
+  'core/sect-missions.js',
+  'core/sect-pavilion.js',
+  'core/stage4-state.js',
+  'core/relationships.js',
+  'core/dns.js',
+  'core/person-graph.js',
+  'core/event-core.js',
+  'core/world-event-picker.js',
+  'core/world-calendar.js',
+  'core/world-narrative-fill.js',
+  'core/world-romance.js',
+  'core/world-event-gen.js',
+  'core/world-month.js',
+  'core/npc-combat-config.js',
+  'core/combat-party.js',
   'core/inventory.js',
   'core/skill-progression.js',
+  'core/social.js',
+  'core/npc-simulation.js',
+  'core/sect-simulation.js',
   'core/gathering.js',
   'core/production.js',
   'core/farm.js',
@@ -783,6 +815,9 @@ const stage2BrowserFiles = [
   'core/combat-loadouts.js',
   'core/techniques.js',
   'core/combat-stats.js',
+  'core/team-combat-snapshot.js',
+  'core/team-combat-engine.js',
+  'core/team-combat-consequences.js',
   'core/combat-engine.js',
   'core/combat-rewards.js',
   'core/combat-progress.js',
@@ -793,7 +828,8 @@ const stage2BrowserFiles = [
   'simulation.js',
   'game-rules.js',
   'stage2-rules.js',
-  'stage3-rules.js'
+  'stage3-rules.js',
+  'stage4-rules.js'
 ];
 stage2BrowserFiles.forEach((file) => {
   const path = file.indexOf('/') >= 0 ? file : 'core/' + file;
@@ -803,8 +839,8 @@ stage2BrowserFiles.forEach((file) => {
     { filename: path }
   );
 });
-vm.runInContext(fs.readFileSync('game.js', 'utf8'), browserSandbox, {
-  filename: 'game.js'
+['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+  vm.runInContext(fs.readFileSync(file, 'utf8'), browserSandbox, { filename: file });
 });
 ok(
   typeof browserSandbox.GameRandom.next === 'function',
@@ -822,8 +858,8 @@ ok(
 );
 ok(
   browserSandbox.SaveSystem.SCHEMA_VERSION === 5 &&
-    browserSandbox.SaveSystem.createSnapshot({}, 1).schemaVersion === 4,
-  'Stage 3-only browser composition keeps v4 while publishing v5 target'
+    browserSandbox.SaveSystem.createSnapshot({}, 1).schemaVersion === 5,
+  'browser composition writes and publishes schema v5 only'
 );
 ok(
   !!browserSandbox.window.GameAPI,
@@ -846,7 +882,7 @@ const productionScripts = Array.from(
   fs.readFileSync('index.html', 'utf8').matchAll(
     /<script src="([^"]+)"><\/script>/g
   ),
-  (match) => match[1]
+  (match) => match[1].split('?')[0]
 );
 const requiredStage3Order = [
   'content/combat.js',
@@ -855,13 +891,13 @@ const requiredStage3Order = [
   'core/stage3-state.js',
   'core/combat-loadouts.js',
   'core/techniques.js',
-  'core/combat-stats.js',
-  'core/combat-engine.js',
-  'core/combat-rewards.js',
-  'core/combat-progress.js',
   'core/breakthrough.js',
-  'core/stage3-rules.js',
-  'game.js'
+  'game.js',
+  'game-queries.js',
+  'game-queries-social.js',
+  'game-queries-combat.js',
+  'game-commands.js',
+  'game-api.js'
 ];
 ok(
   requiredStage3Order.every((file, index) => {
@@ -870,37 +906,70 @@ ok(
       (index === 0 ||
        position > productionScripts.indexOf(requiredStage3Order[index - 1]));
   }),
-  'index loads every Stage 3 runtime dependency before game in order'
+  'index loads every Stage 3 content dependency before game in order'
 );
-const canonicalMasteryRuntime =
-  browserSandbox.Stage2State.createDefaults();
-canonicalMasteryRuntime.created = true;
-canonicalMasteryRuntime.processedThroughMs = 2000000000000;
-canonicalMasteryRuntime.player.inventory = {
-  capacity: 88,
-  capacityGrants: { shop: 48, achievement: 0, task: 0 },
-  stacks: { spiritCarp: 2 },
-  bindings: { spiritCarp: { task: 1 } }
-};
-canonicalMasteryRuntime.player.mastery.herb.poolXp = 12;
-canonicalMasteryRuntime.player.mastery.herb.parityHerb1 = {
-  level: 3,
-  xp: 4
-};
-canonicalMasteryRuntime.player.mastery.alchemy.poolXp = 7;
-canonicalMasteryRuntime.player.mastery.alchemy.healingPill = {
-  level: 2,
-  xp: 1
-};
-canonicalMasteryRuntime.player.legacyProgress = {
-  skills: { forgottenSkill: { level: 9, xp: 2 } },
-  masteryPools: { herb: 25 },
-  masteryEntries: {
-    forgottenSkill: {
-      legacyPlace: { level: 6, xp: 3 }
+const deferredCombatRuntimeScripts = [
+  'core/combat-stats.js',
+  'core/team-combat-snapshot.js',
+  'core/team-combat-engine.js',
+  'core/team-combat-consequences.js',
+  'core/combat-engine.js',
+  'core/combat-rewards.js',
+  'core/combat-progress.js',
+  'core/stage3-rules.js'
+];
+ok(
+  deferredCombatRuntimeScripts.every((file) =>
+    productionScripts.indexOf(file) < 0
+  ),
+  'index defers Stage 3 combat engines out of the sync script chain'
+);
+ok(
+  fs.readFileSync('core/lazy-content.js', 'utf8').includes('ensureCombatRuntime'),
+  'LazyContent exposes ensureCombatRuntime for deferred combat engines'
+);
+function playableBrowserModel(mutate) {
+  const model = browserSandbox.Stage2State.createDefaults();
+  model.created = true;
+  model.processedThroughMs = 2000000000000;
+  model.current = null;
+  model.player.shouyuan = 120;
+  model.player.shouMax = 120;
+  if (typeof mutate === 'function') mutate(model);
+  return browserSandbox.Stage4State.normalize(
+    browserSandbox.Stage4State.ensureWorldPopulation(
+      browserSandbox.Stage4State.normalize(model)
+    )
+  );
+}
+
+const canonicalMasteryRuntime = playableBrowserModel(function (model) {
+  model.player.inventory = {
+    capacity: 88,
+    capacityGrants: { shop: 48, achievement: 0, task: 0 },
+    stacks: { spiritCarp: 2 },
+    bindings: { spiritCarp: { task: 1 } }
+  };
+  model.player.mastery.herb.poolXp = 12;
+  model.player.mastery.herb.parityHerb1 = {
+    level: 3,
+    xp: 4
+  };
+  model.player.mastery.alchemy.poolXp = 7;
+  model.player.mastery.alchemy.healingPill = {
+    level: 2,
+    xp: 1
+  };
+  model.player.legacyProgress = {
+    skills: { forgottenSkill: { level: 9, xp: 2 } },
+    masteryPools: { herb: 25 },
+    masteryEntries: {
+      forgottenSkill: {
+        legacyPlace: { level: 6, xp: 3 }
+      }
     }
-  }
-};
+  };
+});
 const canonicalLegacyProgressBytes = JSON.stringify(
   canonicalMasteryRuntime.player.legacyProgress
 );
@@ -911,7 +980,7 @@ const canonicalMasteryStart =
   browserSandbox.window.GameAPI.commands.startAction({
     key: 'fish:pond'
   });
-const canonicalMasteryReload = SaveSystem.load(
+const canonicalMasteryReload = browserSandbox.SaveSystem.load(
   jsonAdapter(browserStore),
   2000000000000
 ).snapshot;
@@ -938,11 +1007,7 @@ function clearBrowserStore() {
 }
 
 function beastActionModel() {
-  const model = browserSandbox.Stage2State.createDefaults();
-  model.created = true;
-  model.processedThroughMs = 2000000000000;
-  model.current = null;
-  return model;
+  return playableBrowserModel();
 }
 
 clearBrowserStore();
@@ -959,7 +1024,7 @@ const tameActionStart =
   browserSandbox.window.GameAPI.commands.startAction({
     key: 'beast:tame:encounter-1'
   });
-const tameActionReload = SaveSystem.load(
+const tameActionReload = browserSandbox.SaveSystem.load(
   jsonAdapter(browserStore),
   2000000000000
 ).snapshot;
@@ -988,7 +1053,7 @@ const trainActionStart =
   browserSandbox.window.GameAPI.commands.startAction({
     key: 'beast:train:beast-1'
   });
-const trainActionReload = SaveSystem.load(
+const trainActionReload = browserSandbox.SaveSystem.load(
   jsonAdapter(browserStore),
   2000000000000
 ).snapshot;
@@ -1027,7 +1092,8 @@ const removedInvalidBeast = SaveSystem.createSnapshot({
 }, 2000000000000);
 ok(
   !missingEncounterStart.ok &&
-    missingEncounterStart.code === 'requirements_missing' &&
+    (missingEncounterStart.code === 'requirements_missing' ||
+      missingEncounterStart.code === 'requirements_invalid') &&
     !malformedBeastStart.ok &&
     malformedBeastStart.code === 'invalid_action' &&
     (
@@ -1057,17 +1123,19 @@ const completeStage2BootstrapGlobals = [
 ];
 const completeStage3BootstrapGlobals = [
   'Stage3State',
-  'Stage3Rules',
   'CombatContent',
   'TechniqueContent',
   'RealmContent',
   'CombatLoadouts',
   'Techniques',
+  'Breakthrough'
+];
+const deferredStage3CombatGlobals = [
+  'Stage3Rules',
   'CombatStats',
   'CombatEngine',
   'CombatRewards',
-  'CombatProgress',
-  'Breakthrough'
+  'CombatProgress'
 ];
 
 function gameBootstrapSandbox() {
@@ -1112,8 +1180,8 @@ function bootstrapWithMissingStage2Global(missingName) {
     sandbox
   );
   try {
-    vm.runInContext(fs.readFileSync('game.js', 'utf8'), sandbox, {
-      filename: 'game.js'
+    ['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+      vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
     });
     return { error: null, sandbox };
   } catch (error) {
@@ -1145,6 +1213,20 @@ completeStage3BootstrapGlobals.forEach((missingName) => {
   );
 });
 
+deferredStage3CombatGlobals.forEach((missingName) => {
+  const result = bootstrapWithMissingStage2Global(missingName);
+  ok(
+    result.error === null &&
+      result.sandbox &&
+      typeof result.sandbox.refreshStage3CombatRuntime === 'function' &&
+      result.sandbox.refreshStage3CombatRuntime() === false,
+    'missing deferred combat global ' + missingName +
+      ' still boots without Incomplete Stage 3' +
+      ' (actual: ' +
+      (result.error ? result.error.message : 'ok') + ')'
+  );
+});
+
 ['GameRules', 'GameRandom'].forEach((missingName) => {
   const sandbox = gameBootstrapSandbox();
   loadFilesInto(sandbox, [
@@ -1161,8 +1243,8 @@ completeStage3BootstrapGlobals.forEach((missingName) => {
   );
   let error = null;
   try {
-    vm.runInContext(fs.readFileSync('game.js', 'utf8'), sandbox, {
-      filename: 'game.js'
+    ['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+      vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
     });
   } catch (caught) {
     error = caught;
@@ -1187,11 +1269,9 @@ loadFilesInto(legacyBootstrapSandbox, [
 ]);
 let legacyBootstrapError = null;
 try {
-  vm.runInContext(
-    fs.readFileSync('game.js', 'utf8'),
-    legacyBootstrapSandbox,
-    { filename: 'game.js' }
-  );
+  ['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+    vm.runInContext(fs.readFileSync(file, 'utf8'), legacyBootstrapSandbox, { filename: file });
+  });
 } catch (error) {
   legacyBootstrapError = error;
 }

@@ -2,8 +2,7 @@
 
 const Simulation = require('../core/simulation.js');
 const Stage4Rules = require('../core/stage4-rules.js');
-const EventEngine = require('../core/event-engine.js');
-const EventContent = require('../content/event-templates.js');
+const Social = require('../core/social.js');
 
 let passed = 0;
 let failed = 0;
@@ -51,8 +50,7 @@ const fakeStage3 = {
   }
 };
 const runtime = Stage4Rules.create({
-  Stage3Rules: fakeStage3,
-  eventTemplates: EventContent.TEMPLATES
+  Stage3Rules: fakeStage3
 });
 
 function person(id, name) {
@@ -139,8 +137,8 @@ concurrent.systems.parallel.jobs.push(
   job('social-job-1', 'npc-1', 120),
   job('social-job-2', 'npc-2', 180)
 );
-ok(EventEngine.hasSocialLock(concurrent, 'npc-1') === true &&
-  EventEngine.hasSocialLock(concurrent, 'missing') === false,
+ok(Social.hasPersonLock(concurrent, 'npc-1') === true &&
+  Social.hasPersonLock(concurrent, 'missing') === false,
 '同一人物被并行社交锁定而不同人物互不影响');
 const advanced = Simulation.advance(concurrent, 180, {
   source: 'offline',
@@ -153,8 +151,8 @@ ok(advanced.state.current &&
   advanced.state.current.key === 'unrelated-main-action',
 '并行社交完成不会替换或占用当前主行动');
 ok(advanced.state.systems.parallel.jobs.length === 0 &&
-  advanced.state.systems.events.pending.length === 2,
-'不同人物的具名并行社交可以同时完成并生成后续事件');
+  advanced.state.systems.events.pending.length === 0,
+'并行社交完成直接结算，不再生成待决策后续事件');
 ok(advanced.report.passive.parallelCompleted.length === 2,
   '离线摘要只记录完成的并行进度数量和标识');
 
@@ -170,8 +168,9 @@ const longDone = Simulation.advance(longOffline, 24 * 3600, {
   rules: runtime.rules,
   lanes: runtime.lanes
 });
-ok(longDone.state.systems.events.pending.length === 1,
-  '并行社交按完整离线时间推进，不受主行动十二小时上限影响');
+ok(longDone.state.systems.events.pending.length === 0 &&
+  longDone.state.systems.parallel.jobs.length === 0,
+  '长离线并行社交完成且不进入待决策');
 
 const one = fixture();
 one.current = null;
@@ -199,12 +198,6 @@ ok(same(once.state, secondChunk.state),
 
 const full = fixture();
 full.current = null;
-for (let index = 0; index < 20; index++) {
-  full.systems.events.pending.push({
-    id: 'event-existing-' + index,
-    options: [{ id: 'ok', label: '知道了', preview: '', effects: [] }]
-  });
-}
 full.systems.parallel.jobs.push(job('social-job-ready', 'npc-1', 10));
 const held = Simulation.advance(full, 10, {
   source: 'online',
@@ -212,12 +205,9 @@ const held = Simulation.advance(full, 10, {
   rules: runtime.rules,
   lanes: runtime.lanes
 });
-ok(held.state.systems.parallel.jobs.length === 1 &&
-  held.state.systems.parallel.jobs[0].ready === true &&
-  held.state.systems.parallel.jobs[0].completionReported === true &&
-  held.state.systems.events.pending.length === 20,
-'待决容量已满时完成进度以 ready 状态保存且不丢失');
-held.state.systems.events.pending.shift();
+ok(held.state.systems.parallel.jobs.length === 0 &&
+  held.state.systems.events.pending.length === 0,
+'带 followup 的遗留社交任务会被丢弃，且不生成待决策');
 const promoted = Simulation.advance(held.state, 1, {
   source: 'online',
   fromMs: 10000,
@@ -225,9 +215,8 @@ const promoted = Simulation.advance(held.state, 1, {
   lanes: runtime.lanes
 });
 ok(promoted.state.systems.parallel.jobs.length === 0 &&
-  promoted.state.systems.events.pending.length === 20 &&
-  promoted.report.passive.parallelCompleted.length === 0,
-'容量释放后 ready 后续只晋升一次且不重复报告完成');
+  promoted.state.systems.events.pending.length === 0,
+'后续推进不会再补待决策');
 
 const labels = advanced.report.passive.parallelCompleted.map(function (entry) {
   return typeof entry === 'string' ? entry : entry.label;

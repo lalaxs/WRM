@@ -77,25 +77,41 @@
 
   const loaded = root.SaveSystem.load(adapter, now);
   const snapshot = loaded.snapshot;
-  const valid = loaded.source === 'snapshot' &&
-    !loaded.migrated &&
-    !loaded.needsRepair &&
-    snapshot.schemaVersion === 3 &&
-    snapshot.created === true &&
-    snapshot.player.name === '工程验收' &&
-    snapshot.player.inventory.stacks.gatheringFormation === 1 &&
-    !snapshot.player.inventory.bindings.gatheringFormation &&
-    snapshot.systems.homestead.formations.slots[0] === null &&
-    snapshot.systems.homestead.formations.owned.includes(
-      'gatheringFormation'
-    ) &&
-    snapshot.systems.homestead.beasts.activeIds.length === 0 &&
-    snapshot.systems.homestead.beasts.roster.length === 1 &&
-    snapshot.systems.homestead.beasts.roster[0].id === 'beast-1' &&
-    snapshot.current &&
-    snapshot.current.key === 'gather:collect:herb:parityHerb1' &&
-    snapshot.current.mode === 'repeat' &&
-    snapshot.systems.gathering.spots.herb.remaining === 25;
+  // 首轮 createSnapshot 可能把 worldEvents.eventId 的 null 规范成 0；再存一轮得到无修复字节。
+  if (loaded.needsRepair) {
+    if (!root.SaveSystem.save(adapter, snapshot, snapshot.savedAt)) {
+      stop('工程验收存档无法完成同版本规范修复写入。');
+    }
+  }
+  const reloaded = root.SaveSystem.load(adapter, now);
+  const canonical = reloaded.snapshot;
+  const herbSpot = Array.isArray(canonical.systems.gathering.spots.herb)
+    ? canonical.systems.gathering.spots.herb[0]
+    : canonical.systems.gathering.spots.herb;
+  const formationOwned = canonical.systems.homestead.formations.owned.includes(
+    'gatheringFormation'
+  );
+  const formationReady =
+    (canonical.player.inventory.stacks.gatheringFormation === 1 ||
+      formationOwned) &&
+    !canonical.player.inventory.bindings.gatheringFormation;
+  const valid = reloaded.source === 'snapshot' &&
+    !reloaded.migrated &&
+    !reloaded.needsRepair &&
+    canonical.schemaVersion === 5 &&
+    canonical.created === true &&
+    canonical.player.name === '工程验收' &&
+    formationReady &&
+    canonical.systems.homestead.formations.slots[0] === null &&
+    formationOwned &&
+    canonical.systems.homestead.beasts.activeIds.length === 0 &&
+    canonical.systems.homestead.beasts.roster.length === 1 &&
+    canonical.systems.homestead.beasts.roster[0].id === 'beast-1' &&
+    canonical.current &&
+    canonical.current.key === 'gather:collect:herb:parityHerb1' &&
+    canonical.current.mode === 'repeat' &&
+    herbSpot &&
+    herbSpot.remaining === 25;
   if (!valid) {
     stop('工程验收存档未通过正式 SaveSystem 回读校验。');
   }

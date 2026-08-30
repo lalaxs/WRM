@@ -1,0 +1,8 @@
+
+==== dns$$releader 0x13be5a8 size=0x6c ====
+0x13be5a8 BL 0x1ebdcac ; InitArray/il2cpp
+Traceback (most recent call last):
+  File "D:\ZM\xiuxian-idle-h5\tools\_probe_trace.py", line 101, in <module>
+    if s and not s.startswith("LDR x") or (s and "ADRP" in s or "BL" in s or "MOVZ" in s or "CMP" in s or "B." in s or s == "RET"):
+                                                                ^^^^^^^^^
+TypeError: argument of type 'NoneType' is not iterable

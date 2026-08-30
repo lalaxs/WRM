@@ -108,6 +108,7 @@ vm.createContext(sandbox);
   'content/herblore-parity.js',
   'content/materials.js',
   'content/items.js',
+  'content/equipment.js',
   'content/life-skills.js',
   'content/gathering.js',
   'content/recipes.js',
@@ -117,22 +118,39 @@ vm.createContext(sandbox);
   'content/realms.js',
   'content/regions.js',
   'content/sects.js',
+  'content/sect-offices.js',
+  'content/sect-missions.js',
+  'content/sect-pavilion.js',
   'content/npc-generation.js',
   'content/social-interactions.js',
-  'content/event-templates.js',
+  'content/world-event-narratives.js',
   'core/stage2-state.js',
   'core/stage3-state.js',
   'core/random.js',
+  'core/equipment.js',
   'core/npc-generator.js',
   'core/npc-roster.js',
+  'core/person-factory.js',
+  'core/relation-seed.js',
+  'core/sect-offices.js',
+  'core/sect-missions.js',
+  'core/sect-pavilion.js',
   'core/stage4-state.js',
   'core/relationships.js',
+  'core/dns.js',
+  'core/person-graph.js',
+  'core/event-core.js',
+  'core/world-event-picker.js',
+  'core/world-calendar.js',
+  'core/world-narrative-fill.js',
+  'core/world-romance.js',
+  'core/world-event-gen.js',
+  'core/world-month.js',
   'core/npc-combat-config.js',
   'core/combat-party.js',
   'core/inventory.js',
   'core/skill-progression.js',
   'core/social.js',
-  'core/event-engine.js',
   'core/npc-simulation.js',
   'core/sect-simulation.js',
   'core/gathering.js',
@@ -158,7 +176,12 @@ vm.createContext(sandbox);
   'core/stage2-rules.js',
   'core/stage3-rules.js',
   'core/stage4-rules.js',
-  'game.js'
+  'game.js',
+  'game-queries.js',
+  'game-queries-social.js',
+  'game-queries-combat.js',
+  'game-commands.js',
+  'game-api.js'
 ].forEach((file) => vm.runInContext(
   fs.readFileSync(file, 'utf8'),
   sandbox,
@@ -171,13 +194,19 @@ ok(api && api.queries && api.queries.combat, 'combat query exists');
 ok(harness && harness.__test, 'test harness exists');
 
 const base = harness.__test.snapshotModel();
-base.schemaVersion = 4;
+base.schemaVersion = 5;
 base.created = true;
 base.player = harness.defaultPlayer();
 base.player.identity = { gender: 'female' };
 base.player.regionId = 'qinglan-town';
 base.player.flags = { completedFirstAction: true };
-const model = sandbox.Stage4State.migrateV4(base);
+base.player.shouyuan = 120;
+base.player.shouMax = 120;
+const model = sandbox.Stage4State.normalize(
+  sandbox.Stage4State.ensureWorldPopulation(
+    sandbox.Stage4State.normalize(base)
+  )
+);
 harness.__test.replaceModel(model);
 const started = api.commands.startAction({
   key: 'combat:region:qingyunOutskirts:thornHare'
@@ -191,11 +220,14 @@ ok(view.active.allies.length === 1, 'allies view exposed');
 ok(view.active.enemies.length === 1, 'enemies view exposed');
 ok(view.active.allies[0].sourceType === 'player', 'ally source preserved');
 ok(view.active.enemies[0].name === '棘刺兔', 'enemy name preserved');
-ok(JSON.stringify(Object.keys(view.active.allies[0]).sort()) === JSON.stringify([
+const allyKeys = Object.keys(view.active.allies[0]).sort();
+const expectedAllyKeys = [
   'actionIntervalTicks', 'cooldownTicks', 'cooperation', 'fallen', 'hp',
-  'id', 'maxHp', 'maxQi', 'name', 'qi', 'shield', 'sourceId',
-  'sourceType', 'statusEffects', 'techniques'
-]), 'team UnitView exposes only the session snapshot fields');
+  'id', 'maxHp', 'maxQi', 'name', 'portraitSrc', 'qi', 'rank', 'shield',
+  'sourceId', 'sourceType', 'statusEffects', 'techniques'
+];
+ok(JSON.stringify(allyKeys) === JSON.stringify(expectedAllyKeys),
+  'team UnitView exposes only the session snapshot fields');
 ok(Array.isArray(view.active.allies[0].statusEffects),
   'team UnitView maps snapshot statuses');
 ok(Array.isArray(view.active.allies[0].techniques),

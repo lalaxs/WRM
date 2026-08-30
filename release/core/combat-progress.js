@@ -1040,18 +1040,17 @@
       const definition = typeof techniqueId === 'string'
         ? techniqueContent[techniqueId]
         : null;
-      const tier = definition && dataValue(definition, 'tier');
       if (!definition || dataValue(definition, 'kind') !== 'passive' ||
-          !positiveInteger(tier) ||
           typeof grantTechniqueXp !== 'function') {
         return null;
       }
       let granted;
       try {
+        // MWI-style drip: 1 XP per kill; books remain the real leveling path.
         granted = grantTechniqueXp(
           current,
           techniqueId,
-          tier,
+          1,
           'combat',
           sectContext
         );
@@ -1064,7 +1063,7 @@
         return null;
       }
       current = dataValue(granted, 'state');
-      define(gained, techniqueId, tier);
+      define(gained, techniqueId, 1);
     }
     const copied = safeClone(current);
     return copied.ok ? { state: copied.value, gained: gained } : null;
@@ -1350,16 +1349,6 @@
     return combineRewardList(rewards);
   }
 
-  function stopForPending(state, session, atMs) {
-    state.lastActionStop = {
-      key: dataValue(session, 'actionKey'),
-      reason: 'requirements_invalid',
-      atMs: atMs
-    };
-    state.current = null;
-    state.systems.combat.session = null;
-  }
-
   function afterEnemyDefeated(model, rawOptions) {
     const options = readAfterOptions(rawOptions);
     if (!options) return failure('invalid_options', model);
@@ -1549,13 +1538,11 @@
     const uniqueUnlocks = unlocks.filter(function (gateId, index) {
       return unlocks.indexOf(gateId) === index;
     });
-    const pending = !rewardOk && rewardCode === 'inventory_full';
-    if (pending) {
-      stopForPending(working, workingSession, options.createdAtMs);
-    }
+    // 梅尔沃式：背包满只挂起战利品，区域/副本循环不中断；玩家撤退或切换行动才停
+    const rewardWarning = dataValue(rewarded, 'warning');
     return result(
-      !pending,
-      pending ? 'requirements_invalid' : 'ok',
+      true,
+      'ok',
       working,
       {
         enemyId: dataValue(defeated.enemy, 'id'),
@@ -1566,7 +1553,7 @@
         dungeonClear: dungeonClear,
         firstClear: firstClear
       },
-      pending ? 'inventory_full' : null,
+      typeof rewardWarning === 'string' ? rewardWarning : null,
       true
     );
   }
@@ -2027,7 +2014,9 @@
       return {
         id: regionId,
         name: dataValue(region, 'name'),
+        description: dataValue(region, 'description') || '',
         tier: dataValue(region, 'tier'),
+        bannerSrc: dataValue(region, 'bannerSrc') || '',
         requiredRealmIndex: dataValue(region, 'requiredRealmIndex'),
         unlocked: parts.realmIndex >= dataValue(
           region,
@@ -2044,6 +2033,7 @@
               name: dataValue(enemy, 'name'),
               rank: dataValue(enemy, 'rank'),
               cultivation: dataValue(enemy, 'cultivation'),
+              portraitSrc: dataValue(enemy, 'portraitSrc') || '',
               stats: copyStats(enemy),
               drops: previewLootTable(dataValue(enemy, 'lootTableId')),
               killCount: own(parts.progress.enemyKills, enemyId)
@@ -2100,7 +2090,9 @@
       return {
         id: dungeonId,
         name: dataValue(dungeon, 'name'),
+        description: dataValue(dungeon, 'description') || '',
         tier: dataValue(dungeon, 'tier'),
+        bannerSrc: dataValue(dungeon, 'bannerSrc') || '',
         unlocked: parts.realmIndex >= dataValue(
           dungeon,
           'requiredRealmIndex'
@@ -2149,6 +2141,7 @@
               enemyId: enemyId,
               enemyName: dataValue(enemy, 'name'),
               rank: dataValue(enemy, 'rank'),
+              portraitSrc: dataValue(enemy, 'portraitSrc') || '',
               count: dataValue(wave, 'count')
             };
           })

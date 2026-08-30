@@ -1,0 +1,26 @@
+[
+  {
+    "id": "injured-0107",
+    "weight": 8,
+    "type": "injured",
+    "actors": "solo",
+    "template": "{a}从{loc}狼狈归来，衣袍染血，显然遭遇不测。",
+    "statusAny": [
+      "injured"
+    ]
+  },
+  {
+    "id": "solo-extra-10",
+    "weight": 8,
+    "type": "injured",
+    "actors": "solo",
+    "template": "{a}扶墙走在{loc}，每一步都留下血痕。"
+  },
+  {
+    "id": "injured-solo-2591",
+    "weight": 11,
+    "type": "injured",
+    "actors": "solo",
+    "template": "{a}在{loc}受伤倒下，血染衣襟。视线模糊里，仍下意识抓住身旁的虚空。"
+  }
+]

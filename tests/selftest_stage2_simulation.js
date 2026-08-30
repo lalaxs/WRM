@@ -351,8 +351,8 @@ ok(runtime.lanes.every((lane) => Object.isFrozen(lane)),
     'locked action leaves the selected action byte-identical');
 }
 
-// Real completion: the finite explore action must use the gathering domain,
-// report every progression category, then clear only after one completion.
+// Real completion: explore discovery uses the gathering domain, reports every
+// progression category, then continues as a repeatable background action.
 {
   const model = freshModel();
   const started = runtime.rules.start(
@@ -361,14 +361,15 @@ ok(runtime.lanes.every((lane) => Object.isFrozen(lane)),
     1000
   );
   ok(started.ok &&
-     started.state.current.mode === 'finite' &&
-     started.state.current.count === 1,
-  'gather exploration starts as one finite action');
+     started.state.current.mode === 'repeat' &&
+     started.state.current.count === 0,
+  'gather exploration starts as a repeatable action');
   const result = advance(runtime, started.state, 2, 'online', 1000);
   ok(result.report.action.completed === 1 &&
-     result.report.action.stopReason === 'completed' &&
-     result.state.current === null,
-  'finite gathering exploration completes exactly once');
+     result.report.action.stopReason == null &&
+     result.state.current &&
+     result.state.current.key === 'gather:explore:mining',
+  'gathering exploration continues after each discovery');
   exact(result.report.gains.skillXp, { mining: 10 },
     'exploration reports exact skill XP');
   exact(result.report.gains.masteryXp, { 'explore:mining': 5 },
@@ -379,14 +380,13 @@ ok(runtime.lanes.every((lane) => Object.isFrozen(lane)),
 }
 
 function putSpot(model, skillId, entryId, remaining) {
-  model.systems.gathering.spots[skillId] = {
+  model.systems.gathering.spots[skillId] = [{
     instanceId: 'spot-1',
     skillId,
     entryId,
-    quality: 'common',
     capacity: remaining,
     remaining
-  };
+  }];
   model.systems.gathering.nextSpotId = 2;
   return model;
 }
@@ -414,11 +414,11 @@ function putBeast(model) {
   return model;
 }
 
-// Mutation caught: mode drift changes finite tame/explore actions into
-// unbounded background jobs, or prematurely clears repeat actions.
+// Mutation caught: mode drift changes finite tame actions into unbounded
+// background jobs, or prematurely clears repeat actions.
 {
   const cases = [
-    ['gather:explore:mining', true, freshModel()],
+    ['gather:explore:mining', false, freshModel()],
     [
       'gather:collect:mining:copper',
       false,
@@ -451,7 +451,9 @@ function putBeast(model) {
   ok(result.report.action.completed === 1 &&
      result.report.action.stopReason === 'resource_depleted' &&
      result.state.current === null &&
-     result.state.systems.gathering.spots.mining === null,
+     result.state.systems.gathering.spots.mining &&
+     result.state.systems.gathering.spots.mining[0] &&
+     result.state.systems.gathering.spots.mining[0].remaining === 0,
   'last resource completion succeeds once then stops as depleted');
   ok(result.report.gains.items.copperOre === 1 &&
      result.report.gains.skillXp.mining === 12 &&
@@ -1257,8 +1259,7 @@ function passiveOnlyAtBoundary(seconds) {
 {
   const mutableGatheringContent = {
     GATHERING: clone(GatheringContent.GATHERING),
-    FISH_SPECIES: clone(GatheringContent.FISH_SPECIES),
-    RESOURCE_QUALITIES: clone(GatheringContent.RESOURCE_QUALITIES)
+    FISH_SPECIES: clone(GatheringContent.FISH_SPECIES)
   };
   const mutableRecipeContent = {
     RECIPES: clone(RecipeContent.RECIPES)

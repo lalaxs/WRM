@@ -1,0 +1,1027 @@
+游戏自有类导航索引（来自 Il2CppDumper 还原的 dump.cs）
+本文件仅含全局命名空间、TypeDefIndex 在 5000-5200 的自研类。
+说明：IL2CPP 只能还原“类名/字段/方法签名”，方法体内具体逻辑看不到（需 Ghidra/IDA 分析 libil2cpp.so）。
+dump.cs 总行数 528953，本索引只挑出开发者自己写的类。
+
+──────────────────────────────────────────────────────────────────────
+[5004] public class androidc1
+  · 字段(1):
+      myHash : int
+  · 方法(1):
+      bool IsCorrect()
+
+──────────────────────────────────────────────────────────────────────
+[5006] public class cfile : MonoBehaviour
+  · 方法(3):
+      void Start()
+      IEnumerator test()
+      void Update()
+
+──────────────────────────────────────────────────────────────────────
+[5007] public class dishelp : MonoBehaviour
+  · 方法(3):
+      void Start()
+      void dis()
+      void Update()
+
+──────────────────────────────────────────────────────────────────────
+[5008] public static class dns
+  · 字段(143):
+      af : Dictionary<string, string>
+      lf : Dictionary<string, string>
+      root0 : root
+      myurl : string
+      myurl0 : string
+      myurl1 : string
+      namel : string[]
+      namef3 : string[]
+      namef4 : string[]
+      soulname : string[]
+      infonum : int
+      cv2v : Vector2
+      onstarnum : int
+      petbday : int
+      bodycolor : int[][]
+      bodycolors : Color32[]
+      eyecolor : int[][]
+      eyecolors : Color32[]
+      animalhc : int[][]
+      animalhc1 : int[][]
+      colorw : Color32
+      colorg : Color32
+      colorr : Color32
+      coloract : Color32
+      lvcolors : Color32[]
+      feelcolors : Color32[]
+      savetime : int[]
+      waittime : float[]
+      autoselecttime : int
+      fueffect : int
+      tagnum : int
+      yangbuff : int
+      logpagenum : int
+      infologpagenum : int
+      fitem : int[]
+      level_yang : int[]
+      fami_yang : int[]
+      lgr : float[]
+      fami_act1day : int[]
+      level_feel : int[]
+      npclog : int[]
+      sword_yang : int
+      pet_yang : int
+      level_speed : float[]
+      s_day : int
+      sword_atk : int
+      tag_r : float[]
+      swordsoul_atk : int
+      sword_exp : int
+      pet_exp : int
+      pet_day : int
+      sword_expspeed : float
+      pet_expspeed : float
+      sword_exp1max : float
+      pet_exp1max : float
+      act4day : float
+      level_exp1max : int[]
+      pet_clothval : int[]
+      pet_clothsat : int[]
+      pet_clothhue : int[]
+      pet_hairval : int[]
+      pet_hairsat : int[]
+      pet_hairhue : int[]
+      soul_hairval : int
+      soul_hairsat : int
+      soul_hairhue : int
+      soul_eyeval : int
+      soul_eyesat : int
+      soul_eyehue : int
+      pet_bodyval : int
+      pet_bodysat : int
+      pet_bodyhue : int
+      soul_bodyval : int
+      soul_bodysat : int
+      soul_bodyhue : int
+      pet_ear : int[]
+      pet_body : int
+      soul_body : int
+      petmoutype : int[]
+      peteyetype : int[]
+      c_bodyn : int[]
+      c_bhairn : int[]
+      c_fhairn : int[]
+      c_brown : int[]
+      c_clothn : int[]
+      c_eyen : int[]
+      c_moun : int[]
+      parbuff : int
+      baseatk : int[][]
+      exp : int[]
+      age : int[][]
+      lvup : int[][]
+      jobmax : int[]
+      danger : int[]
+      lg_atkmax : int[]
+      lg_exp : int[]
+      lg_work2 : float
+      lg_work3 : float
+      lg_work4 : float
+      lg_work5 : float
+      lg_work6 : float
+      soul : int[]
+      lv_soul : int[]
+      lg_gd : int[]
+      book : int[]
+      writetime : int
+      apprentice : int[]
+      peoples : int[]
+      tag_start : int[]
+      tag_gd : int[]
+      lv_money : float[]
+      houselvup : int
+      livec : Color32
+      deadc : Color32
+      work2_money : float
+      work2_people : float
+      work3_grass : float
+      work4_rock : float
+      work5_drug : float
+      work5_grass : float
+      work6_money : float
+      work6_rock : float
+      saleg : int[]
+      saler : int[]
+      shop : int[]
+      worktime : float[][]
+      worklock : int[][]
+      danbuff : int
+      dancost : int[][]
+      danunlock : int[][]
+      equipcost : int[][]
+      equiptime : int[]
+      repaircost : int[][]
+      equipunlock : int[][]
+      equipeffectbase : float[]
+      equipeffectbasem : float
+      gongdeeffect : float[]
+      equipeffectrange : int[][][]
+      bookeffectbase : float[]
+      bookeffectbasem : float
+      legacyeffectbase : float[]
+      workunlock : int[][]
+      effectlength : int
+  · 方法(25):
+      void init()
+      Vector2 cv2(float x, float y)
+      bool ismale(int id)
+      bool checklevel(int p0n, int p1n)
+      int[] renextlv(int lvl, int lvs)
+      string releader(int fami)
+      int sex(int id)
+      string sexs(int id)
+      string relvcolors(int num)
+      string rename()
+      string rereward(int type, int level = 0)
+      string reswordname()
+      string reswordname1()
+      string repetname()
+      int houselvupcost(int lv)
+      string rejob(int fami, int job)
+      string relevel(int l, int s)
+      string EncryptDES(string pToEncrypt, string sKey)
+      string DecryptDES(string pToDecrypt, string sKey)
+      string UnBase64String(string value)
+      string ToBase64String(string value)
+      string Md5Sum(string strToEncrypt)
+      string md5get(byte[] bytes)
+      string GetMd5Hash(string input, string key)
+      bool checkMd5Hash(string input, string key)
+
+──────────────────────────────────────────────────────────────────────
+[5009] public struct savestring
+  · 字段(1):
+      re : Dictionary<int, string>
+  · 方法(4):
+      void clear()
+      string keytojson()
+      string valuetojson()
+      bool setre(string keys, string values)
+
+──────────────────────────────────────────────────────────────────────
+[5010] public class mylist<T>
+  · 字段(1):
+      re : List<T>
+  · 方法(1):
+      void clear()
+
+──────────────────────────────────────────────────────────────────────
+[5011] public struct myarray<T>
+  · 字段(1):
+      re : T[]
+  · 方法(1):
+      void clear()
+
+──────────────────────────────────────────────────────────────────────
+[5014] public class faceCamera : MonoBehaviour
+  · 字段(9):
+      bodym : Material
+      eyem : Material
+      hairm : Material
+      clothm : Material
+      normalm : Material
+      onshow : bool
+      facelist : List<int[]>
+      facelist1 : List<int[]>
+      faceimage : List<Image>
+  · 方法(7):
+      void Start()
+      IEnumerator mainloop()
+      Texture2D getTexture2d(RenderTexture renderT, string path = "/a1.png")
+      IEnumerator creatface(int[] elm, int age, Image img, int fami, int level = 0)
+      void clear()
+      void addface(int[] elm, int age, Image img, int fami = 1, int level = 0)
+      void Update()
+
+──────────────────────────────────────────────────────────────────────
+[5015] public static class history
+  · 方法(1):
+      string[] re(int[] list)
+
+──────────────────────────────────────────────────────────────────────
+[5016] public class mybt : Button
+  · 字段(4):
+      onp : int
+      isp : bool
+      onlpe : bool
+      canpress : bool
+  · 方法(3):
+      void Update()
+      void OnPointerDown(PointerEventData eventData)
+      void OnPointerUp(PointerEventData eventData)
+
+──────────────────────────────────────────────────────────────────────
+[5017] public class mydicbool
+  · 字段(3):
+      re : Dictionary<string, bool>
+      a1 : mylist<string>
+      a2 : mylist<bool>
+  · 属性(1):
+      Item : bool
+  · 方法(6):
+      bool get_Item(string i)
+      void set_Item(string i, bool value)
+      void clear()
+      string keytojson()
+      string valuetojson()
+      bool setre(string keys, string values)
+
+──────────────────────────────────────────────────────────────────────
+[5018] public class mydicbool0
+  · 字段(1):
+      re : Dictionary<int, bool>
+  · 属性(1):
+      Item : bool
+  · 方法(3):
+      bool get_Item(int i)
+      void set_Item(int i, bool value)
+      void clear()
+
+──────────────────────────────────────────────────────────────────────
+[5019] public class mydicfloat
+  · 字段(3):
+      re : Dictionary<string, float>
+      a1 : mylist<string>
+      a2 : mylist<float>
+  · 属性(1):
+      Item : float
+  · 方法(6):
+      float get_Item(string i)
+      void set_Item(string i, float value)
+      void clear()
+      string keytojson()
+      string valuetojson()
+      bool setre(string keys, string values)
+
+──────────────────────────────────────────────────────────────────────
+[5020] public class mydicint
+  · 字段(3):
+      re : Dictionary<string, int>
+      a1 : mylist<string>
+      a2 : mylist<int>
+  · 属性(1):
+      Item : int
+  · 方法(6):
+      int get_Item(string i)
+      void set_Item(string i, int value)
+      void clear()
+      string keytojson()
+      string valuetojson()
+      bool setre(string keys, string values)
+
+──────────────────────────────────────────────────────────────────────
+[5021] public class mydicstring
+  · 字段(3):
+      re : Dictionary<string, string>
+      a1 : mylist<string>
+      a2 : mylist<string>
+  · 属性(1):
+      Item : string
+  · 方法(6):
+      string get_Item(string i)
+      void set_Item(string i, string value)
+      void clear()
+      string keytojson()
+      string valuetojson()
+      bool setre(string keys, string values)
+
+──────────────────────────────────────────────────────────────────────
+[5023] public class MyIAPManager : MonoBehaviour, IStoreListener
+  · 字段(5):
+      controller : IStoreController
+      extensions : IExtensionProvider
+      kPs : string[]
+      pnum : string
+      re1 : string
+  · 方法(10):
+      void Awake()
+      void init()
+      void showitems()
+      IEnumerator waitv()
+      void OnInitialized(IStoreController controller, IExtensionProvider extensions)
+      void OnInitializeFailed(InitializationFailureReason error)
+      void OnPurchaseClicked(string productId)
+      PurchaseProcessingResult ProcessPurchase(PurchaseEventArgs args)
+      void OnPurchaseFailed(Product i, PurchaseFailureReason p)
+      void OnInitializeFailed(InitializationFailureReason error, string message)
+
+──────────────────────────────────────────────────────────────────────
+[5024] public class person
+  · 字段(76):
+      oc : bool
+      namel : int
+      namef : int
+      id : int
+      _d : bool
+      _li : bool
+      _le : bool
+      cc : int
+      _fly : bool
+      _onstar : bool
+      act1day : int
+      sday : int
+      slove : float
+      slust : float
+      bday : int
+      bdayl : int
+      dlove : float
+      dlust : float
+      _age : int
+      _agedrug : int
+      birthm : int
+      birthd : int
+      _fu : int
+      _lg : int
+      lgs : bool[]
+      _job : int
+      _fami : int
+      tags : HashSet<int>
+      history : List<int[]>
+      _exp : float
+      type : int
+      _exp1 : float
+      _ftype : int
+      _level_l : int
+      _level_s : int
+      flags : HashSet<int>
+      dans : int[]
+      rs : int[]
+      gs : int[]
+      _ab : float
+      _atk : int
+      lvups : float
+      lvupd : float
+      exps : float
+      desire : float
+      atkmax : int
+      _dan : int
+      _yang : bool
+      act1 : int
+      _feel : float
+      _love : float
+      _lust : float
+      ma : int
+      fa : int
+      mo : int
+      par : int
+      par0 : int
+      en0 : int
+      cds : HashSet<int>
+      apps : HashSet<int>
+      frs1 : HashSet<int>
+      frs : HashSet<int>
+      refrs : HashSet<int>
+      ens : HashSet<int>
+      _cds : int[]
+      _apps : int[]
+      _frs : int[]
+      _frs1 : int[]
+      _refrs : int[]
+      _ens : int[]
+      _flags : int[]
+      _tags : int[]
+      _evtime : int
+      evnum : int
+      _expsx : float
+      lvuptime : int
+  · 属性(30):
+      d : bool
+      live : bool
+      leave : bool
+      fly : bool
+      onstar : bool
+      age : int
+      agedrug : int
+      fu : int
+      linggen : int
+      job : int
+      fami : int
+      expmax : float
+      exp : float
+      exp1max : float
+      exp1 : float
+      ftype : int
+      level_l : int
+      level_s : int
+      atkbuff : float
+      atk : int
+      dan : int
+      yang : bool
+      yangmax : int
+      feel : float
+      love : float
+      lust : float
+      evtime : int
+      agemax : int
+      expsx : float
+      exp1s : float
+  · 方法(95):
+      bool get_d()
+      void set_d(bool value)
+      bool get_live()
+      void set_live(bool value)
+      bool get_leave()
+      void set_leave(bool value)
+      bool get_fly()
+      void set_fly(bool value)
+      bool get_onstar()
+      void set_onstar(bool value)
+      int get_age()
+      void set_age(int value)
+      int get_agedrug()
+      void set_agedrug(int value)
+      int get_fu()
+      void set_fu(int value)
+      int get_linggen()
+      void set_linggen(int value)
+      int get_job()
+      void set_job(int value)
+      int get_fami()
+      void set_fami(int value)
+      void addtag(int n)
+      void removetag(int n)
+      float get_expmax()
+      float get_exp()
+      void set_exp(float value)
+      float get_exp1max()
+      float get_exp1()
+      void set_exp1(float value)
+      int get_ftype()
+      void set_ftype(int value)
+      int get_level_l()
+      void set_level_l(int value)
+      int get_level_s()
+      void set_level_s(int value)
+      void blankfrs()
+      void addflag(int n)
+      float get_atkbuff()
+      void set_atkbuff(float value)
+      int get_atk()
+      void set_atk(int value)
+      int get_dan()
+      void set_dan(int value)
+      bool get_yang()
+      void set_yang(bool value)
+      int get_yangmax()
+      float get_feel()
+      void set_feel(float value)
+      void addlove(float num)
+      float get_love()
+      void set_love(float value)
+      float get_lust()
+      void set_lust(float value)
+      void save()
+      void load()
+      void relaen(int p0n)
+      void defriend(int p0n)
+      int get_evtime()
+      void set_evtime(int value)
+      int get_agemax()
+      int getatkmax()
+      float get_expsx()
+      void set_expsx(float value)
+      float get_exp1s()
+      float getexps()
+      float getlvups()
+      float getlvupd()
+      void addday()
+      int lvup()
+      void dead(int num = -1)
+      void changejob(int p1n = -1)
+      void leavec(int num = -1)
+      void leavec0(int num = -1)
+      void relaleave(person p9, int rela)
+      void reladead(person p9, int rela)
+      void heal()
+      void wash()
+      void setfriends(int id0)
+      void setfriends0(int id0)
+      int[] getgift(int lv = 2)
+      void subgift(int[] gift)
+      void addgift(int[] gift)
+      void wedding()
+      void lostyang()
+      void sublvs()
+      bool canmarry()
+      void setenemy(int p0n)
+      void addens(int p0n)
+      void commenevent()
+      void leaveevent()
+      int[] checkrela12()
+      int[] getrela()
+      void fallin(int p0n)
+      void addhistory(int[] list)
+
+──────────────────────────────────────────────────────────────────────
+[5025] public class resizec : MonoBehaviour
+  · 方法(2):
+      void Start()
+      void Update()
+
+──────────────────────────────────────────────────────────────────────
+[5026] public class resizec0 : MonoBehaviour
+  · 字段(1):
+      fl : bool
+  · 方法(2):
+      void Start()
+      void Update()
+
+──────────────────────────────────────────────────────────────────────
+[5027] public class resizec1 : MonoBehaviour
+  · 方法(2):
+      void Start()
+      void Update()
+
+──────────────────────────────────────────────────────────────────────
+[5028] public class resizec2 : resizecbase
+  · 字段(2):
+      tt : int
+      sy : float
+  · 方法(2):
+      void Start()
+      void Update()
+
+──────────────────────────────────────────────────────────────────────
+[5029] public class resizec3 : resizecbase
+  · 字段(1):
+      sy : float
+  · 方法(2):
+      void Start()
+      void Update()
+
+──────────────────────────────────────────────────────────────────────
+[5030] public class resizecbase : MonoBehaviour
+  · 字段(2):
+      onset : bool
+      type : int
+  · 方法(3):
+      void Start()
+      void typeset(int type0)
+      void Update()
+
+──────────────────────────────────────────────────────────────────────
+[5031] public class resizew : MonoBehaviour
+  · 方法(2):
+      void Start()
+      void Update()
+
+──────────────────────────────────────────────────────────────────────
+[5089] public class root : MonoBehaviour
+  · 字段(70):
+      space0 : GameObject
+      this1 : GameObject
+      canvas2 : GameObject
+      canvas3 : GameObject
+      canvas4 : GameObject
+      onskip : bool
+      fishes : int
+      drugs : int[]
+      bonus : int
+      _uuid : string
+      _username : string
+      _pw : string
+      savetime : int
+      events : List<string[]>
+      ens : HashSet<int>
+      lovers : HashSet<int>
+      tf : Dictionary<string, string>
+      ints : mydicint
+      sf : mydicint
+      helps : mydicstring
+      flags : mydicbool
+      floats : mydicfloat
+      cachedFontChs : TMP_FontAsset
+      cachedFontChz : TMP_FontAsset
+      persons4 : List<int>
+      persons3 : List<int>
+      persons : Dictionary<int, person>
+      personstring : Dictionary<int, string>
+      personsface : Dictionary<int, int[]>
+      saveface : mylist<string>
+      saveinfohistory : mylist<string>
+      historylistall : List<int[]>
+      savehistory : mylist<string>
+      historylist : List<GameObject>
+      urlnum : int
+      infonum : int
+      loadsc : bool
+      _onloop : bool
+      files : string[]
+      onsave : bool
+      mday : int[]
+      mchange : bool
+      facecamera0 : GameObject
+      newgameon : bool
+      m1 : Material
+      m2 : Material
+      m3 : Material
+      showdead : bool
+      sdpage : int
+      s1 : StringBuilder
+      logpage : int
+      loglist : List<int[]>
+      visitb : bool
+      infologpage : int
+      hislist : List<int[]>
+      hislistp0n : int
+      onflashheight : bool
+      ongetpost : bool
+      sonloop : bool
+      canzfb : bool
+      mqlid : int
+      ousername : string
+      opw : string
+      username : string
+      pw1 : string
+      temphis : List<int[]>
+      onloop1 : bool
+      onautoselect : bool
+      onrefreshheight : bool
+      AutoRotationOn : bool
+  · 属性(15):
+      age : int
+      agemax : int
+      agedrug : int
+      act : int
+      level_l : int
+      level_s : int
+      yang : int
+      exp : float
+      atk : int
+      atkmax : int
+      lvups : int
+      onloop : bool
+      mydo : int
+      sword_day : int
+      pet_day : int
+  · 方法(281):
+      int get_age()
+      void set_age(int value)
+      int get_agemax()
+      int get_agedrug()
+      void set_agedrug(int value)
+      int get_act()
+      void set_act(int value)
+      int get_level_l()
+      void set_level_l(int value)
+      int get_level_s()
+      void set_level_s(int value)
+      int get_yang()
+      void set_yang(int value)
+      float get_exp()
+      void set_exp(float value)
+      int get_atk()
+      void set_atk(int value)
+      int get_atkmax()
+      int get_lvups()
+      void set_lvups(int value)
+      bool get_onloop()
+      void set_onloop(bool value)
+      void mylog(string text)
+      void Start()
+      void test()
+      void showmask()
+      void loadbreak(int bb, string err = "")
+      IEnumerator loadgame(int bb = 0)
+      IEnumerator loadsceen()
+      void saveclear()
+      void deletesavewithname(string backup)
+      void copysavewithname(string oname, string dname)
+      void savebackup1(int bb)
+      void resaveclear()
+      void saveerr()
+      IEnumerator savegame1()
+      IEnumerator savegame()
+      void qsavegame()
+      IEnumerator mainloop()
+      void mainloop0()
+      void set_mydo(int value)
+      int get_mydo()
+      void adddate()
+      int randomlevel()
+      int creatpersonf(int tfami, int levelmin = 0, int ltype = 0, bool hpar = True)
+      int creatpersonen(person p0)
+      int creatpersonfr(person p0, int ltype = 0)
+      int creatpersonb(person p0, int ltype = 0)
+      int creatpersonm(person p0, int ltype = 0)
+      int retjob(int tlevel, int tfami)
+      void addday()
+      bool cans(person p0)
+      bool canmarry()
+      void relaleave(int rela, int p0n)
+      void reladead(int rela, int p0n)
+      bool checkfac(int p0n, int p1n)
+      float randomaddlove(person p0, float min, float max)
+      void act1event(person p0)
+      void addeventlove(person p0)
+      int creatpersonwithm(int type, int fami, int job, int tlevel, int stype = -1)
+      int creatperson(bool d, int type, int fami, int job, int tlevel, int stype = -1, int faid = -1, int moid = -1)
+      int[] beanface(int type, int[] face1, int[] face2)
+      int[] beauty(int[] face)
+      void savenewface(int[] face)
+      void dayevent()
+      void doevent(int[] temp)
+      void savegameloop()
+      void showsetlan(int type = 0)
+      void varinit()
+      void newgame()
+      void getlvups()
+      void startgame()
+      void disstartgame()
+      void startface()
+      void clearstartface()
+      void startgame1()
+      void start1()
+      void showrect()
+      void showsysbt()
+      void showpeople1()
+      void showpeople()
+      void switchsd()
+      void refreshpeople(int page)
+      IEnumerator sprect(Transform t1)
+      void showpeoplerect(int page)
+      void showitem()
+      void showconfig()
+      void showranking()
+      string remyjob()
+      void showlrect()
+      void lvup()
+      void cjourney()
+      void showlrectlvup()
+      void refreshdate()
+      void refreshage()
+      void refreshatk()
+      void refreshlvups()
+      void refreshlevel()
+      void refreshexp()
+      void refreshatkmax()
+      int get_sword_day()
+      void set_sword_day(int value)
+      int get_pet_day()
+      void set_pet_day(int value)
+      void refreshexpspeed()
+      void refreshjourney()
+      void getsword()
+      void refreshact1()
+      void getegg()
+      void refreshact2()
+      void refreshyang()
+      void useyang_lvup()
+      void useyang_age()
+      void useyang_skill0()
+      void useyang_skill1()
+      void useyang_skill2()
+      void refreshlrectface()
+      int journeytime(int lv)
+      IEnumerator rs()
+      void showcrect()
+      IEnumerator showcrect1()
+      void showcrect0()
+      void refreshpbt(int p0n)
+      void refreshpbtyang(int p0n)
+      void refreshpbtface(int id)
+      void addpbt(person p0)
+      void divorce()
+      void refreshpbtlove(int id)
+      void addswordpetbt(int type)
+      int[] getswordface()
+      int[] getpetface()
+      int[] randomface(int type, int id, int fami = 20, int stype = -1)
+      void randompetface()
+      void randomsoulface()
+      void refreshswordpetact(int type)
+      void refreshact()
+      void refreshnowact()
+      void refreshstarperson(int p0n)
+      bool checken(int p0n, int p1n)
+      void visit(person p0)
+      void showrrect()
+      void switchsysbt(bool b1)
+      void showalllog(int tt = 0)
+      void setlogbts(int tt)
+      void show10log(int tt)
+      IEnumerator setnp(GameObject g0)
+      IEnumerator showhistory()
+      void addinfohistory(int[] list, bool type = False)
+      GameObject gethistoty0(string text, int type = 0)
+      GameObject gethistoty1(string[] text, int type = 0)
+      void switchvisit(bool b1)
+      void checksafefami(person p0)
+      void showinfo(int num, int type = 0)
+      void attact()
+      void showinfo0(int type = 0)
+      void showinfogift()
+      void showinfohistory()
+      void showinfolog()
+      void sethisbts()
+      void show10history()
+      IEnumerator flashheight(Transform t0)
+      IEnumerator seton(resizecbase r0)
+      void refreshinfostar()
+      void preshop(int type)
+      IEnumerator setins(Button a0)
+      void ondayevent()
+      void useitemv0(int num)
+      void useitem01()
+      void useitem02(string text)
+      void useitemv(int p0n, int num)
+      void useitem1()
+      void useitem2(string text)
+      void showbuyfish()
+      bool checknet()
+      void savesf()
+      IEnumerator getpost(string url0, string func = "", string funcre = "", string funcwrong = "", string data = "")
+      IEnumerator waittime0(float time, string func, GameObject clone)
+      IEnumerator getpostnowait(string url0, string func = "", string funcre = "", string funcwrong = "", string data = "")
+      void showerr(string text)
+      void getpost1(string func, string funcre, string temp, bool nowait)
+      void buyfish(string num)
+      IEnumerator getandroidbuy2(string num)
+      void al4()
+      void al5()
+      void androidbuy2check()
+      void failbuy()
+      void tocheck(string text)
+      void tocheck1()
+      void posterr(string text)
+      void tocheck2(string text)
+      void buyposterror()
+      void getv(int type = 0)
+      void getv1()
+      void getv00(string text)
+      void getv0(string text, bool checkzfb = True)
+      void buydrug()
+      void buydrug0(string text)
+      void changefish()
+      void changedrug(int num)
+      void gameend()
+      void addens(int p0n)
+      void job1dead()
+      void job1dead0()
+      void job1dead1()
+      void preitem()
+      void preinfo()
+      void setg(int j, int value)
+      void setr(int j, int value)
+      void setdan(int id, int value)
+      void heals()
+      void usedans()
+      void usegs(int n)
+      void senddan(int n)
+      void sendg(int n)
+      void sendr(int n)
+      string rename(int id)
+      void refreshitem(int page)
+      void refreshinfoitem(int page)
+      void preconfig()
+      void showsignup()
+      void entersignup()
+      void signuppost()
+      void signuppost1(string text)
+      void dissignup()
+      void showsignin()
+      void entersignin()
+      void signinpost()
+      void signinpost1(string text)
+      void dissignin()
+      void deleteaccount0()
+      void deleteaccount()
+      void deleteaccount1()
+      void changepw()
+      void changepw1(string text)
+      void refreshfulls()
+      void refreshdisplay()
+      void refreshmusic()
+      void refreshautoselect()
+      void refreshhistype()
+      void refreshse()
+      void refreshsavetime()
+      void refreshgamespeed()
+      void refreshlan0()
+      void refreshlan()
+      void ApplyLanguageFont()
+      void addhistory(int[] list)
+      void addhistoryg(int[] re)
+      void showwaiticon()
+      IEnumerator waitdiswaiticon()
+      void diswaiticon()
+      void showtip(string tip)
+      IEnumerator autoselect(string nofunc = "", object noelm)
+      void showask(string text, string yesfunc, object yeselm, string nofunc = "", object noelm)
+      void showaskwhitname(string[] text, string yesfunc, object yeselm, string nofunc = "", object noelm, int type = 0)
+      void showtextwithbt(GameObject clone, string[] text, int type = 0)
+      void showenter(string text, string yesfunc, object yeselm)
+      string redate()
+      void playse(string file)
+      void playsebt()
+      void playbgm(string file)
+      void leaveevent(int type, person p0)
+      bool checklive(int p0n)
+      bool checklive1(int p0n)
+      bool checklive0(int p0n)
+      string relinggen(person p0)
+      string shownumf(float num)
+      string shownum(int num)
+      string renum(int num)
+      IEnumerator refreshheight(Transform t0)
+      void quitgame()
+      void addevent(string[] temp)
+      void wedding()
+      void addgift(int[] gift)
+      List<int> getpe(int p0n)
+      bool checkrela(int p0n, int p1n, int type = 0)
+      void Update()
+      void OnApplicationFocus(bool hasFocus)
+      bool quit()
+      void textbt()
+      void ToggleAutoRotation()
+      bool DeviceAutoRotationIsOn()
+
+──────────────────────────────────────────────────────────────────────
+[5090] public class showfloats : MonoBehaviour
+  · 字段(4):
+      num : double
+      id : string
+      r0 : root
+      t1 : TextMeshProUGUI
+  · 方法(4):
+      void Start()
+      void setid(string text)
+      string shownumf(double num0)
+      void Update()
+
+──────────────────────────────────────────────────────────────────────
+[5091] public class showfloatstoint : MonoBehaviour
+  · 字段(4):
+      id : string
+      r0 : root
+      t1 : TextMeshProUGUI
+      num : double
+  · 方法(4):
+      void Start()
+      void setid(string text)
+      string shownumf(double num0)
+      void Update()
+
+──────────────────────────────────────────────────────────────────────
+[5092] public class showints : MonoBehaviour
+  · 字段(4):
+      id : string
+      r0 : root
+      t1 : TextMeshProUGUI
+      num : int
+  · 方法(4):
+      void Start()
+      void setid(string text)
+      string shownum(int num0)
+      void Update()
+

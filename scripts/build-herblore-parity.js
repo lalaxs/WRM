@@ -5,6 +5,7 @@ const path = require('path');
 
 const SOURCE_ROOT = path.resolve(__dirname, '..');
 const INPUT_PATH = process.argv[2] || '/tmp/melvor_herblore_parity_raw.json';
+const OUTPUT_JSON_PATH = path.join(SOURCE_ROOT, 'content', 'herblore-parity.json');
 const OUTPUT_PATH = path.join(SOURCE_ROOT, 'content', 'herblore-parity.js');
 
 const TIER_MASTERY = Object.freeze({
@@ -496,79 +497,22 @@ function buildData(rawRows) {
   };
 }
 
-function renderModule(data) {
-  return `(function (root, factory) {
-  'use strict';
-  const api = factory();
-  if (typeof module === 'object' && module.exports) module.exports = api;
-  else if (root) root.HerbloreParityContent = api;
-})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
-  'use strict';
-
-  function deepFreeze(value) {
-    if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
-    Object.freeze(value);
-    Object.keys(value).forEach(function (key) {
-      deepFreeze(value[key]);
-    });
-    return value;
-  }
-
-  const DATA = deepFreeze(${JSON.stringify(data, null, 2)});
-
-  function cloneRows(value) {
-    return Object.freeze(value.slice());
-  }
-
-  function source() {
-    return DATA.SOURCE;
-  }
-
-  function tierMastery() {
-    return DATA.TIER_MASTERY;
-  }
-
-  function ingredientRows() {
-    return cloneRows(DATA.INGREDIENTS);
-  }
-
-  function seriesRows() {
-    return cloneRows(DATA.SERIES);
-  }
-
-  function potionRows() {
-    return cloneRows(DATA.POTION_ITEMS);
-  }
-
-  function recipeRows() {
-    return cloneRows(DATA.RECIPE_ROWS);
-  }
-
-  return deepFreeze({
-    SOURCE: DATA.SOURCE,
-    BASE_SECONDS: DATA.BASE_SECONDS,
-    TIER_MASTERY: DATA.TIER_MASTERY,
-    INGREDIENTS: DATA.INGREDIENTS,
-    SERIES: DATA.SERIES,
-    POTION_ITEMS: DATA.POTION_ITEMS,
-    RECIPE_ROWS: DATA.RECIPE_ROWS,
-    source,
-    tierMastery,
-    ingredientRows,
-    seriesRows,
-    potionRows,
-    recipeRows
-  });
-});
-`;
+function renderModule() {
+  // Thin UMD loader is hand-maintained at content/herblore-parity.js.
+  // Build only refreshes the JSON artifact.
+  return null;
 }
 
 const rawRows = JSON.parse(fs.readFileSync(INPUT_PATH, 'utf8'));
 const data = buildData(rawRows);
-fs.writeFileSync(OUTPUT_PATH, renderModule(data), 'utf8');
+fs.writeFileSync(OUTPUT_JSON_PATH, JSON.stringify(data), 'utf8');
+const thinExists = fs.existsSync(OUTPUT_PATH);
 console.log(
-  'wrote ' + path.relative(SOURCE_ROOT, OUTPUT_PATH) +
+  'wrote ' + path.relative(SOURCE_ROOT, OUTPUT_JSON_PATH) +
   ' with ' + data.SERIES.length + ' series, ' +
   data.POTION_ITEMS.length + ' potion items, ' +
-  data.RECIPE_ROWS.length + ' recipes'
+  data.RECIPE_ROWS.length + ' recipes' +
+  (thinExists
+    ? ' (thin loader left at content/herblore-parity.js)'
+    : ' (WARNING: thin loader content/herblore-parity.js missing)')
 );

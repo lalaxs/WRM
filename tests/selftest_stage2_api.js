@@ -222,9 +222,9 @@ function createRuntime(options) {
       sandbox.HomesteadContent = content;
     }
   });
-  vm.runInContext(fs.readFileSync('game.js', 'utf8'), sandbox, {
-    filename: 'game.js'
-  });
+  ['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+  vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
+});
   const harness = sandbox.__GameTestHarness;
 
   function freshModel() {
@@ -1322,17 +1322,16 @@ if (stage2ApiReady) {
     'default cooking skillPage hides legacy prototype recipes');
 }
 
-// Gathering pages expose explored quality/capacity and fishing shared stocks.
+// Gathering pages expose explored capacity and fishing shared stocks.
 {
   const model = runtime.freshModel();
-  model.systems.gathering.spots.herb = {
+  model.systems.gathering.spots.herb = [{
     instanceId: 'spot-1',
     skillId: 'herb',
     entryId: 'parityHerb1',
-    quality: 'fine',
     capacity: 20,
     remaining: 7
-  };
+  }];
   model.systems.gathering.fishStocks.spiritCarp = 9;
   model.current = currentAction('fish:pond', {
     mode: 'repeat',
@@ -1348,13 +1347,12 @@ if (stage2ApiReady) {
      herb.bonuses.skillSpeedBonus === 0 &&
      herb.explore.actionKey === 'gather:explore:herb' &&
      herb.resource.entryId === 'parityHerb1' &&
-     herb.resource.quality === 'fine' &&
      herb.resource.remaining === 7 &&
      herb.resource.capacity === 20 &&
      herb.resource.mastery.level === 1 &&
      herb.resource.mastery.speedBonus === 0 &&
      herb.resource.drops[0].itemId === 'garumHerb',
-    'gatherPage exposes progression, explore card, quality, capacity, and drops');
+    'gatherPage exposes progression, explore card, capacity, and drops');
   ok(deeplyFrozen(fish) &&
      fish.skillId === 'fishing' &&
      fish.spots.length === 10 &&

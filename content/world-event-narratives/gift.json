@@ -1,0 +1,818 @@
+[
+  {
+    "id": "gift-chicheng-1",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把一包干粮直接塞给{b}，说路上用得着，对方愣了一下，还是收下了。",
+    "personalityAny": [
+      "chicheng"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ],
+    "affinityMin": 10
+  },
+  {
+    "id": "gift-chicheng-2",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}向{b}递过一柄常用飞剑保养油，笑说别见外，对方愣了一下，还是收下了。",
+    "personalityAny": [
+      "chicheng"
+    ],
+    "affinityMin": 10
+  },
+  {
+    "id": "gift-qingleng-1",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}默默把一枚安神符放在{b}桌上，转身便走，对方愣了一下，还是收下了。",
+    "personalityAny": [
+      "qingleng"
+    ],
+    "affinityMin": 10
+  },
+  {
+    "id": "gift-qingleng-2",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}给{b}留了一小瓶清心露，没多解释。{b}愣了一下，还是收下了。",
+    "personalityAny": [
+      "qingleng"
+    ],
+    "affinityMin": 10
+  },
+  {
+    "id": "gift-rechen-1",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}捧着热乎乎的灵食找到{b}，硬要对方收下，对方愣了一下，还是收下了。",
+    "personalityAny": [
+      "rechen"
+    ],
+    "affinityMin": 10
+  },
+  {
+    "id": "gift-rechen-2",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}给{b}送来新采的灵果，连声说刚摘的，对方愣了一下，还是收下了。",
+    "personalityAny": [
+      "rechen"
+    ],
+    "affinityMin": 10
+  },
+  {
+    "id": "gift-shuaituo-1",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}随手把游历带回的小玩意丢给{b}，说好玩就留下，对方愣了一下，还是收下了。",
+    "personalityAny": [
+      "shuaituo"
+    ],
+    "affinityMin": 10
+  },
+  {
+    "id": "gift-shuaituo-2",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}路过{loc}，把半卷残图塞给{b}便继续赶路，对方愣了一下，还是收下了。",
+    "personalityAny": [
+      "shuaituo"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ],
+    "affinityMin": 10
+  },
+  {
+    "id": "gift-zhizhuo-1",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}郑重把一册注解交给{b}，嘱咐按页细读，对方愣了一下，还是收下了。",
+    "personalityAny": [
+      "zhizhuo"
+    ],
+    "affinityMin": 10
+  },
+  {
+    "id": "gift-zhizhuo-2",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把一枚自己打磨多日的护身佩送给{b}。{b}愣了一下，还是收下了。",
+    "personalityAny": [
+      "zhizhuo"
+    ],
+    "affinityMin": 10
+  },
+  {
+    "id": "gift-renhou-1",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}给{b}送上伤药与绷带，叮嘱莫要硬撑，对方愣了一下，还是收下了。",
+    "personalityAny": [
+      "renhou"
+    ],
+    "affinityMin": 10
+  },
+  {
+    "id": "gift-renhou-2",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把一篮新药草分给{b}，说家里还有，对方愣了一下，还是收下了。",
+    "personalityAny": [
+      "renhou"
+    ],
+    "affinityMin": 10
+  },
+  {
+    "id": "gift-jiaojin-1",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}命人呈上一份精致礼盒给{b}，仪态从容，对方愣了一下，还是收下了。",
+    "personalityAny": [
+      "jiaojin"
+    ],
+    "affinityMin": 10
+  },
+  {
+    "id": "gift-jiaojin-2",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把一枚带宗纹的玉牌送给{b}，说是小意思。{b}愣了一下，还是收下了。",
+    "personalityAny": [
+      "jiaojin"
+    ],
+    "affinityMin": 10
+  },
+  {
+    "id": "gift-wenya-1",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}向{b}赠一笺手抄清心曲谱，字迹端正，对方愣了一下，还是收下了。",
+    "personalityAny": [
+      "wenya"
+    ],
+    "affinityMin": 10
+  },
+  {
+    "id": "gift-wenya-2",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}喝完茶，留下一壶好茶当作礼物。{b}愣了一下，还是收下了。",
+    "personalityAny": [
+      "wenya"
+    ],
+    "affinityMin": 10
+  },
+  {
+    "id": "gift-friend-1",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把搜罗多日的灵材分一半给好友{b}。",
+    "tagAny": [
+      "friend",
+      "close-friend"
+    ],
+    "affinityMin": 30
+  },
+  {
+    "id": "gift-friend-2",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}祝贺{b}突破，送上一壶好酒。{b}愣了一下，还是收下了。",
+    "tagAny": [
+      "friend",
+      "close-friend"
+    ],
+    "affinityMin": 30
+  },
+  {
+    "id": "sect-baicao-valley-1",
+    "weight": 12,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把新采灵草分给{b}，嘱咐阴干用法，对方愣了一下，还是收下了。",
+    "sectAny": [
+      "baicao-valley"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "sect-tiangong-pavilion-2",
+    "weight": 11,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把打磨好的器胚交给{b}试手。",
+    "sectAny": [
+      "tiangong-pavilion"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "sect-qingyin-palace-2",
+    "weight": 11,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}送给{b}一沓新裁符纸，香气清淡，对方愣了一下，还是收下了。",
+    "sectAny": [
+      "qingyin-palace"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "pair-persona-5",
+    "weight": 10,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}送{b}一册诗集，{b}回赠一柄开了刃的小刀，场面微妙。",
+    "personalityA": [
+      "wenya"
+    ],
+    "personalityB": [
+      "chicheng"
+    ]
+  },
+  {
+    "id": "gift-0198",
+    "weight": 11,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}赏下小礼物，勉励{b}莫负门中栽培。",
+    "officeRankA": [
+      "leader",
+      "honor"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "generic-gift-1",
+    "weight": 8,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把多余的乾粮分给{b}。"
+  },
+  {
+    "id": "generic-gift-2",
+    "weight": 8,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}送给{b}一枚不起眼的护身符，说是路上买的。"
+  },
+  {
+    "id": "generic-gift-3",
+    "weight": 8,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}塞给{b}两张传送阵余票。",
+    "pairGenderNone": [
+      "fm"
+    ]
+  },
+  {
+    "id": "generic-gift-4",
+    "weight": 8,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把新缝的剑穗送给{b}，颜色朴素。"
+  },
+  {
+    "id": "generic-gift-5",
+    "weight": 8,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}请{b}喝茶，算作小礼物。"
+  },
+  {
+    "id": "scene-gift-0-0",
+    "weight": 9,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}因办门务路过{loc}山门，见{b}看着不太对劲，把随身小物递过去。{b}想拒，终究还是收下，道谢时没敢多看{a}。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-gift-0-1",
+    "weight": 9,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}因听同门议事路过{loc}厢房廊下，见{b}看着不太对劲，把随身小物递过去。{b}想拒，终究还是收下，道谢时没敢多看{a}。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-gift-0-2",
+    "weight": 9,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}因寻货路过{loc}摊位旁，见{b}看着不太对劲，把随身小物递过去。{b}想拒，终究还是收下，道谢时没敢多看{a}。",
+    "regionTypes": [
+      "market"
+    ]
+  },
+  {
+    "id": "scene-gift-0-3",
+    "weight": 9,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}因采药路过{loc}林径，见{b}看着不太对劲，把随身小物递过去。{b}想拒，终究还是收下，道谢时没敢多看{a}。",
+    "regionTypes": [
+      "wilderness"
+    ]
+  },
+  {
+    "id": "scene-gift-0-4",
+    "weight": 9,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}因候船路过{loc}渡口，见{b}看着不太对劲，把随身小物递过去。{b}想拒，终究还是收下，道谢时没敢多看{a}。",
+    "regionTypes": [
+      "town"
+    ]
+  },
+  {
+    "id": "scene-gift-0-5",
+    "weight": 9,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}因借火路过{loc}丹房外，见{b}看着不太对劲，把随身小物递过去。{b}想拒，终究还是收下，道谢时没敢多看{a}。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-gift-0-6",
+    "weight": 9,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}因观剑路过{loc}剑冢前，见{b}看着不太对劲，把随身小物递过去。{b}想拒，终究还是收下，道谢时没敢多看{a}。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-gift-0-7",
+    "weight": 9,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}因照看灵谷路过{loc}灵田边，见{b}看着不太对劲，把随身小物递过去。{b}想拒，终究还是收下，道谢时没敢多看{a}。",
+    "regionTypes": [
+      "town",
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-gift-1-0",
+    "weight": 9,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}山门把备好的物事交到{b}手里，嘴上说随手。{b}接过后盯着那物片刻，才低声问「为何是我」。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-gift-1-1",
+    "weight": 9,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}厢房廊下把备好的物事交到{b}手里，嘴上说随手。{b}接过后盯着那物片刻，才低声问「为何是我」。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-gift-1-2",
+    "weight": 9,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}摊位旁把备好的物事交到{b}手里，嘴上说随手。{b}接过后盯着那物片刻，才低声问「为何是我」。",
+    "regionTypes": [
+      "market"
+    ]
+  },
+  {
+    "id": "scene-gift-1-3",
+    "weight": 9,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}林径把备好的物事交到{b}手里，嘴上说随手。{b}接过后盯着那物片刻，才低声问「为何是我」。",
+    "regionTypes": [
+      "wilderness"
+    ]
+  },
+  {
+    "id": "scene-gift-1-4",
+    "weight": 9,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}渡口把备好的物事交到{b}手里，嘴上说随手。{b}接过后盯着那物片刻，才低声问「为何是我」。",
+    "regionTypes": [
+      "town"
+    ]
+  },
+  {
+    "id": "scene-gift-1-5",
+    "weight": 9,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}丹房外把备好的物事交到{b}手里，嘴上说随手。{b}接过后盯着那物片刻，才低声问「为何是我」。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-gift-1-6",
+    "weight": 9,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}剑冢前把备好的物事交到{b}手里，嘴上说随手。{b}接过后盯着那物片刻，才低声问「为何是我」。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-gift-1-7",
+    "weight": 9,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}灵田边把备好的物事交到{b}手里，嘴上说随手。{b}接过后盯着那物片刻，才低声问「为何是我」。",
+    "regionTypes": [
+      "town",
+      "sectBase"
+    ]
+  },
+  {
+    "id": "gift-tension-1601",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把礼物递出时手微颤，嘴上却说随手带的。{b}接过，目光在他脸上停得太久，才低头道谢。",
+    "tagNone": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "gift-tension-1602",
+    "weight": 15,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{b}在{loc}接过{a}的礼物，面上波澜不惊，指腹却反复摩挲包装的结，像舍不得拆，更舍不得还。",
+    "tagNone": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "gift-tension-1603",
+    "weight": 15,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}送礼时故意不看{b}的眼睛。{b}轻声问为何，他喉间一紧，只答你用得着。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 20
+  },
+  {
+    "id": "gift-tension-1604",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "礼盒打开，{b}在{loc}怔住。抬眼时{a}已别过脸，耳根却红得藏不住。",
+    "tagAny": [
+      "lover",
+      "impressed",
+      "life-debt"
+    ]
+  },
+  {
+    "id": "gift-tension-1605",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把东西塞进{b}手里就想走。{b}拉住他袖口，力道很轻，却让他整个人停在原地。",
+    "tagNone": [
+      "enemy"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ]
+  },
+  {
+    "id": "gift-tension-1606",
+    "weight": 13,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}送礼，{b}推拒两次，终究收下。道谢时声音稳，可眨眼的频率出卖了心里的乱。",
+    "tagNone": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "gift-chicheng-cause-1",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}见{b}在{loc}奔波半日唇色发白，二话不说塞过一包干粮。对方本打算推辞，终究还是接住了。",
+    "personalityAny": [
+      "chicheng"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-chicheng-cause-2",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}听说{b}要远行，当晚便送来保养油与伤药，笑说别见外。{b}喉头动了动，只轻声道谢。",
+    "personalityAny": [
+      "chicheng"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-qingleng-cause-1",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}默默把一枚安神符搁到{b}手边，未及解释便走开。{b}追问时，只听见一句“别熬夜”。",
+    "personalityAny": [
+      "qingleng"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-qingleng-cause-2",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}见{b}在{loc}咳了一声，次日桌上多了清心露，附签只有两字。对方握瓶的手紧了紧。",
+    "personalityAny": [
+      "qingleng"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-rechen-cause-1",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}兴奋地塞给{b}一袋新摘灵果，说分享才痛快。对方笑着接过，应得很轻。",
+    "personalityAny": [
+      "rechen"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-rechen-cause-2",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}听说{b}喜某味茶，专门绕到{loc}买来相赠。打开匣半夜，两人同时忘了客套。",
+    "personalityAny": [
+      "rechen"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-shuaituo-cause-1",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}随手把一枚护身玉扔给{b}，说你用得着。对方追问来历，{a}只耸肩，目光却认真。",
+    "personalityAny": [
+      "shuaituo"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-shuaituo-cause-2",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}赌赢后在{loc}把一半灵石塞给{b}，笑称运气该分。{b}推辞不过，手里发热。",
+    "personalityAny": [
+      "shuaituo"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-zhizhuo-cause-1",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把抄录三遍的心得塞给{b}，说此道必有用。对方翻开，见批注密密麻麻，一时无言。",
+    "personalityAny": [
+      "zhizhuo"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-zhizhuo-cause-2",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}为{b}在{loc}寻得一枚缺角的旧符，郑重递上。说“我寻了很久”，声音发紧。",
+    "personalityAny": [
+      "zhizhuo"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-renhou-cause-1",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}见{b}在{loc}衣角破损，悄悄送来针线与新布。对方发现时，{a}已装作路过。",
+    "personalityAny": [
+      "renhou"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-renhou-cause-2",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把温着的汤药递给{b}，说顺手做的。{b}接过，脚步一顿，却只道辛苦了。",
+    "personalityAny": [
+      "renhou"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-jiaojin-cause-1",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把一匣精致灵果丢给{b}，说看你配得上。对方抬眉，{a}却先别开脸，脸红了。",
+    "personalityAny": [
+      "jiaojin"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-jiaojin-cause-2",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}当众在{loc}送给{b}一枚名贵玉佩，口称随手。私下却反复确认对方收好了没有。",
+    "personalityAny": [
+      "jiaojin"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-wenya-cause-1",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把一卷抄好的诗笺与清茶送给{b}，仪态从容。对方展开时，发现批注温软如话。",
+    "personalityAny": [
+      "wenya"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-wenya-cause-2",
+    "weight": 16,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}见{b}在{loc}看着很累，次日送来安神香，附短笺“莫忧”。{b}再遇时，目光柔了许多。",
+    "personalityAny": [
+      "wenya"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "locale-realm-gift-1",
+    "weight": 10,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把一枚定向石塞给{b}，说迷路时用。对方握紧，道谢未完，潮气已漫上眼睫。",
+    "regionTypes": [
+      "specialRealm"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ]
+  },
+  {
+    "id": "locale-market-gift-1",
+    "weight": 10,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}看见{b}盯着某物却未掏钱，便买下塞过去。对方连连摇头，最终还是收下，脸发热。",
+    "regionTypes": [
+      "market"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ]
+  },
+  {
+    "id": "gift-fm-soft-1",
+    "weight": 15,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}见{b}风尘还没洗干净，只把一包点心轻轻放到他手边，说路上垫垫。对方怔了怔，接过时嗓音低了半分。",
+    "pairGenderAny": [
+      "fm"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-fm-soft-2",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把一枚安神符折好，推到{b}袖侧，未多言。{b}抬眼看她，手在符角停了停。",
+    "pairGenderAny": [
+      "fm"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-fm-soft-3",
+    "weight": 13,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}路过{loc}时给{b}留了伤药与短笺，写「莫硬撑」。他展开时脸有点热，却把药收得很稳。",
+    "pairGenderAny": [
+      "fm"
+    ]
+  },
+  {
+    "id": "gift-mf-assert-1",
+    "weight": 14,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}见{b}唇色发白，二话不说把干粮塞进她手里，说「先吃」。她一愣，笑意才慢慢散开。",
+    "pairGenderAny": [
+      "mf"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ],
+    "affinityMin": 8
+  },
+  {
+    "id": "gift-spark-1",
+    "weight": 15,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把小物递给{b}，说路上用得着。{b}先拒后收，问为何给自己，{a}答得含糊，两人都不自然。",
+    "arcAny": [
+      "spark"
+    ],
+    "affinityMin": 12
+  },
+  {
+    "id": "gift-warm-1",
+    "weight": 20,
+    "type": "gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把礼物递给{b}，嘴上说不值钱。{b}收下后盯着{a}看了片刻，低声说「你总这样」。",
+    "arcAny": [
+      "warm",
+      "bond",
+      "mend"
+    ]
+  }
+]

@@ -1,0 +1,34 @@
+
+## Static unpack verdict evidence
+
+### Present in repo
+- tools/il2cpp_input/arm64/libil2cpp.so
+- tools/il2cpp_input/global-metadata.dat
+- tools/il2cpp_output/dump.cs, script.json
+- tools/il2cpp_input/assets/** is EMPTY (only Managed/Metadata dirs, no unity3d/sharedassets)
+
+### Absent
+- APK / split APKs
+- assets/bin/Data/*.assets, sharedassets*, resources.assets, level*, globalgamemanagers
+- StreamingAssets
+- Lua / plaintext event JSON from original
+
+### String evidence
+- 掌门/长老/真传/外门/内门/弟子 etc: ZERO hits in metadata UTF-8/UTF-16 and SO
+- ScriptString pure-CJK set is tiny (UI/calendar/errors only)
+- npclog: int[170] IDs recoverable (already in core/dns.js)
+- UI hierarchy paths exist: config/content/text*, helpconfig6/13 (Transform paths, not ciphertext)
+
+### Crypto
+- dns.EncryptDES / DecryptDES RVA 0x13BF5B8 / 0x13BFB7C — classic DES+Base64 pattern (sKey param)
+- ZERO direct BL call sites to EncryptDES/DecryptDES in entire SO (invoke via MethodInfo/blr or rare paths)
+- No obvious hardcoded 8-byte game DES key isolated from ScriptString
+
+### rejob / releader
+- RVA 0x13BE614 / 0x13BE5A8 — index into runtime string tables / literals
+- Do NOT call DecryptDES directly
+- Returned Chinese job titles are NOT stored as IL2CPP string literals in metadata
+
+### Implication
+Cannot statically recover rejob/releader labels or npclog narrative templates from current artifacts.
+Need full Unity data files from APK and/or runtime Frida dump.

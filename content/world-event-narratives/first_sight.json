@@ -1,0 +1,175 @@
+[
+  {
+    "id": "first_sight-1201",
+    "weight": 15,
+    "type": "first_sight",
+    "actors": "pair",
+    "template": "{a}在{loc}初次看见{b}，脚步乱了一拍。对方回眸时，两人竟都没能立刻移开视线。",
+    "tagNone": [
+      "enemy",
+      "lover",
+      "partner"
+    ],
+    "affinityMax": 20
+  },
+  {
+    "id": "first_sight-1202",
+    "weight": 14,
+    "type": "first_sight",
+    "actors": "pair",
+    "template": "市声喧闹，{a}却在{loc}只听见{b}一声轻笑。抬头对上眼的刹那，心底像被什么轻轻撞了一下。",
+    "tagNone": [
+      "enemy",
+      "lover"
+    ],
+    "affinityMax": 25
+  },
+  {
+    "id": "first_sight-1203",
+    "weight": 14,
+    "type": "first_sight",
+    "actors": "pair",
+    "template": "{a}本打算匆匆路过{loc}，却被{b}袖间的剑穗绊住目光。对方察觉，微微侧身，风里竟多了一分无措。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMax": 20
+  },
+  {
+    "id": "first_sight-1204",
+    "weight": 13,
+    "type": "first_sight",
+    "actors": "pair",
+    "template": "{a}在{loc}看见{b}时，话到嘴边全忘了。对方递过一盏茶，手相触，两人都装作若无其事。",
+    "personalityAny": [
+      "rechen",
+      "wenya"
+    ],
+    "tagNone": [
+      "enemy",
+      "partner"
+    ],
+    "affinityMax": 22
+  },
+  {
+    "id": "first_sight-1205",
+    "weight": 13,
+    "type": "first_sight",
+    "actors": "pair",
+    "template": "{a}向来不喜注目，却在{loc}被{b}的身影绊住。他移开视线的速度，比以往慢了半息。",
+    "personalityA": [
+      "qingleng"
+    ],
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMax": 20
+  },
+  {
+    "id": "first_sight-1206",
+    "weight": 12,
+    "type": "first_sight",
+    "actors": "pair",
+    "template": "飞舟掠过{loc}，{a}与{b}在舷边对上眼不过一瞬。那一瞬过后，两人却都记得对方眼中的光。",
+    "tagNone": [
+      "enemy",
+      "lover"
+    ],
+    "affinityMax": 18
+  },
+  {
+    "id": "first_sight-1207",
+    "weight": 12,
+    "type": "first_sight",
+    "actors": "pair",
+    "template": "{a}在{loc}听曲，抬头却撞进{b}的目光。曲未终，心跳却先乱了半拍，连袖中扇骨都握紧了。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMax": 25
+  },
+  {
+    "id": "first_sight-1208",
+    "weight": 12,
+    "type": "first_sight",
+    "actors": "pair",
+    "template": "大雨将至，{a}与{b}在{loc}檐下避雨。谁都没先开口，可雨声里，沉默忽然变得暧昧。",
+    "tagNone": [
+      "enemy",
+      "partner"
+    ],
+    "affinityMax": 20
+  },
+  {
+    "id": "first_sight-1209",
+    "weight": 11,
+    "type": "first_sight",
+    "actors": "pair",
+    "template": "{a}在{loc}看见{b}时多看了一眼，连忙低头掩饰。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMax": 22
+  },
+  {
+    "id": "first_sight-1210",
+    "weight": 11,
+    "type": "first_sight",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}第一次照面，礼数周全，可告辞后两人都下意识回头望了望空处。",
+    "tagNone": [
+      "enemy",
+      "lover",
+      "friend"
+    ],
+    "affinityMax": 15
+  },
+  {
+    "id": "first_sight-tension-1801",
+    "weight": 16,
+    "type": "first_sight",
+    "actors": "pair",
+    "template": "{a}在{loc}看见{b}的第一眼就忘了抬脚。对方回眸极淡，他却觉得手里突然发热，连握剑都不稳。",
+    "tagNone": [
+      "enemy",
+      "lover",
+      "partner"
+    ],
+    "affinityMax": 20
+  },
+  {
+    "id": "first_sight-tension-1802",
+    "weight": 16,
+    "type": "first_sight",
+    "actors": "pair",
+    "template": "在{loc}，人潮里，{a}只看见{b}侧脸。对方擦肩而过，并未停留。{a}却在原地站了很久，喉间发干。",
+    "tagNone": [
+      "enemy",
+      "lover"
+    ],
+    "affinityMax": 22
+  },
+  {
+    "id": "first_sight-tension-1803",
+    "weight": 15,
+    "type": "first_sight",
+    "actors": "pair",
+    "template": "{b}在{loc}抬眼时，{a}刚好撞上那道目光。两人同时移开，又同时回头，空气里像绷着一根细线。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMax": 18
+  },
+  {
+    "id": "first_sight-tension-1804",
+    "weight": 15,
+    "type": "first_sight",
+    "actors": "pair",
+    "template": "{a}在{loc}想开口请教，话在嘴边转了三圈。{b}等得不耐，眉心微蹙。他却更紧张，手里全湿了。",
+    "tagNone": [
+      "enemy",
+      "partner"
+    ],
+    "affinityMax": 25
+  }
+]

@@ -245,8 +245,8 @@
         result[skillId].push(masteryKey(skillId, entry.masteryId));
       });
     });
-    Object.keys(GatheringContent.FISH_SPECIES).forEach(function (speciesId) {
-      result.fishing.push(speciesId);
+    (GatheringContent.GATHERING.fishing.spots || []).forEach(function (spot) {
+      result.fishing.push(masteryKey('fishing', spot.masteryId || spot.id));
     });
     Object.values(RecipeContent.RECIPES).forEach(function (recipe) {
       result[recipe.skillId].push(
@@ -314,11 +314,15 @@
     });
     return {
       nextSpotId: 1,
-      spots: { herb: null, mining: null, woodcutting: null },
+      spots: { herb: [], mining: [], woodcutting: [] },
       fishStocks,
       fishRecoverAcc: 0,
       fishRecoverAnchorMs: null,
-      fishRecoverBaseSeconds: null
+      fishRecoverBaseSeconds: null,
+      fishingUnlocks: {
+        secretCove: false,
+        berserkShoal: false
+      }
     };
   }
 
@@ -452,6 +456,26 @@
     return contentId;
   }
 
+  function fishingSpeciesToSpotIds() {
+    const map = {};
+    const spots = GatheringContent.GATHERING &&
+      GatheringContent.GATHERING.fishing &&
+      GatheringContent.GATHERING.fishing.spots
+      ? GatheringContent.GATHERING.fishing.spots
+      : [];
+    spots.forEach(function (spot) {
+      (spot.drops || []).forEach(function (drop) {
+        const itemId = drop && (drop.itemId || drop.item);
+        if (typeof itemId !== 'string' || !itemId) return;
+        if (!own(map, itemId)) define(map, itemId, []);
+        if (map[itemId].indexOf(spot.id) < 0) map[itemId].push(spot.id);
+      });
+    });
+    return map;
+  }
+
+  const FISHING_SPECIES_TO_SPOTS = fishingSpeciesToSpotIds();
+
   function normalizeMastery(source, legacyProgress) {
     const raw = isRecord(source) ? source : {};
     const result = createMastery();
@@ -510,6 +534,19 @@
             result[skillId][canonicalContentId],
             levelRecord(rawEntries[contentId])
           );
+        } else if (
+          skillId === 'fishing' &&
+          own(FISHING_SPECIES_TO_SPOTS, contentId)
+        ) {
+          const incoming = levelRecord(rawEntries[contentId]);
+          FISHING_SPECIES_TO_SPOTS[contentId].forEach(function (spotId) {
+            if (own(result.fishing, spotId)) {
+              result.fishing[spotId] = mergeLevelRecord(
+                result.fishing[spotId],
+                incoming
+              );
+            }
+          });
         } else {
           archiveMasteryEntry(
             legacyProgress,
@@ -717,15 +754,11 @@
         0
       )
     );
-    const quality = own(GatheringContent.RESOURCE_QUALITIES, raw.quality)
-      ? raw.quality
-      : 'common';
     const existingId = cleanId(raw.instanceId, null);
     return {
       instanceId: existingId || allocateId(),
       skillId,
       entryId,
-      quality,
       capacity,
       remaining
     };
@@ -797,14 +830,46 @@
         : isRecord(rawPlayer.spots)
           ? rawPlayer.spots[skillId]
           : null;
-      const spot = normalizeSpot(candidate, skillId, function () {
-        return 'spot-' + nextId++;
+      const rawList = Array.isArray(candidate)
+        ? candidate
+        : (candidate ? [candidate] : []);
+      const spots = [];
+      const indexByEntry = Object.create(null);
+      const skillLevel = isRecord(rawPlayer.skills) &&
+        isRecord(rawPlayer.skills[skillId])
+        ? finiteInteger(rawPlayer.skills[skillId].level, 1, 1)
+        : 1;
+      const capacityCap = typeof GatheringContent.maxSpotCapacity ===
+        'function'
+        ? Math.max(1, finiteInteger(
+          GatheringContent.maxSpotCapacity(skillLevel),
+          1,
+          1
+        ))
+        : 50;
+      rawList.forEach(function (row) {
+        const spot = normalizeSpot(row, skillId, function () {
+          return 'spot-' + nextId++;
+        });
+        if (!spot) return;
+        spot.capacity = Math.max(spot.remaining, capacityCap, spot.capacity);
+        spot.remaining = Math.min(spot.remaining, spot.capacity);
+        const existingIndex = indexByEntry[spot.entryId];
+        if (existingIndex == null) {
+          indexByEntry[spot.entryId] = spots.length;
+          spots.push(spot);
+        } else {
+          const current = spots[existingIndex];
+          const mergedRemaining = Math.min(
+            capacityCap,
+            current.remaining + spot.remaining
+          );
+          current.remaining = mergedRemaining;
+          current.capacity = Math.max(capacityCap, mergedRemaining);
+        }
+        nextId = Math.max(nextId, spotNumber(spot.instanceId) + 1);
       });
-      result.spots[skillId] = spot;
-      if (spot) nextId = Math.max(
-        nextId,
-        spotNumber(spot.instanceId) + 1
-      );
+      result.spots[skillId] = spots;
     });
     result.nextSpotId = nextId;
 
@@ -850,6 +915,18 @@
     );
     result.fishRecoverAnchorMs = anchor.anchorMs;
     result.fishRecoverBaseSeconds = anchor.baseValue;
+
+    const rawUnlocks = isRecord(source.fishingUnlocks)
+      ? source.fishingUnlocks
+      : {};
+    Object.keys(result.fishingUnlocks).forEach(function (flag) {
+      result.fishingUnlocks[flag] = rawUnlocks[flag] === true;
+    });
+    Object.keys(rawUnlocks).forEach(function (flag) {
+      if (!own(result.fishingUnlocks, flag)) {
+        define(result.fishingUnlocks, flag, rawUnlocks[flag] === true);
+      }
+    });
     return result;
   }
 
@@ -1157,11 +1234,17 @@
 
     let match = /^gather:(herb|mining|woodcutting):([^:]+)$/.exec(key);
     if (match) {
+      if (/^spot-\d+$/.test(match[2])) {
+        return 'gather:collect:' + match[1] + ':' + match[2];
+      }
       const entryId = canonicalResourceEntryId(match[1], match[2]);
       if (entryId) return 'gather:collect:' + match[1] + ':' + entryId;
     }
     match = /^gather:collect:(herb|mining|woodcutting):([^:]+)$/.exec(key);
     if (match) {
+      if (/^spot-\d+$/.test(match[2])) {
+        return 'gather:collect:' + match[1] + ':' + match[2];
+      }
       const entryId = canonicalResourceEntryId(match[1], match[2]);
       if (entryId) return 'gather:collect:' + match[1] + ':' + entryId;
     }

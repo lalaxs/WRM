@@ -1,0 +1,478 @@
+[
+  {
+    "id": "meet-0001",
+    "weight": 12,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}碰上，话有点僵，还是互换了名字。各自说明来干什么后，彼此才松了些。"
+  },
+  {
+    "id": "meet-0002",
+    "weight": 12,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}路过{loc}遇见{b}，回身打了声招呼，随口寒暄近况，听完却没再深追。"
+  },
+  {
+    "id": "meet-0003",
+    "weight": 12,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}在{loc}寻人，恰遇见{b}。先寒暄近况，话里却带着试探，对清楚后又都装作无事。"
+  },
+  {
+    "id": "meet-0004",
+    "weight": 12,
+    "type": "meet",
+    "actors": "pair",
+    "template": "雨歇后，{a}与{b}在{loc}廊下相遇，先避了雨，又互相八卦了几句门中近闻。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "meet-0005",
+    "weight": 12,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}在{loc}市集角落与{b}撞个正着，两人一起把散落的货物拾起，顺便寒暄认识一下。",
+    "regionTypes": [
+      "market",
+      "town"
+    ]
+  },
+  {
+    "id": "rogue-wandering-sword-2",
+    "weight": 10,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}在{loc}路遇{b}，拔剑替其解围，临走前互换了名字。",
+    "rogueTitleAny": [
+      "wandering-sword"
+    ]
+  },
+  {
+    "id": "rogue-street-alchemist-2",
+    "weight": 10,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}在{loc}把走方带来的丹样分给{b}试服，嘱咐忌口，并互换了名字。",
+    "rogueTitleAny": [
+      "street-alchemist"
+    ]
+  },
+  {
+    "id": "rogue-herb-wanderer-2",
+    "weight": 10,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}教{b}辨认{loc}路边一株易混的毒草，并互换了名字。",
+    "rogueTitleAny": [
+      "herb-wanderer"
+    ]
+  },
+  {
+    "id": "rogue-forge-guest-2",
+    "weight": 10,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}围着残器讨论淬火，火星轻迸，临走前互换了名字。",
+    "rogueTitleAny": [
+      "forge-guest"
+    ]
+  },
+  {
+    "id": "rogue-beast-keeper-2",
+    "weight": 10,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}请{b}帮忙看管幼兽片刻，自己去{loc}买粮，临走前互换了名字。",
+    "rogueTitleAny": [
+      "beast-keeper"
+    ]
+  },
+  {
+    "id": "rogue-talisman-guest-2",
+    "weight": 10,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}在{loc}送{b}一张安行符，说山路湿滑用得着，临走前互换了名字。",
+    "rogueTitleAny": [
+      "talisman-guest"
+    ]
+  },
+  {
+    "id": "rogue-jianghu-xia-2",
+    "weight": 10,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}酒肆听人说书，听到兴处击案，临走前互换了名字。",
+    "rogueTitleAny": [
+      "jianghu-xia"
+    ]
+  },
+  {
+    "id": "rogue-cloud-daoist-2",
+    "weight": 10,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}在{loc}送给{b}一枚无名玉牌，说是路边捡的机缘，临走前互换了名字。",
+    "rogueTitleAny": [
+      "cloud-daoist"
+    ]
+  },
+  {
+    "id": "rogue-lone-hermit-2",
+    "weight": 10,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}在{loc}留下半卷残篇给{b}，人已不见。",
+    "rogueTitleAny": [
+      "lone-hermit"
+    ]
+  },
+  {
+    "id": "rogue-wandering-rogue-2",
+    "weight": 10,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}在{loc}租了个通铺，夜里与{b}闲聊，互相吐槽修行难处。",
+    "rogueTitleAny": [
+      "wandering-rogue"
+    ]
+  },
+  {
+    "id": "rogue-market-cultivator-2",
+    "weight": 10,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}托{b}在{loc}照看摊位，自己去进货。",
+    "rogueTitleAny": [
+      "market-cultivator"
+    ],
+    "regionTypes": [
+      "market",
+      "town"
+    ]
+  },
+  {
+    "id": "rogue-mortal-aspirant-2",
+    "weight": 10,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}买了本入门册，在{loc}拉着{b}问生字。",
+    "rogueTitleAny": [
+      "mortal-aspirant"
+    ]
+  },
+  {
+    "id": "generic-meet-1",
+    "weight": 8,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}桥上相遇，侧身让过后又退回来说话。"
+  },
+  {
+    "id": "generic-meet-2",
+    "weight": 8,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}寻声走到{loc}，发现是{b}在唤灵兽。"
+  },
+  {
+    "id": "generic-meet-3",
+    "weight": 8,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}在{loc}迷路，向{b}问了方向。"
+  },
+  {
+    "id": "generic-meet-4",
+    "weight": 8,
+    "type": "meet",
+    "actors": "pair",
+    "template": "晨雾里，{a}与{b}同时抵达{loc}山门。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "generic-meet-5",
+    "weight": 8,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}从{loc}驿站出来，正撞上{b}投宿。"
+  },
+  {
+    "id": "scene-meet-0-0",
+    "weight": 9,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}因办门务来到{loc}山门，正撞见{b}也伸手去够同一处。两人缩手又对上，{a}先让了半步，{b}却把位置让了回来。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-meet-0-1",
+    "weight": 9,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}因听同门议事来到{loc}厢房廊下，正撞见{b}也伸手去够同一处。两人缩手又对上，{a}先让了半步，{b}却把位置让了回来。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-meet-0-2",
+    "weight": 9,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}因寻货来到{loc}摊位旁，正撞见{b}也伸手去够同一处。两人缩手又对上，{a}先让了半步，{b}却把位置让了回来。",
+    "regionTypes": [
+      "market"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-meet-0-3",
+    "weight": 9,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}因采药来到{loc}林径，正撞见{b}也伸手去够同一处。两人缩手又对上，{a}先让了半步，{b}却把位置让了回来。",
+    "regionTypes": [
+      "wilderness"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-meet-0-4",
+    "weight": 9,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}因候船来到{loc}渡口，正撞见{b}也伸手去够同一处。两人缩手又对上，{a}先让了半步，{b}却把位置让了回来。",
+    "regionTypes": [
+      "town"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-meet-0-5",
+    "weight": 9,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}因借火来到{loc}丹房外，正撞见{b}也伸手去够同一处。两人缩手又对上，{a}先让了半步，{b}却把位置让了回来。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-meet-0-6",
+    "weight": 9,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}因观剑来到{loc}剑冢前，正撞见{b}也伸手去够同一处。两人缩手又对上，{a}先让了半步，{b}却把位置让了回来。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-meet-0-7",
+    "weight": 9,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}因照看灵谷来到{loc}灵田边，正撞见{b}也伸手去够同一处。两人缩手又对上，{a}先让了半步，{b}却把位置让了回来。",
+    "regionTypes": [
+      "town",
+      "sectBase"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-meet-1-0",
+    "weight": 9,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}因办门务在{loc}山门遇见{b}。本想装作路过，{b}却先开口叫住，寒暄近况，话不多，却停得稍久。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-meet-1-1",
+    "weight": 9,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}因听同门议事在{loc}厢房廊下遇见{b}。本想装作路过，{b}却先开口叫住，寒暄近况，话不多，却停得稍久。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-meet-1-2",
+    "weight": 9,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}因寻货在{loc}摊位旁遇见{b}。本想装作路过，{b}却先开口叫住，寒暄近况，话不多，却停得稍久。",
+    "regionTypes": [
+      "market"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-meet-1-3",
+    "weight": 9,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}因采药在{loc}林径遇见{b}。本想装作路过，{b}却先开口叫住，寒暄近况，话不多，却停得稍久。",
+    "regionTypes": [
+      "wilderness"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-meet-1-4",
+    "weight": 9,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}因候船在{loc}渡口遇见{b}。本想装作路过，{b}却先开口叫住，寒暄近况，话不多，却停得稍久。",
+    "regionTypes": [
+      "town"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-meet-1-5",
+    "weight": 9,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}因借火在{loc}丹房外遇见{b}。本想装作路过，{b}却先开口叫住，寒暄近况，话不多，却停得稍久。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-meet-1-6",
+    "weight": 9,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}因观剑在{loc}剑冢前遇见{b}。本想装作路过，{b}却先开口叫住，寒暄近况，话不多，却停得稍久。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-meet-1-7",
+    "weight": 9,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}因照看灵谷在{loc}灵田边遇见{b}。本想装作路过，{b}却先开口叫住，寒暄近况，话不多，却停得稍久。",
+    "regionTypes": [
+      "town",
+      "sectBase"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "meet-tension-1701",
+    "weight": 13,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}在{loc}看见{b}，本打算若无其事走过。脚步到近前还是乱了。{b}点头极淡，睫毛却颤了一下。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMax": 35
+  },
+  {
+    "id": "meet-tension-1702",
+    "weight": 12,
+    "type": "meet",
+    "actors": "pair",
+    "template": "廊下狭路，{a}与{b}在{loc}侧身相让。衣袖擦过时两人都僵住，随后又同时低头，像什么都没发生。",
+    "tagNone": [
+      "enemy"
+    ],
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "meet-tension-1703",
+    "weight": 12,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}在{loc}远远看见{b}就放慢了步。对方抬眼对上，先冷着脸，嘴角却不受控地软了一瞬。",
+    "tagAny": [
+      "impressed",
+      "life-debt",
+      "friend"
+    ]
+  },
+  {
+    "id": "locale-realm-meet-1",
+    "weight": 11,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}阵雾里错身，本以为是幻影，伸手试探时却触到真实体温，两人都怔住。",
+    "regionTypes": [
+      "specialRealm"
+    ]
+  },
+  {
+    "id": "locale-wild-meet-1",
+    "weight": 10,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}在{loc}追踪兽迹时与{b}撞上，彼此先戒备，确认不是敌手后，才把袖中的符缓缓收回。",
+    "regionTypes": [
+      "wilderness"
+    ]
+  },
+  {
+    "id": "meet-spark-first-1",
+    "weight": 16,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}初次照面，话都客气得发硬。分开前两人还是互换了名字，{b}应得很快，像怕冷场。",
+    "eventCountMax": 1
+  },
+  {
+    "id": "meet-spark-first-2",
+    "weight": 16,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}在{loc}与{b}撞上，本可错开，却因一句问路停住。问完后两人同时沉默，才各自让路。",
+    "eventCountMax": 1
+  },
+  {
+    "id": "meet-spark-again-1",
+    "weight": 18,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}在{loc}又遇见{b}，下意识想装作没看见，{b}却先点了头。两人客套两句，都听出了彼此记得上次。",
+    "arcAny": [
+      "spark"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "meet-spark-again-2",
+    "weight": 18,
+    "type": "meet",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}再度碰面。寒暄里{a}多问了一句近况，{b}答完又补问回来。",
+    "arcAny": [
+      "spark"
+    ],
+    "eventCountMin": 2
+  }
+]

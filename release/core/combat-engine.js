@@ -10,6 +10,7 @@
     module.exports = factory(
       require('../content/combat.js'),
       require('../content/techniques.js'),
+      require('../content/realms.js'),
       require('./combat-stats.js'),
       require('./techniques.js'),
       require('./inventory.js'),
@@ -22,6 +23,7 @@
     root.CombatEngine = factory(
       root.CombatContent,
       root.TechniqueContent,
+      root.RealmContent,
       root.CombatStats,
       root.Techniques,
       root.Inventory,
@@ -34,6 +36,7 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (
   CombatContent,
   TechniqueContent,
+  RealmContent,
   CombatStats,
   Techniques,
   Inventory,
@@ -44,12 +47,19 @@
 ) {
   'use strict';
 
-  const MAX_TECHNIQUE_LEVEL = 20;
+  const MAX_TECHNIQUE_LEVEL = 200;
   const ACTIVE_SLOT_COUNT = 3;
-  const PASSIVE_SLOT_COUNT = 3;
+  const PASSIVE_SLOT_COUNT = 5;
   const UINT32_MAX = 0xFFFFFFFF;
   const SUPPLY_TYPES = Object.freeze(['food', 'pill', 'talisman']);
-  const STATUS_IDS = Object.freeze(['shock', 'slow', 'haste']);
+  const STATUS_IDS = Object.freeze([
+    'shock', 'slow', 'haste', 'burn', 'poison', 'weaken', 'inspire',
+    'silence', 'vulnerable'
+  ]);
+  const PURGEABLE_STATUS_IDS = Object.freeze([
+    'shock', 'slow', 'burn', 'poison', 'weaken', 'silence', 'vulnerable'
+  ]);
+  const AOE_TARGET_COEFFICIENTS = Object.freeze([1, 0.85, 0.72, 0.65]);
   const PLAYER_STAT_KEYS = Object.freeze([
     'maxHp', 'maxQi', 'attack', 'defense', 'accuracy', 'evasion',
     'critChance', 'attackIntervalTicks'
@@ -528,13 +538,13 @@
   function validCondition(condition) {
     if (!plainRecord(condition)) return false;
     const type = dataValue(condition, 'type');
-    if (type === 'always') return true;
+    if (type === 'always' || type === 'selfMissingShield') return true;
     if (type === 'selfHpBelow' || type === 'selfQiAbove' ||
-        type === 'enemyHpBelow') {
+        type === 'selfQiBelow' || type === 'enemyHpBelow') {
       const threshold = dataValue(condition, 'threshold');
       return finite(threshold) && threshold >= 0 && threshold <= 1;
     }
-    if (type === 'enemyHasStatus') {
+    if (type === 'enemyHasStatus' || type === 'enemyMissingStatus') {
       return typeof dataValue(condition, 'statusId') === 'string';
     }
     if (type === 'selfMissingBuff') {
@@ -583,11 +593,28 @@
     });
   }
 
+  function unlockedActiveSlotsForRealm(realmIndex) {
+    if (!Number.isSafeInteger(realmIndex) || realmIndex < 0) return 1;
+    if (realmIndex >= 10) return ACTIVE_SLOT_COUNT;
+    if (realmIndex >= 9) return 2;
+    return 1;
+  }
+
+  function unlockedPassiveSlotsForRealm(realmIndex) {
+    if (!Number.isSafeInteger(realmIndex) || realmIndex < 0) return 1;
+    if (realmIndex >= 12) return PASSIVE_SLOT_COUNT;
+    if (realmIndex >= 11) return 4;
+    if (realmIndex >= 10) return 3;
+    if (realmIndex >= 9) return 2;
+    return 1;
+  }
+
   function copyLoadoutSnapshot(
     loadout,
     known,
     derivedStats,
-    hasActiveBeast
+    hasActiveBeast,
+    realmIndex
   ) {
     if (!plainRecord(loadout) || !plainRecord(known) ||
         !plainRecord(derivedStats) ||
@@ -608,6 +635,9 @@
         !plainRecord(supplyState)) {
       return null;
     }
+    const safeRealmIndex = Number.isSafeInteger(realmIndex) ? realmIndex : 0;
+    const unlockedActive = unlockedActiveSlotsForRealm(safeRealmIndex);
+    const unlockedPassive = unlockedPassiveSlotsForRealm(safeRealmIndex);
     const activeCopy = [];
     for (let index = 0; index < active.length; index++) {
       const slot = active[index];
@@ -665,7 +695,10 @@
         supplies: supplyCopy,
         techniqueLevels: levels,
         derivedStats: statsCopy.value,
-        hasActiveBeast: hasActiveBeast
+        hasActiveBeast: hasActiveBeast,
+        realmIndex: safeRealmIndex,
+        unlockedActiveSlots: unlockedActive,
+        unlockedPassiveSlots: unlockedPassive
       }
       : null;
   }
@@ -747,11 +780,28 @@
     } catch (error) {
       return null;
     }
+    const breakthrough = dataValue(playerState, 'breakthrough');
+    const realmId = dataValue(breakthrough, 'realmId');
+    let realmIndex = 0;
+    if (typeof realmId === 'string' && RealmContent &&
+        typeof RealmContent.getRealm === 'function') {
+      try {
+        const realm = RealmContent.getRealm(realmId);
+        if (realm && Number.isSafeInteger(dataValue(realm, 'index'))) {
+          realmIndex = dataValue(realm, 'index');
+        } else if (realm && Number.isSafeInteger(realm.index)) {
+          realmIndex = realm.index;
+        }
+      } catch (error) {
+        realmIndex = 0;
+      }
+    }
     const snapshot = copyLoadoutSnapshot(
       loadout,
       known,
       derived,
-      hasValidActiveBeast(state)
+      hasValidActiveBeast(state),
+      realmIndex
     );
     if (!snapshot) return null;
 
@@ -968,6 +1018,90 @@
             dataValue(status, 'attackIntervalReduction') !== 0.1) {
           return false;
         }
+      } else if (statusId === 'burn') {
+        if (!exactDataKeys(status, [
+          'remainingTicks', 'pulseIntervalTicks', 'pulseDamageRatio',
+          'pulseAccumulator', 'sourceAttack'
+        ]) ||
+            !positiveInteger(dataValue(status, 'remainingTicks')) ||
+            dataValue(status, 'pulseIntervalTicks') !== 4 ||
+            !finiteAtLeast(dataValue(status, 'pulseDamageRatio'), 0) ||
+            !safeIntegerAtLeast(dataValue(status, 'pulseAccumulator'), 0) ||
+            !finiteAtLeast(dataValue(status, 'sourceAttack'), 0)) {
+          return false;
+        }
+      } else if (statusId === 'poison') {
+        if (!exactDataKeys(status, [
+          'remainingTicks', 'pulseIntervalTicks', 'pulseDamageRatio',
+          'pulseAccumulator', 'stacks', 'maxStacks', 'sourceAttack'
+        ]) ||
+            !positiveInteger(dataValue(status, 'remainingTicks')) ||
+            dataValue(status, 'pulseIntervalTicks') !== 4 ||
+            !finiteAtLeast(dataValue(status, 'pulseDamageRatio'), 0) ||
+            !safeIntegerAtLeast(dataValue(status, 'pulseAccumulator'), 0) ||
+            !positiveInteger(dataValue(status, 'stacks')) ||
+            dataValue(status, 'maxStacks') !== 5 ||
+            !finiteAtLeast(dataValue(status, 'sourceAttack'), 0)) {
+          return false;
+        }
+      } else if (statusId === 'weaken') {
+        if (!exactDataKeys(status, [
+          'remainingTicks', 'attackFactor', 'accuracyFlat'
+        ]) ||
+            !positiveInteger(dataValue(status, 'remainingTicks')) ||
+            !finiteAtLeast(dataValue(status, 'attackFactor'), 0) ||
+            dataValue(status, 'attackFactor') > 1 ||
+            !finite(dataValue(status, 'accuracyFlat'))) {
+          return false;
+        }
+      } else if (statusId === 'inspire') {
+        if (!plainRecord(status) ||
+            !positiveInteger(dataValue(status, 'remainingTicks')) ||
+            !finiteAtLeast(dataValue(status, 'damageBonus'), 0)) {
+          return false;
+        }
+        const inspireKeys = Object.keys(status);
+        for (let i = 0; i < inspireKeys.length; i++) {
+          const key = inspireKeys[i];
+          if (key !== 'remainingTicks' && key !== 'damageBonus' &&
+              key !== 'accuracyFlat' && key !== 'critChanceBonus' &&
+              key !== 'damageReduction' && key !== 'selfAttackPenalty') {
+            return false;
+          }
+        }
+        if (own(status, 'accuracyFlat') &&
+            !finite(dataValue(status, 'accuracyFlat'))) {
+          return false;
+        }
+        if (own(status, 'critChanceBonus') &&
+            !finiteAtLeast(dataValue(status, 'critChanceBonus'), 0)) {
+          return false;
+        }
+        if (own(status, 'damageReduction') &&
+            (!finiteAtLeast(dataValue(status, 'damageReduction'), 0) ||
+              dataValue(status, 'damageReduction') > 1)) {
+          return false;
+        }
+        if (own(status, 'selfAttackPenalty') &&
+            (!finiteAtLeast(dataValue(status, 'selfAttackPenalty'), 0) ||
+              dataValue(status, 'selfAttackPenalty') > 1)) {
+          return false;
+        }
+      } else if (statusId === 'silence') {
+        if (!exactDataKeys(
+          status,
+          ['remainingTicks', 'skipNextAction']
+        ) ||
+            !positiveInteger(dataValue(status, 'remainingTicks')) ||
+            typeof dataValue(status, 'skipNextAction') !== 'boolean') {
+          return false;
+        }
+      } else if (statusId === 'vulnerable') {
+        if (!exactDataKeys(status, ['remainingTicks', 'damageTakenFactor']) ||
+            !positiveInteger(dataValue(status, 'remainingTicks')) ||
+            !finiteAtLeast(dataValue(status, 'damageTakenFactor'), 1)) {
+          return false;
+        }
       } else {
         return false;
       }
@@ -1103,14 +1237,15 @@
     record[key] = previous + amount;
   }
 
-  function event(type, sourceId, targetId, amount, critical, techniqueId) {
+  function event(type, sourceId, targetId, amount, critical, techniqueId, hit) {
     return {
       type: type,
       sourceId: sourceId,
       targetId: targetId,
       amount: amount,
       critical: critical,
-      techniqueId: techniqueId
+      techniqueId: techniqueId,
+      hit: hit !== false
     };
   }
 
@@ -1121,7 +1256,8 @@
       'enemy',
       0,
       false,
-      techniqueId || null
+      techniqueId || null,
+      true
     );
     value.code = code;
     return value;
@@ -1146,17 +1282,75 @@
   }
 
   function critChanceFor(attacker) {
+    let chance;
     const direct = dataValue(attacker, 'critChance');
-    if (finite(direct)) return clamp(direct, 0, 0.95);
-    const id = dataValue(attacker, 'id');
-    return typeof id === 'string' && own(enemies, id) &&
-      finite(enemies[id].stats.critChance)
-      ? clamp(enemies[id].stats.critChance, 0, 0.95)
-      : 0;
+    if (finite(direct)) {
+      chance = direct;
+    } else {
+      const id = dataValue(attacker, 'id');
+      chance = typeof id === 'string' && own(enemies, id) &&
+        finite(enemies[id].stats.critChance)
+        ? enemies[id].stats.critChance
+        : 0;
+    }
+    const inspire = dataValue(attacker.statuses, 'inspire');
+    if (plainRecord(inspire) &&
+        positiveInteger(dataValue(inspire, 'remainingTicks')) &&
+        finite(dataValue(inspire, 'critChanceBonus'))) {
+      chance += dataValue(inspire, 'critChanceBonus');
+    }
+    return clamp(chance, 0, 0.95);
   }
 
-  function applyDamage(target, amount) {
+  function applyDamage(parts, target, amount, targetId) {
     let remaining = amount;
+    if (targetId === 'player') {
+      const guard = dataValue(target.buffs, 'guard');
+      if (plainRecord(guard) &&
+          positiveInteger(dataValue(guard, 'charges')) &&
+          dataValue(parts.snapshot, 'hasActiveBeast') === true) {
+        guard.charges = dataValue(guard, 'charges') - 1;
+        if (guard.charges <= 0) delete target.buffs.guard;
+        parts.events.push(event(
+          'guard',
+          'beast',
+          'player',
+          amount,
+          false,
+          null
+        ));
+        return 0;
+      }
+      const threshold = passiveBonusField(parts.snapshot, 'lowHpThreshold');
+      const reduction = passiveBonusField(
+        parts.snapshot,
+        'lowHpDamageReduction'
+      );
+      if (threshold > 0 && reduction > 0 &&
+          target.maxHp > 0 &&
+          target.hp / target.maxHp <= threshold) {
+        remaining *= 1 - reduction;
+      }
+      const ward = dataValue(target.buffs, 'warded');
+      if (plainRecord(ward) &&
+          finite(dataValue(ward, 'damageReduction')) &&
+          finite(dataValue(target, 'shield')) &&
+          dataValue(target, 'shield') > 0) {
+        remaining *= 1 - dataValue(ward, 'damageReduction');
+      }
+      const inspireWard = dataValue(target.statuses, 'inspire');
+      if (plainRecord(inspireWard) &&
+          positiveInteger(dataValue(inspireWard, 'remainingTicks')) &&
+          finite(dataValue(inspireWard, 'damageReduction'))) {
+        remaining *= 1 - dataValue(inspireWard, 'damageReduction');
+      }
+    }
+    const vulnerable = dataValue(target.statuses, 'vulnerable');
+    if (plainRecord(vulnerable) &&
+        positiveInteger(dataValue(vulnerable, 'remainingTicks')) &&
+        finite(dataValue(vulnerable, 'damageTakenFactor'))) {
+      remaining *= dataValue(vulnerable, 'damageTakenFactor');
+    }
     const shield = finite(dataValue(target, 'shield'))
       ? Math.max(0, dataValue(target, 'shield'))
       : 0;
@@ -1168,6 +1362,80 @@
     const before = target.hp;
     target.hp = Math.max(0, before - remaining);
     return before - target.hp;
+  }
+
+  function combatantAttackFactor(combatant) {
+    let factor = 1;
+    const weaken = dataValue(combatant.statuses, 'weaken');
+    if (plainRecord(weaken) &&
+        positiveInteger(dataValue(weaken, 'remainingTicks')) &&
+        finite(dataValue(weaken, 'attackFactor'))) {
+      factor *= dataValue(weaken, 'attackFactor');
+    }
+    const inspire = dataValue(combatant.statuses, 'inspire');
+    if (plainRecord(inspire) &&
+        positiveInteger(dataValue(inspire, 'remainingTicks'))) {
+      if (finite(dataValue(inspire, 'damageBonus'))) {
+        factor *= 1 + dataValue(inspire, 'damageBonus');
+      }
+      if (finite(dataValue(inspire, 'selfAttackPenalty'))) {
+        factor *= 1 - dataValue(inspire, 'selfAttackPenalty');
+      }
+    }
+    return factor;
+  }
+
+  function combatantAccuracy(combatant) {
+    let accuracy = combatant.accuracy;
+    const weaken = dataValue(combatant.statuses, 'weaken');
+    if (plainRecord(weaken) &&
+        positiveInteger(dataValue(weaken, 'remainingTicks')) &&
+        finite(dataValue(weaken, 'accuracyFlat'))) {
+      accuracy += dataValue(weaken, 'accuracyFlat');
+    }
+    const inspire = dataValue(combatant.statuses, 'inspire');
+    if (plainRecord(inspire) &&
+        positiveInteger(dataValue(inspire, 'remainingTicks')) &&
+        finite(dataValue(inspire, 'accuracyFlat'))) {
+      accuracy += dataValue(inspire, 'accuracyFlat');
+    }
+    return accuracy;
+  }
+
+  function scaledBuffDuration(parts, durationTicks) {
+    if (!positiveInteger(durationTicks)) return durationTicks;
+    const bonus = passiveBonusField(parts.snapshot, 'buffDurationBonus');
+    if (!(bonus > 0)) return durationTicks;
+    return Math.max(1, Math.round(durationTicks * (1 + bonus)));
+  }
+
+  function resistPlayerDebuff(parts) {
+    const resist = passiveBonusField(parts.snapshot, 'controlResistBonus');
+    if (!(resist > 0)) return false;
+    const rolled = draw(parts);
+    if (rolled === null) return null;
+    return rolled < resist;
+  }
+
+  function effectiveTechniqueCooldownTicks(parts, baseTicks) {
+    if (!Number.isSafeInteger(baseTicks) || baseTicks < 0) return 0;
+    if (baseTicks === 0) return 0;
+    const stats = dataValue(parts.snapshot, 'derivedStats');
+    const cdr = plainRecord(stats) && finite(dataValue(stats, 'cooldownReduction'))
+      ? dataValue(stats, 'cooldownReduction')
+      : 0;
+    const factor = 1 - clamp(cdr, 0, 0.5);
+    return Math.max(1, Math.floor(baseTicks * factor));
+  }
+
+  function mwiHitChance(accuracy, evasion) {
+    const acc = Math.max(0, finite(accuracy) ? accuracy : 0);
+    const eva = Math.max(0, finite(evasion) ? evasion : 0);
+    const accPower = Math.pow(acc, 1.4);
+    const evaPower = Math.pow(eva, 1.4);
+    const total = accPower + evaPower;
+    if (!(total > 0)) return 0.5;
+    return accPower / total;
   }
 
   function resolveAttack(
@@ -1183,14 +1451,12 @@
   ) {
     let landed = false;
     const count = positiveInteger(hits) ? hits : 1;
+    const attackFactor = combatantAttackFactor(attacker);
+    const accuracy = combatantAccuracy(attacker);
     for (let index = 0; index < count; index++) {
       const accuracyRoll = draw(parts);
       if (accuracyRoll === null) return { ok: false, landed: landed };
-      const hitChance = clamp(
-        0.75 + (attacker.accuracy - defender.evasion) * 0.005,
-        0.2,
-        0.98
-      );
+      const hitChance = mwiHitChance(accuracy, defender.evasion);
       if (accuracyRoll >= hitChance) {
         parts.events.push(event(
           'damage',
@@ -1198,21 +1464,22 @@
           targetId,
           0,
           false,
-          techniqueId
+          techniqueId,
+          false
         ));
         continue;
       }
       const criticalRoll = draw(parts);
       if (criticalRoll === null) return { ok: false, landed: landed };
       const baseDamage = Math.max(1, Math.floor(
-        attacker.attack * multiplier -
+        attacker.attack * attackFactor * multiplier -
           defender.defense * (1 - defenseIgnore) * 0.5
       ));
       const critical = criticalRoll < critChanceFor(attacker);
       const amount = critical
         ? Math.floor(baseDamage * 1.5)
         : baseDamage;
-      const applied = applyDamage(defender, amount);
+      const applied = applyDamage(parts, defender, amount, targetId);
       if (targetId === 'player') {
         parts.counts.metrics.damageTaken += applied;
       } else {
@@ -1222,16 +1489,17 @@
         'damage',
         sourceId,
         targetId,
-        amount,
+        applied,
         critical,
-        techniqueId
+        techniqueId,
+        true
       ));
       landed = true;
     }
     return { ok: true, landed: landed };
   }
 
-  function statusRecord(statusId, remainingTicks) {
+  function statusRecord(statusId, remainingTicks, extra) {
     if (statusId === 'shock') {
       return {
         remainingTicks: remainingTicks,
@@ -1244,13 +1512,90 @@
         attackIntervalAdd: 2
       };
     }
+    if (statusId === 'burn') {
+      return {
+        remainingTicks: remainingTicks,
+        pulseIntervalTicks: 4,
+        pulseDamageRatio: finite(extra && extra.pulseDamageRatio)
+          ? extra.pulseDamageRatio
+          : 0.18,
+        pulseAccumulator: 0,
+        sourceAttack: finite(extra && extra.sourceAttack)
+          ? extra.sourceAttack
+          : 0
+      };
+    }
+    if (statusId === 'poison') {
+      return {
+        remainingTicks: remainingTicks,
+        pulseIntervalTicks: 4,
+        pulseDamageRatio: finite(extra && extra.pulseDamageRatio)
+          ? extra.pulseDamageRatio
+          : 0.08,
+        pulseAccumulator: 0,
+        stacks: positiveInteger(extra && extra.stacks) ? extra.stacks : 1,
+        maxStacks: 5,
+        sourceAttack: finite(extra && extra.sourceAttack)
+          ? extra.sourceAttack
+          : 0
+      };
+    }
+    if (statusId === 'weaken') {
+      return {
+        remainingTicks: remainingTicks,
+        attackFactor: finite(extra && extra.attackFactor)
+          ? clamp(extra.attackFactor, 0, 1)
+          : 0.85,
+        accuracyFlat: finite(extra && extra.accuracyFlat)
+          ? extra.accuracyFlat
+          : -15
+      };
+    }
+    if (statusId === 'inspire') {
+      const record = {
+        remainingTicks: remainingTicks,
+        damageBonus: finite(extra && extra.damageBonus)
+          ? Math.max(0, extra.damageBonus)
+          : 0.12
+      };
+      if (finite(extra && extra.accuracyFlat)) {
+        record.accuracyFlat = extra.accuracyFlat;
+      }
+      if (finite(extra && extra.critChanceBonus) &&
+          extra.critChanceBonus > 0) {
+        record.critChanceBonus = extra.critChanceBonus;
+      }
+      if (finite(extra && extra.damageReduction) &&
+          extra.damageReduction > 0) {
+        record.damageReduction = clamp(extra.damageReduction, 0, 1);
+      }
+      if (finite(extra && extra.selfAttackPenalty) &&
+          extra.selfAttackPenalty > 0) {
+        record.selfAttackPenalty = clamp(extra.selfAttackPenalty, 0, 1);
+      }
+      return record;
+    }
+    if (statusId === 'silence') {
+      return {
+        remainingTicks: remainingTicks,
+        skipNextAction: true
+      };
+    }
+    if (statusId === 'vulnerable') {
+      return {
+        remainingTicks: remainingTicks,
+        damageTakenFactor: finite(extra && extra.damageTakenFactor)
+          ? Math.max(1, extra.damageTakenFactor)
+          : 1.1
+      };
+    }
     return {
       remainingTicks: remainingTicks,
       attackIntervalReduction: 0.1
     };
   }
 
-  function applyStatus(target, statusId, durationTicks) {
+  function applyStatus(target, statusId, durationTicks, extra) {
     if (STATUS_IDS.indexOf(statusId) < 0 ||
         !positiveInteger(durationTicks)) {
       return false;
@@ -1265,11 +1610,35 @@
       : 0;
     const next = statusRecord(
       statusId,
-      Math.max(currentRemaining, durationTicks)
+      Math.max(currentRemaining, durationTicks),
+      extra
     );
     if (statusId === 'shock' && plainRecord(current) &&
         dataValue(current, 'skipNextAction') === true) {
       next.skipNextAction = true;
+    }
+    if (statusId === 'poison' && plainRecord(current)) {
+      const oldStacks = positiveInteger(dataValue(current, 'stacks'))
+        ? dataValue(current, 'stacks')
+        : 1;
+      next.stacks = Math.min(
+        next.maxStacks,
+        oldStacks + (positiveInteger(extra && extra.stacks) ? extra.stacks : 1)
+      );
+      const oldAttack = finite(dataValue(current, 'sourceAttack'))
+        ? dataValue(current, 'sourceAttack')
+        : 0;
+      next.sourceAttack = Math.max(oldAttack, next.sourceAttack);
+    }
+    if (statusId === 'burn' && plainRecord(current)) {
+      const oldAttack = finite(dataValue(current, 'sourceAttack'))
+        ? dataValue(current, 'sourceAttack')
+        : 0;
+      next.sourceAttack = Math.max(oldAttack, next.sourceAttack);
+      next.pulseDamageRatio = Math.max(
+        dataValue(current, 'pulseDamageRatio') || 0,
+        next.pulseDamageRatio
+      );
     }
     statuses[statusId] = next;
     return true;
@@ -1290,22 +1659,7 @@
   }
 
   function passiveHealingBonus(snapshot) {
-    const passive = strictArrayValues(dataValue(
-      snapshot,
-      'passiveTechniques'
-    ));
-    const levels = dataValue(snapshot, 'techniqueLevels');
-    if (!passive || !plainRecord(levels)) return 0;
-    let total = 0;
-    for (let index = 0; index < passive.length; index++) {
-      const techniqueId = passive[index];
-      if (techniqueId === null) continue;
-      const level = dataValue(levels, techniqueId);
-      const effect = scaledEffectFor(techniqueId, level);
-      const amount = effect && dataValue(effect, 'supplyHealingBonus');
-      if (finite(amount) && amount > 0) total += amount;
-    }
-    return total;
+    return passiveBonusField(snapshot, 'supplyHealingBonus');
   }
 
   function taggedDamageBonus(snapshot, technique) {
@@ -1314,9 +1668,15 @@
       'passiveTechniques'
     ));
     const levels = dataValue(snapshot, 'techniqueLevels');
+    const unlocked = Number.isSafeInteger(
+      dataValue(snapshot, 'unlockedPassiveSlots')
+    )
+      ? dataValue(snapshot, 'unlockedPassiveSlots')
+      : PASSIVE_SLOT_COUNT;
     if (!passive || !plainRecord(levels) || !technique) return 0;
     let total = 0;
     for (let index = 0; index < passive.length; index++) {
+      if (index >= unlocked) break;
       const passiveId = passive[index];
       if (passiveId === null) continue;
       const effect = scaledEffectFor(
@@ -1581,6 +1941,7 @@
   }
 
   function executeNormalAttack(parts) {
+    let multiplier = 1 + passiveBonusField(parts.snapshot, 'normalAttackBonus');
     const resolved = resolveAttack(
       parts,
       parts.player,
@@ -1588,11 +1949,29 @@
       'player',
       parts.enemy.id,
       null,
-      1,
+      multiplier,
       0,
       1
     );
     if (!resolved.ok) return false;
+    const qiRegen = 0.02 * (1 + passiveBonusField(parts.snapshot, 'qiRegenBonus'));
+    if (qiRegen > 0 && parts.player.maxQi > 0) {
+      const before = parts.player.qi;
+      parts.player.qi = Math.min(
+        parts.player.maxQi,
+        before + parts.player.maxQi * qiRegen
+      );
+      if (parts.player.qi > before) {
+        parts.events.push(event(
+          'restore_qi',
+          'player',
+          'player',
+          parts.player.qi - before,
+          false,
+          null
+        ));
+      }
+    }
     parts.player.cooldownTicks = effectiveInterval(parts.player);
     recordPlayerAction(parts, 'normalAttack', null);
     return true;
@@ -1610,15 +1989,38 @@
       if (rolled === null) return false;
       if (rolled >= chance) return true;
     }
+    const stacks = positiveInteger(dataValue(rawStatus, 'stacks'))
+      ? dataValue(rawStatus, 'stacks')
+      : 1;
+    const pulseDamageRatio = finite(dataValue(rawStatus, 'pulseDamageRatio'))
+      ? dataValue(rawStatus, 'pulseDamageRatio')
+      : (statusId === 'poison' ? 0.08 : 0.18);
+    const ailmentPower = 1 + passiveBonusField(
+      parts.snapshot,
+      'ailmentPowerBonus'
+    );
+    const duration = scaledBuffDuration(parts, durationTicks);
+    // 对敌不利状态不吃增益时长；仅 haste/inspire 等己方增益吃
+    const appliedDuration = (statusId === 'haste' || statusId === 'inspire')
+      ? duration
+      : durationTicks;
     if (!positiveInteger(durationTicks) ||
-        !applyStatus(parts.enemy, statusId, durationTicks)) {
+        !applyStatus(parts.enemy, statusId, appliedDuration, {
+          sourceAttack: parts.player.attack,
+          stacks: stacks,
+          pulseDamageRatio: pulseDamageRatio * ailmentPower,
+          attackFactor: dataValue(rawStatus, 'attackFactor'),
+          accuracyFlat: dataValue(rawStatus, 'accuracyFlat'),
+          damageBonus: dataValue(rawStatus, 'damageBonus'),
+          damageTakenFactor: dataValue(rawStatus, 'damageTakenFactor')
+        })) {
       return true;
     }
     parts.events.push(event(
       'status',
       'player',
       parts.enemy.id,
-      durationTicks,
+      appliedDuration,
       false,
       techniqueId
     ));
@@ -1629,6 +2031,38 @@
     return { ok: ok, code: code || 'ok' };
   }
 
+  function aoeTargetCoefficient(targetCount) {
+    const index = Math.max(1, Math.min(4, targetCount | 0)) - 1;
+    return AOE_TARGET_COEFFICIENTS[index];
+  }
+
+  function passiveBonusField(snapshot, field) {
+    const passive = strictArrayValues(dataValue(
+      snapshot,
+      'passiveTechniques'
+    ));
+    const levels = dataValue(snapshot, 'techniqueLevels');
+    const unlocked = Number.isSafeInteger(
+      dataValue(snapshot, 'unlockedPassiveSlots')
+    )
+      ? dataValue(snapshot, 'unlockedPassiveSlots')
+      : PASSIVE_SLOT_COUNT;
+    if (!passive || !plainRecord(levels)) return 0;
+    let total = 0;
+    for (let index = 0; index < passive.length; index++) {
+      if (index >= unlocked) break;
+      const techniqueId = passive[index];
+      if (techniqueId === null) continue;
+      const effect = scaledEffectFor(
+        techniqueId,
+        dataValue(levels, techniqueId)
+      );
+      const amount = effect && dataValue(effect, field);
+      if (finite(amount) && amount > 0) total += amount;
+    }
+    return total;
+  }
+
   function executeTechnique(parts, techniqueId, slotIndex) {
     const technique = techniques[techniqueId];
     const levels = dataValue(parts.snapshot, 'techniqueLevels');
@@ -1637,12 +2071,19 @@
     if (!effect || parts.player.qi < technique.qiCost) {
       return techniqueExecution(false, 'invalid_technique');
     }
+    const needsBeast = dataValue(effect, 'requireBeast') === true ||
+      dataValue(effect, 'type') === 'beastAttack' ||
+      dataValue(effect, 'type') === 'guard';
+    if (needsBeast &&
+        dataValue(parts.snapshot, 'hasActiveBeast') !== true) {
+      return techniqueExecution(false, 'missing_active_beast');
+    }
     const nextInventory = consumeItemCost(parts, technique.runeCost);
     if (!nextInventory) {
       return techniqueExecution(false, 'missing_rune_charm');
     }
     parts.inventory = nextInventory;
-    Object.keys(technique.runeCost).forEach(function (itemId) {
+    Object.keys(technique.runeCost || {}).forEach(function (itemId) {
       addCount(
         parts.counts.costs.items,
         itemId,
@@ -1651,7 +2092,7 @@
     });
     parts.player.qi -= technique.qiCost;
     const type = dataValue(effect, 'type');
-    if (type === 'attack') {
+    if (type === 'attack' || type === 'aoeAttack') {
       const activeBeastMultiplier = dataValue(
         effect,
         'activeBeastMultiplier'
@@ -1665,6 +2106,17 @@
         return techniqueExecution(false, 'invalid_technique');
       }
       multiplier *= 1 + taggedDamageBonus(parts.snapshot, technique);
+      const hpBelow = dataValue(effect, 'enemyHpBelowBonus');
+      if (plainRecord(hpBelow) &&
+          finite(dataValue(hpBelow, 'threshold')) &&
+          finite(dataValue(hpBelow, 'bonus')) &&
+          parts.enemy.maxHp > 0 &&
+          parts.enemy.hp / parts.enemy.maxHp <= dataValue(hpBelow, 'threshold')) {
+        multiplier *= 1 + dataValue(hpBelow, 'bonus');
+      }
+      if (type === 'aoeAttack') {
+        multiplier *= aoeTargetCoefficient(1);
+      }
       const defenseIgnore = finite(dataValue(effect, 'defenseIgnore'))
         ? clamp(dataValue(effect, 'defenseIgnore'), 0, 1)
         : 0;
@@ -1687,31 +2139,116 @@
           !applyTechniqueStatus(parts, effect, techniqueId)) {
         return techniqueExecution(false, 'invalid_technique');
       }
+      const follow = dataValue(effect, 'followStatus');
+      if (resolved.landed && plainRecord(follow)) {
+        applyTechniqueStatus(parts, { status: follow }, techniqueId);
+      }
     } else if (type === 'heal') {
-      const ratio = dataValue(effect, 'maxHpRatio');
-      if (!finite(ratio) || ratio < 0) {
+      const maxHpRatio = finite(dataValue(effect, 'maxHpRatio'))
+        ? dataValue(effect, 'maxHpRatio')
+        : 0;
+      const attackFactor = finite(dataValue(effect, 'attackFactor'))
+        ? dataValue(effect, 'attackFactor')
+        : 0;
+      if (maxHpRatio < 0 || attackFactor < 0 ||
+          (maxHpRatio === 0 && attackFactor === 0)) {
         return techniqueExecution(false, 'invalid_technique');
       }
-      const before = parts.player.hp;
-      parts.player.hp = Math.min(
-        parts.player.maxHp,
-        before + parts.player.maxHp * ratio
+      const healPower = 1 + passiveBonusField(parts.snapshot, 'healPowerBonus');
+      let incoming = 1 + passiveBonusField(
+        parts.snapshot,
+        'incomingHealBonus'
       );
+      const threshold = passiveBonusField(parts.snapshot, 'lowHpThreshold');
+      const lowHeal = passiveBonusField(
+        parts.snapshot,
+        'lowHpIncomingHealBonus'
+      );
+      if (threshold > 0 && lowHeal > 0 &&
+          parts.player.maxHp > 0 &&
+          parts.player.hp / parts.player.maxHp <= threshold) {
+        incoming += lowHeal;
+      }
+      const raw = parts.player.attack * attackFactor +
+        parts.player.maxHp * maxHpRatio;
+      const healing = Math.max(0, raw * healPower * incoming);
+      const before = parts.player.hp;
+      parts.player.hp = Math.min(parts.player.maxHp, before + healing);
+      const healed = parts.player.hp - before;
       parts.events.push(event(
         'heal',
         'player',
         'player',
-        parts.player.hp - before,
+        healed,
         false,
         techniqueId
       ));
+      const overflow = healing - healed;
+      const overflowRate = passiveBonusField(
+        parts.snapshot,
+        'overflowHealToShield'
+      );
+      if (overflow > 0 && overflowRate > 0) {
+        const capRatio = passiveBonusField(
+          parts.snapshot,
+          'overflowShieldCap'
+        );
+        const overflowCap = parts.player.maxHp * (
+          capRatio > 0 ? capRatio : 0.12
+        );
+        const hardCap = parts.player.maxHp * 0.5;
+        const converted = overflow * overflowRate;
+        const beforeShield = finite(parts.player.shield)
+          ? Math.max(0, parts.player.shield)
+          : 0;
+        const room = Math.max(0, overflowCap - beforeShield);
+        const gained = Math.min(converted, room);
+        parts.player.shield = Math.min(hardCap, beforeShield + gained);
+        if (parts.player.shield > beforeShield) {
+          parts.events.push(event(
+            'shield',
+            'player',
+            'player',
+            parts.player.shield - beforeShield,
+            false,
+            techniqueId
+          ));
+        }
+      }
+      if (dataValue(effect, 'purge') === true) {
+        const statuses = parts.player.statuses;
+        let purged = null;
+        for (let index = 0; index < PURGEABLE_STATUS_IDS.length; index++) {
+          const statusId = PURGEABLE_STATUS_IDS[index];
+          if (own(statuses, statusId)) {
+            delete statuses[statusId];
+            purged = statusId;
+            break;
+          }
+        }
+        parts.events.push(event(
+          'purge',
+          'player',
+          'player',
+          purged ? 1 : 0,
+          false,
+          techniqueId
+        ));
+      }
     } else if (type === 'restoreQi') {
-      const amount = dataValue(effect, 'amount');
-      if (!finite(amount) || amount < 0) {
+      const amount = finite(dataValue(effect, 'amount'))
+        ? dataValue(effect, 'amount')
+        : 0;
+      const maxQiRatio = finite(dataValue(effect, 'maxQiRatio'))
+        ? dataValue(effect, 'maxQiRatio')
+        : 0;
+      if (amount < 0 || maxQiRatio < 0 ||
+          (amount === 0 && maxQiRatio === 0)) {
         return techniqueExecution(false, 'invalid_technique');
       }
+      const restore = amount + parts.player.maxQi * maxQiRatio;
       const before = parts.player.qi;
-      parts.player.qi = Math.min(parts.player.maxQi, before + amount);
+      parts.player.qi = Math.min(parts.player.maxQi, before + restore);
       parts.events.push(event(
         'restore_qi',
         'player',
@@ -1720,16 +2257,171 @@
         false,
         techniqueId
       ));
+      const selfStatus = dataValue(effect, 'status');
+      if (plainRecord(selfStatus) && dataValue(selfStatus, 'id') === 'haste') {
+        applyStatus(
+          parts.player,
+          'haste',
+          scaledBuffDuration(
+            parts,
+            dataValue(selfStatus, 'durationTicks') || 12
+          ),
+          {}
+        );
+      }
+    } else if (type === 'shield') {
+      const defenseFactor = finite(dataValue(effect, 'defenseFactor'))
+        ? dataValue(effect, 'defenseFactor')
+        : 0;
+      const maxHpRatio = finite(dataValue(effect, 'maxHpRatio'))
+        ? dataValue(effect, 'maxHpRatio')
+        : 0;
+      if (defenseFactor < 0 || maxHpRatio < 0 ||
+          (defenseFactor === 0 && maxHpRatio === 0)) {
+        return techniqueExecution(false, 'invalid_technique');
+      }
+      const shieldPower = 1 + passiveBonusField(
+        parts.snapshot,
+        'shieldPowerBonus'
+      );
+      const raw = parts.player.defense * defenseFactor +
+        parts.player.maxHp * maxHpRatio;
+      const shield = Math.max(0, raw * shieldPower);
+      const cap = parts.player.maxHp * 0.5;
+      parts.player.shield = Math.min(
+        cap,
+        Math.max(parts.player.shield || 0, shield)
+      );
+      parts.events.push(event(
+        'shield',
+        'player',
+        'player',
+        shield,
+        false,
+        techniqueId
+      ));
+      const damageReduction = dataValue(effect, 'damageReduction');
+      if (finite(damageReduction) && damageReduction > 0) {
+        parts.player.buffs.warded = {
+          remainingTicks: scaledBuffDuration(
+            parts,
+            Math.max(16, technique.cooldownTicks || 16)
+          ),
+          damageReduction: damageReduction
+        };
+      }
+    } else if (type === 'purge') {
+      const statuses = parts.player.statuses;
+      let purged = null;
+      for (let index = 0; index < PURGEABLE_STATUS_IDS.length; index++) {
+        const statusId = PURGEABLE_STATUS_IDS[index];
+        if (own(statuses, statusId)) {
+          delete statuses[statusId];
+          purged = statusId;
+          break;
+        }
+      }
+      parts.events.push(event(
+        'purge',
+        'player',
+        'player',
+        purged ? 1 : 0,
+        false,
+        techniqueId
+      ));
+    } else if (type === 'beastAttack') {
+      if (dataValue(parts.snapshot, 'hasActiveBeast') !== true) {
+        return techniqueExecution(false, 'missing_active_beast');
+      }
+      const multiplier = dataValue(effect, 'multiplier');
+      if (!finite(multiplier) || multiplier <= 0) {
+        return techniqueExecution(false, 'invalid_technique');
+      }
+      const resolved = resolveAttack(
+        parts,
+        parts.player,
+        parts.enemy,
+        'beast',
+        parts.enemy.id,
+        techniqueId,
+        multiplier,
+        0,
+        1
+      );
+      if (!resolved.ok) {
+        return techniqueExecution(false, 'rng_exhausted');
+      }
+    } else if (type === 'guard') {
+      if (dataValue(parts.snapshot, 'hasActiveBeast') !== true) {
+        return techniqueExecution(false, 'missing_active_beast');
+      }
+      const durationTicks = positiveInteger(dataValue(effect, 'durationTicks'))
+        ? dataValue(effect, 'durationTicks')
+        : 16;
+      parts.player.buffs.guard = {
+        remainingTicks: scaledBuffDuration(parts, durationTicks),
+        charges: 1
+      };
+      parts.events.push(event(
+        'guard',
+        'player',
+        'player',
+        durationTicks,
+        false,
+        techniqueId
+      ));
+    } else if (type === 'partyDamageBuff') {
+      const durationTicks = scaledBuffDuration(
+        parts,
+        positiveInteger(dataValue(effect, 'durationTicks'))
+          ? dataValue(effect, 'durationTicks')
+          : 12
+      );
+      let damageBonus = finite(dataValue(effect, 'damageBonus'))
+        ? dataValue(effect, 'damageBonus')
+        : 0.12;
+      const affinityBonus = passiveBonusField(
+        parts.snapshot,
+        'affinityTeamBonus'
+      );
+      if (affinityBonus > 0) {
+        damageBonus *= 1 + affinityBonus;
+      }
+      const inspireExtra = { damageBonus: damageBonus };
+      if (finite(dataValue(effect, 'accuracyFlat'))) {
+        inspireExtra.accuracyFlat = dataValue(effect, 'accuracyFlat');
+      }
+      if (finite(dataValue(effect, 'critChanceBonus'))) {
+        inspireExtra.critChanceBonus = dataValue(effect, 'critChanceBonus');
+      }
+      if (finite(dataValue(effect, 'damageReduction'))) {
+        inspireExtra.damageReduction = dataValue(effect, 'damageReduction');
+      }
+      if (finite(dataValue(effect, 'selfAttackPenalty'))) {
+        inspireExtra.selfAttackPenalty = dataValue(effect, 'selfAttackPenalty');
+      }
+      if (!applyStatus(parts.player, 'inspire', durationTicks, inspireExtra)) {
+        return techniqueExecution(false, 'invalid_technique');
+      }
+      parts.events.push(event(
+        'status',
+        'player',
+        'player',
+        durationTicks,
+        false,
+        techniqueId
+      ));
     } else {
       return techniqueExecution(false, 'invalid_technique');
     }
     parts.player.cooldownTicks = effectiveInterval(parts.player);
     parts.player.techniqueCooldowns[techniqueId] =
-      technique.cooldownTicks;
+      effectiveTechniqueCooldownTicks(parts, technique.cooldownTicks);
+    // MWI-style drip: combat use is tiny vs duplicate books (50 / 500).
     addCount(
       parts.counts.gains.techniqueXp,
       techniqueId,
-      technique.tier
+      1
     );
     recordPlayerAction(parts, techniqueId, slotIndex);
     return techniqueExecution(true);
@@ -1777,6 +2469,22 @@
       ));
       return true;
     }
+    const silence = dataValue(parts.enemy.statuses, 'silence');
+    if (plainRecord(silence) &&
+        positiveInteger(dataValue(silence, 'remainingTicks')) &&
+        dataValue(silence, 'skipNextAction') === true) {
+      silence.skipNextAction = false;
+      parts.enemy.cooldownTicks = effectiveInterval(parts.enemy);
+      parts.events.push(event(
+        'status_skip',
+        'silence',
+        parts.enemy.id,
+        0,
+        false,
+        null
+      ));
+      return true;
+    }
     const resolved = resolveAttack(
       parts,
       parts.enemy,
@@ -1789,16 +2497,120 @@
       1
     );
     if (!resolved.ok) return false;
+    if (resolved.landed) {
+      const definition = own(enemies, parts.enemy.id)
+        ? enemies[parts.enemy.id]
+        : null;
+      const rank = definition && definition.rank;
+      if (rank === 'elite' || rank === 'boss') {
+        const slowChance = rank === 'boss' ? 0.18 : 0.12;
+        const rolled = draw(parts);
+        if (rolled === null) return false;
+        if (rolled < slowChance) {
+          const resisted = resistPlayerDebuff(parts);
+          if (resisted === null) return false;
+          if (resisted) {
+            parts.events.push(event(
+              'resist',
+              parts.enemy.id,
+              'player',
+              0,
+              false,
+              null
+            ));
+          } else if (applyStatus(parts.player, 'slow', 8, {})) {
+            parts.events.push(event(
+              'status',
+              parts.enemy.id,
+              'player',
+              8,
+              false,
+              null
+            ));
+          }
+        }
+      }
+    }
     parts.enemy.cooldownTicks = effectiveInterval(parts.enemy);
     return true;
   }
 
-  function decrementStatuses(combatant) {
+  function applyDotPulse(parts, combatant, statusId, status) {
+    if (!plainRecord(status)) return;
+    const interval = dataValue(status, 'pulseIntervalTicks');
+    if (!positiveInteger(interval)) return;
+    const accumulator = safeIntegerAtLeast(
+      dataValue(status, 'pulseAccumulator'),
+      0
+    )
+      ? dataValue(status, 'pulseAccumulator') + 1
+      : 1;
+    if (accumulator < interval) {
+      status.pulseAccumulator = accumulator;
+      return;
+    }
+    status.pulseAccumulator = 0;
+    const ratio = dataValue(status, 'pulseDamageRatio');
+    const sourceAttack = dataValue(status, 'sourceAttack');
+    if (!finite(ratio) || ratio <= 0 || !finite(sourceAttack)) return;
+    const stacks = statusId === 'poison' &&
+      positiveInteger(dataValue(status, 'stacks'))
+      ? dataValue(status, 'stacks')
+      : 1;
+    const amount = Math.max(1, Math.round(sourceAttack * ratio * stacks));
+    const before = combatant.hp;
+    const shield = finite(combatant.shield) ? Math.max(0, combatant.shield) : 0;
+    let remaining = amount;
+    if (shield > 0) {
+      const absorbed = Math.min(shield, remaining);
+      combatant.shield = shield - absorbed;
+      remaining -= absorbed;
+    }
+    combatant.hp = Math.max(0, combatant.hp - remaining);
+    const applied = before - combatant.hp +
+      (shield - (combatant.shield || 0));
+    if (combatant === parts.player) {
+      parts.counts.metrics.damageTaken += applied;
+    } else {
+      parts.counts.metrics.damageDealt += applied;
+    }
+    parts.events.push(event(
+      'dot',
+      statusId,
+      combatant === parts.player ? 'player' : parts.enemy.id,
+      applied,
+      false,
+      null,
+      true
+    ));
+  }
+
+  function decrementStatuses(parts, combatant) {
     const statuses = combatant.statuses;
     Object.keys(statuses).forEach(function (statusId) {
-      const remaining = statuses[statusId].remainingTicks - 1;
+      const status = statuses[statusId];
+      if (statusId === 'burn' || statusId === 'poison') {
+        applyDotPulse(parts, combatant, statusId, status);
+      }
+      const remaining = status.remainingTicks - 1;
       if (remaining <= 0) delete statuses[statusId];
-      else statuses[statusId].remainingTicks = remaining;
+      else status.remainingTicks = remaining;
+    });
+  }
+
+  function decrementBuffs(combatant) {
+    const buffs = combatant.buffs;
+    if (!plainRecord(buffs)) return;
+    Object.keys(buffs).forEach(function (buffId) {
+      if (buffId === 'enemyStartHandled') return;
+      const buff = buffs[buffId];
+      if (!plainRecord(buff) ||
+          !positiveInteger(dataValue(buff, 'remainingTicks'))) {
+        return;
+      }
+      const remaining = dataValue(buff, 'remainingTicks') - 1;
+      if (remaining <= 0) delete buffs[buffId];
+      else buff.remainingTicks = remaining;
     });
   }
 
@@ -1812,10 +2624,12 @@
         parts.player.techniqueCooldowns[id] = value - 1;
       }
     });
-    decrementStatuses(parts.player);
+    decrementStatuses(parts, parts.player);
+    decrementBuffs(parts.player);
     if (parts.enemy) {
       if (parts.enemy.cooldownTicks > 0) parts.enemy.cooldownTicks--;
-      decrementStatuses(parts.enemy);
+      decrementStatuses(parts, parts.enemy);
+      decrementBuffs(parts.enemy);
     }
     parts.session.elapsedTicks++;
     let outcome = forcedOutcome || 'continue';

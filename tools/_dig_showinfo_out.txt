@@ -1,0 +1,327 @@
+
+==== root$$showinfo @0x141dc58 len 0x305c ====
+    91 ?@0x12995cc
+    78 UnityEngine.Transform$$Find
+    70 UnityEngine.Component$$get_gameObject
+    44 UnityEngine.GameObject$$GetComponent<object>
+    31 TMPComponentExtensions$$EnsureDefaultFont
+    28 UnityEngine.GameObject$$SetActive
+    24 ?@0x1299700
+    17 System.Collections.Generic.Dictionary<object, object>$$get_Item
+    16 ?@0x1299814
+    14 UnityEngine.Events.UnityEventBase$$RemoveAllListeners
+    12 UnityEngine.Events.UnityAction$$.ctor
+    12 UnityEngine.Events.UnityEvent$$AddListener
+    10 UnityEngine.UI.Selectable$$set_interactable
+    10 System.Int32$$ToString
+     9 ?@0x1299578
+     9 System.String$$Concat
+     8 UnityEngine.Component$$GetComponent<object>
+     7 root$$rename
+     6 UnityEngine.GameObject$$get_transform
+     6 root$$checklive
+     5 System.Collections.Generic.Dictionary<int, object>$$get_Item
+     2 mydicstring$$get_Item
+     2 UnityEngine.Transform$$get_childCount
+     1 root.<>c__DisplayClass220_0$$.ctor
+     1 System.Collections.Generic.Dictionary<int, object>$$ContainsKey
+     1 UnityEngine.Resources$$UnloadUnusedAssets
+     1 UnityEngine.Component$$get_transform
+     1 faceCamera$$addface
+     1 root$$refreshinfostar
+     1 ?@0x1299670
+     1 person$$get_yangmax
+     1 UnityEngine.Transform$$GetChild
+     1 UnityEngine.Object$$Destroy
+     1 System.Collections.Generic.HashSet<int>$$Contains
+     1 root.<>c__DisplayClass220_1$$.ctor
+     1 System.Type$$GetTypeFromHandle
+     1 UnityEngine.Resources$$Load
+     1 UnityEngine.Object$$Instantiate
+     1 UnityEngine.Object$$set_name
+     1 UnityEngine.Transform$$SetParent
+
+==== root$$showinfo0 @0x13e831c len 0x162c ====
+    48 UnityEngine.Transform$$Find
+    44 ?@0x12995cc
+    44 UnityEngine.Component$$get_gameObject
+    35 System.Text.StringBuilder$$Append
+    28 UnityEngine.GameObject$$SetActive
+    13 UnityEngine.GameObject$$GetComponent<object>
+    12 TMPComponentExtensions$$EnsureDefaultFont
+    10 System.Collections.Generic.Dictionary<object, object>$$get_Item
+     9 System.Text.StringBuilder$$Clear
+     4 System.Single$$ToString
+     2 person$$get_agemax
+     2 System.Int32$$ToString
+     1 UnityEngine.GameObject$$get_transform
+     1 System.Collections.Generic.Dictionary<int, object>$$get_Item
+     1 ?@0x1299700
+     1 dns$$relevel
+     1 root$$relinggen
+     1 person$$get_ftype
+     1 person$$get_love
+     1 person$$get_lust
+     1 person$$get_exp1max
+     1 person$$get_exp1s
+     1 mydicint$$get_Item
+     1 ?@0x1299818
+     1 ?@0x1299820
+
+==== root$$addinfohistory @0x141c2c8 len 0x188 ====
+     4 UnityEngine.GameObject$$get_transform
+     3 ?@0x12995cc
+     1 UnityEngine.Transform$$Find
+     1 history$$re
+     1 root$$gethistoty0
+     1 root$$gethistoty1
+     1 ?@0x1299700
+     1 UnityEngine.Object$$op_Inequality
+     1 UnityEngine.Transform$$SetParent
+     1 UnityEngine.Transform$$set_localScale
+     1 ?@0x1299818
+
+==== root$$showhistory @0x13e4364 len 0x74 ====
+     1 ?@0x12995cc
+     1 ?@0x1299814
+     1 root.<showhistory>d__213$$.ctor
+     1 ?@0x1299578
+     1 ?@0x1299818
+
+==== person$$addhistory @0x13cca20 len 0x25c ====
+     6 ?@0x12995cc
+     4 ?@0x1299578
+     2 System.Collections.Generic.List<object>$$AddWithResize
+     1 ?@0x1299670
+     1 System.Array$$CopyTo
+     1 ?@0x1299700
+     1 mydicint$$get_Item
+     1 ?@0x1299708
+     1 UnityEngine.JsonUtility$$ToJson
+     1 ?@0x1299818
+     1 ?@0x1299820
+
+==== root$$addhistory @0x13f26b4 len 0x358 ====
+    10 ?@0x12995cc
+     5 ?@0x1299578
+     3 System.Collections.Generic.List<object>$$AddWithResize
+     2 mydicint$$get_Item
+     1 ?@0x1299670
+     1 System.Array$$CopyTo
+     1 ?@0x1299708
+     1 UnityEngine.JsonUtility$$ToJson
+     1 ?@0x1299700
+     1 System.Linq.Enumerable$$Contains<int>
+     1 root$$addhistoryg
+     1 System.Collections.Generic.List<object>$$RemoveAt
+     1 ?@0x1299818
+     1 ?@0x1299820
+
+==== root$$addevent @0x14132fc len 0xac ====
+     1 ?@0x12995cc
+     1 ?@0x1299818
+
+==== person$$addday @0x13cda80 len 0x4d4 ====
+     9 ?@0x1299700
+     4 ?@0x12995cc
+     4 root$$get_act
+     2 mydicint$$get_Item
+     2 ?@0x1299670
+     2 person$$get_lust
+     2 person$$get_love
+     1 root$$refreshpbtface
+     1 person$$get_agemax
+     1 person$$addhistory
+     1 root$$addhistory
+     1 person$$dead
+     1 person$$set_exp
+     1 person$$lvup
+     1 person$$set_love
+     1 person$$set_exp1
+     1 dns$$sex
+     1 ?@0x1299818
+     1 ?@0x1299820
+
+==== root$$addday @0x13e9948 len 0x38f8 ====
+    74 ?@0x12995cc
+    55 ?@0x1299670
+    37 mydicint$$set_Item
+    33 mydicint$$get_Item
+    33 mydicbool$$set_Item
+    31 root$$addhistory
+    18 mydicfloat$$get_Item
+    17 mydicbool$$get_Item
+    14 root$$get_act
+    12 root$$set_mydo
+    12 ?@0x1299700
+    10 root$$get_mydo
+    10 person$$addhistory
+     8 UnityEngine.Random$$get_value
+     8 root$$get_exp
+     7 System.Int32$$ToString
+     7 System.String$$Concat
+     7 person$$get_love
+     6 mydicfloat$$set_Item
+     6 System.Collections.Generic.Dictionary<int, object>$$get_Item
+     6 root$$set_exp
+     6 UnityEngine.Transform$$Find
+     5 root$$set_atk
+     5 root$$set_act
+     5 person$$set_love
+     4 UnityEngine.Random$$Range
+     4 UnityEngine.Component$$get_transform
+     4 UnityEngine.Component$$get_gameObject
+     4 UnityEngine.GameObject$$SetActive
+     4 root$$get_atk
+     4 System.Collections.Generic.HashSet<int>$$Contains
+     3 root$$get_lvups
+     3 root$$set_lvups
+     3 System.Collections.Generic.Dictionary<int, object>$$get_Count
+     3 root$$get_atkmax
+     3 person$$get_exp1s
+     3 person$$set_ftype
+     3 root$$cans
+     3 person$$set_exp1
+     3 person$$get_lust
+
+==== FLOAT person$$addday ====
+  0x13cddc8 LDRS dlust
+  0x13cddd8 STRS _lust
+  0x13cddf0 STRS _lust
+  0x13cde28 LDRS dlove
+  0x13cdef4 LDRS slust
+  0x13cdf0c STRS _lust
+  0x13cdf24 STRS _lust
+     9 ?@0x1299700
+     4 ?@0x12995cc
+     4 root$$get_act
+     2 mydicint$$get_Item
+     2 ?@0x1299670
+     2 person$$get_lust
+     2 person$$get_love
+     1 root$$refreshpbtface
+     1 person$$get_agemax
+     1 person$$addhistory
+     1 root$$addhistory
+     1 person$$dead
+     1 person$$set_exp
+     1 person$$lvup
+     1 person$$set_love
+     1 person$$set_exp1
+     1 dns$$sex
+     1 ?@0x1299818
+     1 ?@0x1299820
+
+==== showinfo interesting BL + CMP ====
+0x141e15c BL System.Collections.Generic.Dictionary<int, object>$$get_Item
+0x141e2b0 BL System.Collections.Generic.Dictionary<int, object>$$get_Item
+0x141e814 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x141e834 BL System.String$$Concat
+0x141ea68 BL System.Int32$$ToString
+0x141ea84 BL System.String$$Concat
+0x141eaa0 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x141ead4 BL System.Int32$$ToString
+0x141eaf4 BL System.Int32$$ToString
+0x141eb20 BL System.String$$Concat
+0x141eb3c BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x141eb4c BL System.String$$Concat
+0x141ebe0 BL System.Int32$$ToString
+0x141ebfc BL System.String$$Concat
+0x141ec18 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x141ecc0 BL System.Int32$$ToString
+0x141ecdc BL System.String$$Concat
+0x141ecf8 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x141eda0 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x141ee54 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x141eeac BL System.Int32$$ToString
+0x141eefc BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x141ef2c BL System.Int32$$ToString
+0x141ef7c BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x141efa4 BL System.String$$Concat
+0x141f028 BL System.Int32$$ToString
+0x141f074 BL System.Collections.Generic.Dictionary<int, object>$$get_Item
+0x141f0bc BL System.Collections.Generic.Dictionary<int, object>$$get_Item
+0x141f284 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x141fac0 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x141fb04 BL System.Collections.Generic.Dictionary<int, object>$$get_Item
+0x141fb84 BL mydicstring$$get_Item
+0x141fcac BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x141ffd0 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x1420068 BL mydicstring$$get_Item
+0x1420188 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x14204a8 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x14205ec BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x142075c BL System.Int32$$ToString
+0x1420778 BL System.String$$Concat
+0x1420804 BL System.Int32$$ToString
+0x1420818 BL System.String$$Concat
+0x1420834 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+
+==== addinfohistory interesting BL + CMP ====
+
+==== showinfo0 interesting BL + CMP ====
+0x13e85c8 BL System.Collections.Generic.Dictionary<int, object>$$get_Item
+0x13e8664 BL System.Text.StringBuilder$$Clear
+0x13e86a4 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x13e86b8 BL System.Text.StringBuilder$$Append
+0x13e86dc BL System.Text.StringBuilder$$Append
+0x13e8768 BL System.Text.StringBuilder$$Clear
+0x13e8790 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x13e87a4 BL System.Text.StringBuilder$$Append
+0x13e87cc BL System.Text.StringBuilder$$Append
+0x13e8844 BL System.Text.StringBuilder$$Clear
+0x13e886c BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x13e8880 BL System.Text.StringBuilder$$Append
+0x13e889c BL System.Text.StringBuilder$$Append
+0x13e88b0 BL System.Text.StringBuilder$$Append
+0x13e88cc BL System.Text.StringBuilder$$Append
+0x13e88f8 BL System.Text.StringBuilder$$Append
+0x13e8970 BL System.Text.StringBuilder$$Clear
+0x13e8998 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x13e89ac BL System.Text.StringBuilder$$Append
+0x13e89c0 BL System.Text.StringBuilder$$Append
+0x13e89ec BL System.Text.StringBuilder$$Append
+0x13e8a00 BL System.Text.StringBuilder$$Append
+0x13e8a38 BL System.Text.StringBuilder$$Append
+0x13e8a5c BL System.Text.StringBuilder$$Append
+0x13e8a70 BL System.Single$$ToString
+0x13e8a84 BL System.Text.StringBuilder$$Append
+0x13e8a98 BL System.Text.StringBuilder$$Append
+0x13e8ac0 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x13e8adc BL System.Text.StringBuilder$$Append
+0x13e8b54 BL System.Text.StringBuilder$$Clear
+0x13e8b7c BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x13e8b90 BL System.Text.StringBuilder$$Append
+0x13e8ba4 BL System.Single$$ToString
+0x13e8bb8 BL System.Text.StringBuilder$$Append
+0x13e8bdc BL System.Text.StringBuilder$$Append
+0x13e8c54 BL System.Text.StringBuilder$$Clear
+0x13e8c7c BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x13e8c90 BL System.Text.StringBuilder$$Append
+0x13e8ca4 BL System.Single$$ToString
+0x13e8cb8 BL System.Text.StringBuilder$$Append
+0x13e8cd4 BL System.Text.StringBuilder$$Append
+0x13e8d4c BL System.Text.StringBuilder$$Clear
+0x13e8d74 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x13e8d88 BL System.Text.StringBuilder$$Append
+0x13e8d9c BL System.Text.StringBuilder$$Append
+0x13e8db0 BL System.Text.StringBuilder$$Append
+0x13e8dcc BL System.Text.StringBuilder$$Append
+0x13e8f60 BL System.Int32$$ToString
+0x13e8ff4 BL System.Int32$$ToString
+0x13e9020 BL System.Text.StringBuilder$$Clear
+0x13e9048 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x13e905c BL System.Text.StringBuilder$$Append
+0x13e9070 BL System.Text.StringBuilder$$Append
+0x13e909c BL System.Text.StringBuilder$$Append
+0x13e90b0 BL System.Text.StringBuilder$$Append
+0x13e90f0 BL System.Text.StringBuilder$$Append
+0x13e9168 BL System.Text.StringBuilder$$Clear
+0x13e9190 BL System.Collections.Generic.Dictionary<object, object>$$get_Item
+0x13e91a4 BL System.Text.StringBuilder$$Append
+0x13e91c0 BL System.Text.StringBuilder$$Append
+0x13e9284 BL System.Single$$ToString
+0x13e9770 BL mydicint$$get_Item
+
+=== root.mydo / act labels from af already known ===
+act1=增进感情 act2=一起修炼 act3=闲适度过 act4=试图逃离 act5=教导

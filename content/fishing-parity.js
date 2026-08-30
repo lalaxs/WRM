@@ -64,6 +64,53 @@
     ['dragonFish', '龙鱼', 70]
   ];
 
+  // 尚无独立美术时，用可区分 emoji 区分鱼种（避免卡片上一排全是同一条蓝鱼）
+  const SPECIES_ICON = {
+    spiritShrimp: '🦐',
+    sardineFish: '🐟',
+    spiritCarp: '🐠',
+    blowfish: '🐡',
+    herringFish: '🐟',
+    spiritSeahorse: '🌊',
+    mackerelFish: '🐠',
+    silverTrout: '🐟',
+    leapingTrout: '🐠',
+    poisonFish: '☠️',
+    sunsetSalmon: '🍣',
+    leapingSalmon: '🍣',
+    fanfish: '🐠',
+    greenBass: '🐟',
+    darkCatfish: '🐟',
+    spiritLobster: '🦞',
+    halibutFish: '🐟',
+    skeletonFish: '💀',
+    swordfish: '🗡️',
+    anglerFish: '🐡',
+    crabSpirit: '🦀',
+    thunderEel: '⚡',
+    sharkSpirit: '🦈',
+    leapingBroad: '🐠',
+    caveFish: '🌑',
+    tilapiaFish: '🐟',
+    magicFish: '✨',
+    mantaRay: '🪽',
+    whaleSpirit: '🐋',
+    lavaFish: '🔥',
+    spikeFish: '📌',
+    rockfish: '🪨',
+    blueCrab: '🦀',
+    magmaEel: '🌋',
+    largeBlowfish: '🐡',
+    staticJellyfish: '🪼',
+    frostCrab: '❄️',
+    frozenManta: '❄️',
+    ghostFish: '👻',
+    mysticSeahorse: '🌌',
+    terrorFish: '👿',
+    mysticShark: '🦈',
+    dragonFish: '🐉'
+  };
+
   const COOKABLE = {
     spiritShrimp: ['cookedSpiritShrimp', '灵虾汤', 1, 6, 20],
     sardineFish: ['cookedSardineFish', '烤沙丁', 3, 6, 22],
@@ -125,6 +172,7 @@
     return {
       id: id,
       name: name,
+      masteryId: 'fishing:' + id,
       unlockLevel: unlockLevel,
       time: time,
       xp: xp,
@@ -285,7 +333,7 @@
       }
       rows.push(itemRow(id, name, 'material', {
         materialType: SPECIAL_COOK[id] ? 'special_fish' : 'raw_fish',
-        icon: '🐟',
+        icon: SPECIES_ICON[id] || '🐟',
         description: name + '，钓鱼所得。',
         useTags: COOKABLE[id]
           ? ['cooking']

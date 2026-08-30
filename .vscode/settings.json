@@ -1,0 +1,13 @@
+{
+  "liveServer.settings.root": "/",
+  "liveServer.settings.mount": [],
+  "liveServer.settings.ignoreFiles": [
+    "release/**",
+    "dist/**",
+    "docs/**",
+    "tests/**",
+    "scripts/**",
+    "node_modules/**",
+    ".git/**"
+  ]
+}

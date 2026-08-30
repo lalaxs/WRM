@@ -4,19 +4,22 @@
     ? factory(
       require('./random.js'),
       require('../content/equipment.js'),
-      require('./equipment.js')
+      require('./equipment.js'),
+      require('./dns.js')
     )
     : factory(
       root && root.GameRandom,
       root && root.EquipmentContent,
-      root && root.Equipment
+      root && root.Equipment,
+      root && root.Dns
     );
   if (typeof module === 'object' && module.exports) module.exports = api;
   else if (root) root.NpcGenerator = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (
   GameRandom,
   EquipmentContent,
-  Equipment
+  Equipment,
+  Dns
 ) {
   'use strict';
 
@@ -200,6 +203,25 @@
     return row;
   }
 
+  function spiritualRootRow(value) {
+    const row = weightedNamedRow(value);
+    if (!row) return null;
+    const efficiencyMult = finiteNumber(
+      stableData(value, 'efficiencyMult'),
+      0.1,
+      10
+    );
+    if (efficiencyMult === null) return null;
+    row.efficiencyMult = efficiencyMult;
+    const lgIndex = integer(stableData(value, 'lgIndex'), 0, 7);
+    row.lgIndex = lgIndex == null ? 3 : lgIndex;
+    const lgExp = integer(stableData(value, 'lgExp'), 1, 1000);
+    if (lgExp != null) row.lgExp = lgExp;
+    const traits = stableStringList(stableData(value, 'traits'));
+    row.traits = traits || [];
+    return row;
+  }
+
   function positiveWeight(rows) {
     let total = 0;
     for (let index = 0; index < rows.length; index++) {
@@ -302,9 +324,19 @@
       'TALENTS',
       weightedNamedRow
     );
+    const spiritualRoots = uniqueRows(
+      generation,
+      'SPIRITUAL_ROOTS',
+      spiritualRootRow
+    );
     const principles = uniqueRows(
       generation,
       'ROMANCE_PRINCIPLES',
+      weightedNamedRow
+    );
+    const daoHeartTraits = uniqueRows(
+      generation,
+      'DAO_HEART_TRAITS',
       weightedNamedRow
     );
     if (!regions ||
@@ -318,13 +350,16 @@
         !personalities ||
         !values ||
         !talents ||
+        !spiritualRoots ||
         !principles ||
         positiveWeight(realms) === null ||
         positiveWeight(genders) === null ||
         positiveWeight(personalities) === null ||
         positiveWeight(values) === null ||
         positiveWeight(talents) === null ||
-        positiveWeight(principles) === null) {
+        positiveWeight(spiritualRoots) === null ||
+        positiveWeight(principles) === null ||
+        (daoHeartTraits !== null && positiveWeight(daoHeartTraits) === null)) {
       return null;
     }
     if (realms.length !== 16 ||
@@ -389,7 +424,9 @@
       personalities: personalities,
       values: values,
       talents: talents,
-      principles: principles
+      spiritualRoots: spiritualRoots,
+      principles: principles,
+      daoHeartTraits: daoHeartTraits
     };
   }
 
@@ -453,6 +490,28 @@
       : null;
   }
 
+  // 抽 1~2 个道心标签：先抽主标签，再按 ~45% 概率抽次标签（不重复）。
+  // 返回 { traits: [id, ...], rngState }；内容无标签池时返回空数组（不失败）。
+  function chooseDaoHeartTraits(rows, rngState) {
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return { traits: [], rngState: rngState };
+    }
+    const first = chooseWeighted(rows, rngState);
+    if (!first) return null;
+    const ids = [first.value.id];
+    let state = first.rngState;
+    const secondRoll = draw(state);
+    if (secondRoll && secondRoll.value < 0.45) {
+      state = secondRoll.rngState;
+      const second = chooseWeighted(rows, state);
+      if (second && second.value.id !== ids[0]) {
+        ids.push(second.value.id);
+        state = second.rngState;
+      }
+    }
+    return { traits: ids, rngState: state };
+  }
+
   function stableStringList(value) {
     const input = stableArray(value);
     if (!input) return null;
@@ -504,12 +563,38 @@
       type: 'origin',
       atAge: 0,
       regionId: region.id,
-      text: '出生于' + region.name + '，自此在修行路上留下姓名。'
+      text: '出生于' + region.name + '。'
     }];
   }
 
   function roundFinite(value) {
     return Math.round(value * 1000000) / 1000000;
+  }
+
+  // 对标：造人初始修为按与玩家同量级的需求表滚动（Dns.cultivationNeed）。
+  const REALM_CULTIVATION_NEED = Object.freeze([
+    100, 250, 450, 700, 1000, 1400, 1900, 2500, 3000,
+    6000, 15000, 40000, 100000, 250000, 600000, 1500000, 0
+  ]);
+
+  function realmCultivationNeed(realmStage) {
+    if (Dns && typeof Dns.cultivationNeed === 'function') {
+      return Dns.cultivationNeed(realmStage);
+    }
+    const stage = Math.max(0, Math.floor(Number(realmStage) || 0));
+    return REALM_CULTIVATION_NEED[stage] || 0;
+  }
+
+  function cultivationEfficiencyValue(realmStage, root, variance) {
+    const stage = Math.max(0, Math.floor(Number(realmStage) || 0));
+    const mult = root && Number.isFinite(root.efficiencyMult)
+      ? root.efficiencyMult
+      : 1;
+    const roll = Number.isFinite(variance)
+      ? Math.min(1, Math.max(0, variance))
+      : 0.5;
+    const base = 0.6 + stage * 1.8 + stage * stage * 1.6;
+    return Math.round(base * mult * (0.85 + roll * 0.3) * 100) / 100;
   }
 
   function equipmentRealmOrder(realmStage) {
@@ -659,15 +744,25 @@
       const cultivationRoll = draw(rngState);
       if (!cultivationRoll) return null;
       rngState = cultivationRoll.rngState;
-      const cultivation = Math.floor(
-        cultivationRoll.value *
-        (realm.value.realmStage + 1) *
-        1000
-      );
+      const need = realmCultivationNeed(realm.value.realmStage);
+      const cultivation = need > 0
+        ? Math.floor(cultivationRoll.value * need)
+        : 0;
 
       const talent = chooseWeighted(content.talents, rngState);
       if (!talent) return null;
       rngState = talent.rngState;
+      const spiritualRoot = chooseWeighted(content.spiritualRoots, rngState);
+      if (!spiritualRoot) return null;
+      rngState = spiritualRoot.rngState;
+      const efficiencyRoll = draw(rngState);
+      if (!efficiencyRoll) return null;
+      rngState = efficiencyRoll.rngState;
+      const cultivationEfficiency = cultivationEfficiencyValue(
+        realm.value.realmStage,
+        spiritualRoot.value,
+        efficiencyRoll.value
+      );
       const personality = chooseWeighted(
         content.personalities,
         rngState
@@ -680,6 +775,12 @@
       const principle = chooseWeighted(content.principles, rngState);
       if (!principle) return null;
       rngState = principle.rngState;
+      const daoTraits = chooseDaoHeartTraits(content.daoHeartTraits, rngState);
+      let traits = [];
+      if (daoTraits) {
+        traits = daoTraits.traits;
+        rngState = daoTraits.rngState;
+      }
 
       const ordinal = nextId - 1;
       const region = content.regions[ordinal % content.regions.length];
@@ -722,10 +823,19 @@
         lifespanYears: lifespanYears,
         realmStage: realm.value.realmStage,
         cultivation: cultivation,
+        cultivationEfficiency: cultivationEfficiency,
+        level_l: Dns && typeof Dns.majorLevel === 'function'
+          ? Dns.majorLevel(realm.value.realmStage)
+          : realm.value.realmStage,
+        level_s: realm.value.realmStage <= 8 ? realm.value.realmStage : 0,
+        exp1: cultivation,
+        history: [],
+        spiritualRootId: spiritualRoot.value.id,
         talentId: talent.value.id,
         personalityId: personality.value.id,
         valueProfileId: value.value.id,
         romancePrincipleId: principle.value.id,
+        traits: traits.slice(),
         regionId: region.id,
         sectId: sectId,
         familyId: familyId,
@@ -739,6 +849,13 @@
         biography: originBiography(region),
         keyEventIds: [],
         status: 'living',
+        kin: {
+          fa: null,
+          mo: null,
+          par: null,
+          frs: [],
+          ens: []
+        },
         lastDetailedAt: 0,
         lastBackgroundAt: 0
       };

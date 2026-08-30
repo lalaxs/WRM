@@ -29,7 +29,22 @@
     return null;
   }
 
+  function loadFishingParityContent() {
+    if (typeof globalThis !== 'undefined' && globalThis.FishingParityContent) {
+      return globalThis.FishingParityContent;
+    }
+    if (typeof require === 'function') {
+      try {
+        return require('./fishing-parity.js');
+      } catch (err) {
+        return null;
+      }
+    }
+    return null;
+  }
+
   const MATERIAL_CONTENT = loadMaterialContent();
+  const FISHING_PARITY = loadFishingParityContent();
 
   function drop(itemId, w, q) {
     return { itemId: itemId, w: w, q: q };
@@ -53,6 +68,7 @@
     return {
       id: id,
       name: name,
+      masteryId: 'fishing:' + id,
       unlockLevel: unlockLevel,
       time: time,
       xp: xp,
@@ -182,7 +198,7 @@
     ])
   ];
 
-  const fishingSpots = [
+  const legacyFishingSpots = [
     spot('pond', '村口池塘', 1, 4.0, 10, [
       drop('spiritCarp', 70, 1), drop('spiritShrimp', 30, 1)
     ]),
@@ -223,6 +239,27 @@
       drop('spiritLobster', 20, 1), drop('thunderEel', 15, 1)
     ])
   ];
+
+  const fishingSpots = (FISHING_PARITY && Array.isArray(FISHING_PARITY.SPOTS) &&
+    FISHING_PARITY.SPOTS.length)
+    ? FISHING_PARITY.SPOTS.map(function (record) {
+      return {
+        id: record.id,
+        name: record.name,
+        masteryId: record.masteryId || ('fishing:' + record.id),
+        unlockLevel: record.unlockLevel,
+        time: record.time,
+        xp: record.xp,
+        fishChance: record.fishChance,
+        junkChance: record.junkChance,
+        specialChance: record.specialChance,
+        unlockFlag: record.unlockFlag || null,
+        drops: record.drops.map(function (entry) {
+          return drop(entry.itemId, entry.w, entry.q);
+        })
+      };
+    })
+    : legacyFishingSpots;
 
   const herbEntries = [
     entry('lingzhiGrove', '灵芝草丛', 1, 5.0, 12, 12, 25, [
@@ -366,7 +403,7 @@
     };
   }
 
-  const FISH_SPECIES = deepFreeze({
+  const legacyFishSpecies = {
     spiritCarp: species('spiritCarp', '灵鲤'),
     spiritShrimp: species('spiritShrimp', '灵虾'),
     silverTrout: species('silverTrout', '银鳟'),
@@ -377,13 +414,79 @@
     spiritLobster: species('spiritLobster', '灵龙虾'),
     swordfish: species('swordfish', '剑鱼'),
     dragonFish: species('dragonFish', '龙鱼')
-  });
+  };
 
-  const RESOURCE_QUALITIES = deepFreeze({
-    common: { weight: 70, capacityMultiplier: 1, extraYieldChance: 0 },
-    fine: { weight: 25, capacityMultiplier: 1.25, extraYieldChance: 0.15 },
-    rare: { weight: 5, capacityMultiplier: 1.5, extraYieldChance: 0.30 }
-  });
+  const FISH_SPECIES = deepFreeze(
+    FISHING_PARITY && FISHING_PARITY.FISH_SPECIES
+      ? Object.keys(FISHING_PARITY.FISH_SPECIES).reduce(function (acc, id) {
+        const row = FISHING_PARITY.FISH_SPECIES[id];
+        acc[id] = {
+          id: row.id,
+          name: row.name,
+          masteryId: 'fishing:' + row.id,
+          maxStock: row.maxStock,
+          recoverSeconds: row.recoverSeconds
+        };
+        return acc;
+      }, {})
+      : legacyFishSpecies
+  );
+
+  const RESOURCE_SPOT_CAPS = deepFreeze([
+    { minLevel: 1, maxCapacity: 50 },
+    { minLevel: 25, maxCapacity: 60 },
+    { minLevel: 50, maxCapacity: 70 },
+    { minLevel: 75, maxCapacity: 80 },
+    { minLevel: 90, maxCapacity: 90 }
+  ]);
+  // 每次探索向目标地点追加的可采次数（不会一次加满）
+  const DISCOVER_GAIN_MIN = 10;
+  const DISCOVER_GAIN_MAX = 20;
+
+  function maxSpotCapacity(skillLevel) {
+    const level = Number(skillLevel);
+    const safeLevel = Number.isFinite(level) && level > 0
+      ? Math.floor(level)
+      : 1;
+    let max = 50;
+    RESOURCE_SPOT_CAPS.forEach(function (row) {
+      if (safeLevel >= row.minLevel) max = row.maxCapacity;
+    });
+    return max;
+  }
+
+  function discoverGainRange() {
+    return { min: DISCOVER_GAIN_MIN, max: DISCOVER_GAIN_MAX };
+  }
+
+  function exploreSaturated(skillId, skillLevel, heldSpots) {
+    const family = GATHERING[skillId];
+    if (!family || !Array.isArray(family.entries)) return true;
+    const level = Number(skillLevel);
+    const safeLevel = Number.isFinite(level) && level > 0
+      ? Math.floor(level)
+      : 1;
+    const pool = family.entries.filter(function (entry) {
+      return entry.unlockLevel <= safeLevel;
+    });
+    if (!pool.length) return true;
+    const cap = maxSpotCapacity(safeLevel);
+    const held = Array.isArray(heldSpots) ? heldSpots : [];
+    const byEntry = Object.create(null);
+    held.forEach(function (spot) {
+      if (!spot || typeof spot.entryId !== 'string') return;
+      byEntry[spot.entryId] = spot;
+    });
+    for (let index = 0; index < pool.length; index++) {
+      const spot = byEntry[pool[index].id];
+      if (!spot) return false;
+      const remaining = Number(spot.remaining);
+      if (!(Number.isFinite(remaining) && remaining >= cap)) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   function eachDrop(visitor) {
     ['mining', 'woodcutting', 'herb'].forEach(function (skillId) {
@@ -423,11 +526,19 @@
   return Object.freeze({
     GATHERING: GATHERING,
     FISH_SPECIES: FISH_SPECIES,
-    RESOURCE_QUALITIES: RESOURCE_QUALITIES,
+    RESOURCE_SPOT_CAPS: RESOURCE_SPOT_CAPS,
+    DISCOVER_GAIN_MIN: DISCOVER_GAIN_MIN,
+    DISCOVER_GAIN_MAX: DISCOVER_GAIN_MAX,
     LEGACY_ENTRY_ALIASES: deepFreeze(LEGACY_ENTRY_ALIASES),
+    FISHING_PARITY: FISHING_PARITY,
+    JUNK_POOL: FISHING_PARITY ? FISHING_PARITY.JUNK_POOL : null,
+    SPECIAL_POOL: FISHING_PARITY ? FISHING_PARITY.SPECIAL_POOL : null,
     eachDrop: eachDrop,
     getEntry: getEntry,
     resolveEntryId: resolveEntryId,
-    getFishingSpot: getFishingSpot
+    getFishingSpot: getFishingSpot,
+    maxSpotCapacity: maxSpotCapacity,
+    discoverGainRange: discoverGainRange,
+    exploreSaturated: exploreSaturated
   });
 });

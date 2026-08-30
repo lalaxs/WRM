@@ -1,0 +1,246 @@
+[
+  {
+    "id": "spar-0043",
+    "weight": 10,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}比试了几招，打得挺认真。",
+    "affinityMin": -20
+  },
+  {
+    "id": "spar-0044",
+    "weight": 10,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}在{loc}请{b}试剑，两人没真下狠手。",
+    "affinityMin": -20
+  },
+  {
+    "id": "spar-0045",
+    "weight": 10,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}比身法，地上扬起一点土。",
+    "affinityMin": -20
+  },
+  {
+    "id": "spar-0046",
+    "weight": 10,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}对掌三下，分开后各自整理衣服。",
+    "affinityMin": -20
+  },
+  {
+    "id": "spar-0047",
+    "weight": 10,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}在{loc}与{b}以木剑较技，没分出输赢。",
+    "affinityMin": -20
+  },
+  {
+    "id": "sect-taixuan-sword-1",
+    "weight": 12,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}以剑论交，剑意激荡。",
+    "sectAny": [
+      "taixuan-sword"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "generic-spar-1",
+    "weight": 8,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}以竹枝代剑，没真下狠手。"
+  },
+  {
+    "id": "generic-spar-2",
+    "weight": 8,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}请{b}在{loc}喂招，专门练防守。"
+  },
+  {
+    "id": "generic-spar-3",
+    "weight": 8,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}同{b}比拼轻身术，绕着{loc}跑了三圈。"
+  },
+  {
+    "id": "scene-spar-0-0",
+    "weight": 9,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}山门起意切磋，先说好没真下狠手。交手时{a}却下意识收了力，被{b}一眼看穿，两人都有些尴尬。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-spar-0-1",
+    "weight": 9,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}厢房廊下起意切磋，先说好没真下狠手。交手时{a}却下意识收了力，被{b}一眼看穿，两人都有些尴尬。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-spar-0-2",
+    "weight": 9,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}摊位旁起意切磋，先说好没真下狠手。交手时{a}却下意识收了力，被{b}一眼看穿，两人都有些尴尬。",
+    "regionTypes": [
+      "market"
+    ]
+  },
+  {
+    "id": "scene-spar-0-3",
+    "weight": 9,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}林径起意切磋，先说好没真下狠手。交手时{a}却下意识收了力，被{b}一眼看穿，两人都有些尴尬。",
+    "regionTypes": [
+      "wilderness"
+    ]
+  },
+  {
+    "id": "scene-spar-0-4",
+    "weight": 9,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}渡口起意切磋，先说好没真下狠手。交手时{a}却下意识收了力，被{b}一眼看穿，两人都有些尴尬。",
+    "regionTypes": [
+      "town"
+    ]
+  },
+  {
+    "id": "scene-spar-0-5",
+    "weight": 9,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}丹房外起意切磋，先说好没真下狠手。交手时{a}却下意识收了力，被{b}一眼看穿，两人都有些尴尬。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-spar-0-6",
+    "weight": 9,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}剑冢前起意切磋，先说好没真下狠手。交手时{a}却下意识收了力，被{b}一眼看穿，两人都有些尴尬。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-spar-0-7",
+    "weight": 9,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}灵田边起意切磋，先说好没真下狠手。交手时{a}却下意识收了力，被{b}一眼看穿，两人都有些尴尬。",
+    "regionTypes": [
+      "town",
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-spar-1-0",
+    "weight": 9,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}山门试招。最后一招险些破防，{b}停住后喘了口气，笑意里带着一点不服。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-spar-1-1",
+    "weight": 9,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}厢房廊下试招。最后一招险些破防，{b}停住后喘了口气，笑意里带着一点不服。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-spar-1-2",
+    "weight": 9,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}摊位旁试招。最后一招险些破防，{b}停住后喘了口气，笑意里带着一点不服。",
+    "regionTypes": [
+      "market"
+    ]
+  },
+  {
+    "id": "scene-spar-1-3",
+    "weight": 9,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}林径试招。最后一招险些破防，{b}停住后喘了口气，笑意里带着一点不服。",
+    "regionTypes": [
+      "wilderness"
+    ]
+  },
+  {
+    "id": "scene-spar-1-4",
+    "weight": 9,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}渡口试招。最后一招险些破防，{b}停住后喘了口气，笑意里带着一点不服。",
+    "regionTypes": [
+      "town"
+    ]
+  },
+  {
+    "id": "scene-spar-1-5",
+    "weight": 9,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}丹房外试招。最后一招险些破防，{b}停住后喘了口气，笑意里带着一点不服。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-spar-1-6",
+    "weight": 9,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}剑冢前试招。最后一招险些破防，{b}停住后喘了口气，笑意里带着一点不服。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-spar-1-7",
+    "weight": 9,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}灵田边试招。最后一招险些破防，{b}停住后喘了口气，笑意里带着一点不服。",
+    "regionTypes": [
+      "town",
+      "sectBase"
+    ]
+  },
+  {
+    "id": "spar-spark-1",
+    "weight": 16,
+    "type": "spar",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}切磋。最后一合{a}本可压赢，却收了力。{b}看破后没点破，只说「下次认真」。",
+    "arcAny": [
+      "spark"
+    ]
+  }
+]

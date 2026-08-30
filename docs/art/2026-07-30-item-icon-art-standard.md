@@ -82,14 +82,7 @@ assets/resource-icons/50/
 
 当前有效批次：
 
-| 批次 | 含义 |
-| --- | --- |
-| `p0-v4-no-outline` | 第一优先级道具图标，正式无描边风格 |
-| `p1-v4-no-outline` | 第二优先级道具图标，正式无描边风格 |
-| `p2-v4-no-outline` | 第三优先级道具图标，正式无描边风格 |
-| `runtime-mining-flat-svg` | 运行期接入的低阶矿石、宝石、灵石 SVG 图标 |
-
-`docs/art/icon-batches/2026-07-29/_deprecated/` 下的内容是旧版或废弃候选，不应继续生产，也不应作为正式风格参考。
+运行时图标由 `content/item-art.js` 映射到正式资产；历史批次目录已清理，以本规范 + 现网素材为准。
 
 ## 视觉族规则
 
@@ -131,8 +124,5 @@ node selftest_release_sync.js
 
 ## 当前参考来源
 
-- `docs/art/2026-07-29-material-icon-requirements.md`：材料图标需求表和风格初版。
-- `docs/art/icon-batches/2026-07-29/batch-summary-v4-no-outline.md`：已生成批次和有效候选统计。
-- `docs/superpowers/specs/2026-07-30-top-resource-icons-design.md`：顶部资源图标沿用同一套规范的说明。
 - `content/materials.js`：道具美术提示词字段 `artPrompt` 的生成来源。
 - `content/item-art.js`：当前游戏内道具图标映射来源。

@@ -98,9 +98,10 @@ ok(Relationships !== null &&
     'getBond',
     'getEdge',
     'queryPair',
+    'queryPairs',
     'setBondStage'
   ]),
-'关系模块只公开六个纯领域接口');
+'关系模块只公开七个纯领域接口');
 
 if (Relationships) {
   ok(Object.isFrozen(Relationships), '关系模块公共边界冻结');
@@ -115,7 +116,7 @@ if (Relationships) {
       'dependence',
       'loyalty',
       'jealousy',
-      'resentment',
+      'closeness',
       'lastChangedAt'
     ]) &&
     zero.affection === 0 &&
@@ -125,7 +126,7 @@ if (Relationships) {
     zero.dependence === 0 &&
     zero.loyalty === 0 &&
     zero.jealousy === 0 &&
-    zero.resentment === 0 &&
+    zero.closeness === 0 &&
     zero.lastChangedAt === 0,
   '不存在的有向边以完整八项零值读取且不落盘');
   ok(Object.isFrozen(zero), '有向关系读模型冻结');
@@ -170,7 +171,7 @@ if (Relationships) {
     forward.state,
     'npc-1',
     'player',
-    { affection: 91, resentment: 4 },
+    { affection: 91, closeness: 4 },
     11
   );
   ok(reverse.ok === true &&
@@ -190,7 +191,7 @@ if (Relationships) {
     reverse.state,
     'npc-1',
     'player',
-    { affection: 999, resentment: -999 },
+    { affection: 999, closeness: -999 },
     12
   );
   ok(clamped.ok === true &&
@@ -203,7 +204,7 @@ if (Relationships) {
       clamped.state,
       'npc-1',
       'player'
-    ).resentment === 0,
+    ).closeness === 0,
   '八项关系变化精确夹在整数 0 到 100');
 
   const sparse = Relationships.applyDelta(
@@ -227,7 +228,7 @@ if (Relationships) {
     dependence: 0,
     loyalty: 0,
     jealousy: 0,
-    resentment: 0,
+    closeness: 0,
     lastChangedAt: 0
   };
   const zeroRead = Relationships.queryPair(
@@ -721,7 +722,7 @@ if (Relationships) {
     dependence: 0,
     loyalty: 0,
     jealousy: 0,
-    resentment: 0,
+    closeness: 0,
     lastChangedAt: '1'
   };
   ok(Relationships.getEdge(
@@ -785,7 +786,7 @@ if (Relationships) {
         dependence: 0,
         loyalty: 0,
         jealousy: 0,
-        resentment: 0,
+        closeness: 0,
         lastChangedAt: sparseCount
       };
       sparseCount++;

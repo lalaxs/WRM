@@ -918,12 +918,36 @@
     };
   }
 
+  function mergePendingItems(target, source) {
+    Object.keys(source || {}).forEach(function (itemId) {
+      const add = Number(source[itemId]) || 0;
+      if (add <= 0) return;
+      const current = Number(target[itemId]) || 0;
+      target[itemId] = current + add;
+    });
+  }
+
+  function copyRewardItems(items) {
+    const copied = {};
+    Object.keys(items || {}).forEach(function (itemId) {
+      copied[itemId] = items[itemId];
+    });
+    return copied;
+  }
+
+  function overflowPendingSource() {
+    return { type: 'combat-overflow', id: 'stash' };
+  }
+
+  function resolvePendingSource(source, items, currency) {
+    const validated = canonicalRewardPayload(source, items, currency);
+    if (validated) return validated.source;
+    return overflowPendingSource();
+  }
+
   function applyOrPend(model, rawReward, createdAtMs) {
     const parts = inspectModel(model);
     if (!parts) return failure('invalid_state', model, null);
-    if (parts.pendingLoot !== null) {
-      return failure('pending_loot_exists', model, null);
-    }
     if (parts.nextLootId === Number.MAX_SAFE_INTEGER) {
       return failure('loot_id_exhausted', model, null);
     }
@@ -938,6 +962,41 @@
     }
     const converted = convertEquipmentRewards(parts, reward);
     if (!converted) return failure('invalid_rewards', model, null);
+
+    // 已有待领取：合并进 pending，战斗继续（梅尔沃式挂机不因背包中断）
+    if (parts.pendingLoot !== null) {
+      const existing = readPending(parts.pendingLoot, parts.nextLootId);
+      if (!existing) return failure('invalid_state', model, null);
+      const mergedItems = {};
+      mergePendingItems(mergedItems, existing.items);
+      mergePendingItems(mergedItems, reward.items);
+      const mergedCurrency = existing.currency + reward.currency;
+      if (!Number.isSafeInteger(mergedCurrency) || mergedCurrency < 0) {
+        return failure('invalid_currency', model, null);
+      }
+      // 挂起批次保留原始掉落物；装备转换只推进 RNG，不改背包
+      parts.combat.pendingLoot = {
+        id: existing.id,
+        source: resolvePendingSource(
+          existing.source || reward.source,
+          mergedItems,
+          mergedCurrency
+        ),
+        items: mergedItems,
+        currency: mergedCurrency,
+        createdAtMs: existing.createdAtMs
+      };
+      parts.state.rngState = converted.rngState;
+      return mutationResult(
+        true,
+        'inventory_full',
+        parts.state,
+        batchResult(reward.items, reward.currency, existing.id),
+        'inventory_full',
+        true
+      );
+    }
+
     const applied = callInventory(converted.inventory, converted.items);
     if (!applied) return failure('inventory_apply_failed', model, null);
     if (applied.ok) {
@@ -972,22 +1031,28 @@
         !sameData(applied.value, parts.inventory)) {
       return failure('invalid_rewards', model, null);
     }
+    const pendingItems = copyRewardItems(reward.items);
     const pending = {
       id: 'combat-loot-' + parts.nextLootId,
-      source: reward.source,
-      items: converted.items,
+      source: resolvePendingSource(
+        reward.source,
+        pendingItems,
+        reward.currency
+      ),
+      items: pendingItems,
       currency: reward.currency,
       createdAtMs: Object.is(createdAtMs, -0) ? 0 : createdAtMs
     };
     parts.combat.pendingLoot = pending;
     parts.combat.nextLootId = parts.nextLootId + 1;
-    parts.player.inventory = converted.inventory;
+    // 满包挂起时不写入装备转换结果，避免掉落物从 pending 签名中消失
     parts.state.rngState = converted.rngState;
+    // ok=true：挂起战利品但不视为战斗失败，供 afterEnemyDefeated 继续刷怪
     return mutationResult(
-      false,
+      true,
       'inventory_full',
       parts.state,
-      null,
+      batchResult(reward.items, reward.currency, pending.id),
       'inventory_full',
       true
     );

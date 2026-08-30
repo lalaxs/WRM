@@ -1,0 +1,31 @@
+[
+  {
+    "id": "birthday-0184",
+    "weight": 7,
+    "type": "birthday",
+    "actors": "pair",
+    "template": "{a}记着生辰，在{loc}为{b}备了一席薄酒。",
+    "tagAny": [
+      "friend",
+      "close-friend",
+      "lover",
+      "blood",
+      "mentor"
+    ],
+    "affinityMin": 25
+  },
+  {
+    "id": "birthday-0185",
+    "weight": 5,
+    "type": "birthday",
+    "actors": "solo",
+    "template": "有人提及今日是{a}生辰，{loc}一带多了几句贺词。"
+  },
+  {
+    "id": "solo-extra-14",
+    "weight": 8,
+    "type": "birthday",
+    "actors": "solo",
+    "template": "{a}生辰无人记得，只在{loc}自己买了碗面。"
+  }
+]

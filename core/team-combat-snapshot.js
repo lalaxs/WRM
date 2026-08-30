@@ -149,12 +149,16 @@
       const instanceId = loadout.equipment[slot];
       return instanceId && byId[instanceId] ? byId[instanceId] : null;
     }).filter(Boolean);
+    const playerName = model && model.player &&
+      typeof model.player.name === 'string'
+      ? String(model.player.name).trim()
+      : '';
     const unit = unitFromStats(
       'ally-player',
       'ally',
       'player',
       'player',
-      '你',
+      playerName || '无名',
       clone(CombatStats.derive(model, loadoutId)),
       techniques,
       loadout.supplies,

@@ -1,0 +1,768 @@
+
+==== dns$$releader 0x13be5a8 size=0x6c ====
+0x13be5a8 BL 0x1ebdcac ; InitArray/il2cpp
+0x13be5b8 ADRP+LDR x22 -> 0x2b1c728 [field+0xb0]
+0x13be5d0 BL 0x1295978 ; InitMethod?
+0x13be5d8 MOVZ w1,#10
+0x13be5dc BL 0x1295a70 ; ArrayNew?
+0x13be5ec BL 0x1ebdcac ; InitArray/il2cpp
+0x13be5f4 CMP w8,#1
+0x13be5f8 B.9 0x13c12c0
+0x13be5fc ADRP+LDR x22 -> 0x2b1c608 [field+-0x70]
+
+==== dns$$rejob 0x13be614 size=0x1f0 ====
+0x13be614 BL 0x1295978 ; InitMethod?
+0x13be61c MOVZ w1,#4
+0x13be620 BL 0x1295a70 ; ArrayNew?
+0x13be630 BL 0x1ebdcac ; InitArray/il2cpp
+0x13be638 CMP w8,#2
+0x13be63c B.9 0x13c12c0
+0x13be640 ADRP+LDR x22 -> 0x2b1c780 [field+0x108]
+0x13be658 BL 0x1295978 ; InitMethod?
+0x13be660 MOVZ w1,#4
+0x13be664 BL 0x1295a70 ; ArrayNew?
+0x13be674 BL 0x1ebdcac ; InitArray/il2cpp
+0x13be67c CMP w8,#3
+0x13be680 B.9 0x13c12c0
+0x13be684 ADRP+LDR x22 -> 0x2b1c648 [field+-0x30]
+0x13be69c BL 0x1295978 ; InitMethod?
+0x13be6a4 MOVZ w1,#4
+0x13be6a8 BL 0x1295a70 ; ArrayNew?
+0x13be6b8 BL 0x1ebdcac ; InitArray/il2cpp
+0x13be6c0 CMP w8,#4
+0x13be6c4 B.9 0x13c12c0
+0x13be6c8 ADRP+LDR x22 -> 0x2b1c858 [field+0x1e0]
+0x13be6e0 BL 0x1295978 ; InitMethod?
+0x13be6e8 MOVZ w1,#4
+0x13be6ec BL 0x1295a70 ; ArrayNew?
+0x13be6fc BL 0x1ebdcac ; InitArray/il2cpp
+0x13be704 CMP w8,#5
+0x13be708 B.9 0x13c12c0
+0x13be70c ADRP+LDR x22 -> 0x2b1c710 [field+0x98]
+0x13be724 BL 0x1295978 ; InitMethod?
+0x13be72c MOVZ w1,#4
+0x13be730 BL 0x1295a70 ; ArrayNew?
+0x13be740 BL 0x1ebdcac ; InitArray/il2cpp
+0x13be748 CMP w8,#6
+0x13be74c B.9 0x13c12c0
+0x13be750 ADRP+LDR x22 -> 0x2b1c6c8 [field+0x50]
+0x13be768 BL 0x1295978 ; InitMethod?
+0x13be770 MOVZ w1,#4
+0x13be774 BL 0x1295a70 ; ArrayNew?
+0x13be784 BL 0x1ebdcac ; InitArray/il2cpp
+0x13be78c CMP w8,#7
+0x13be790 B.9 0x13c12c0
+0x13be794 ADRP+LDR x22 -> 0x2b1c708 [field+0x90]
+0x13be7ac BL 0x1295978 ; InitMethod?
+0x13be7b4 MOVZ w1,#4
+0x13be7b8 BL 0x1295a70 ; ArrayNew?
+0x13be7c8 BL 0x1ebdcac ; InitArray/il2cpp
+0x13be7d0 CMP w8,#8
+0x13be7d4 B.9 0x13c12c0
+0x13be7e8 BL 0x1295978 ; InitMethod?
+0x13be7f0 MOVZ w1,#4
+0x13be7f4 BL 0x1295a70 ; ArrayNew?
+
+==== dns$$relevel 0x13bf350 size=0x268 ====
+0x13bf35c BL 0x1ebdcac ; InitArray/il2cpp
+0x13bf364 CMP w8,#4
+0x13bf368 B.9 0x13c12c0
+0x13bf36c ADRP+LDR x22 -> 0x2b1d6f8 [field+0x1080]
+0x13bf384 BL 0x1295978 ; InitMethod?
+0x13bf38c MOVZ w1,#11
+0x13bf390 BL 0x1295a70 ; ArrayNew?
+0x13bf3a0 BL 0x1ebdcac ; InitArray/il2cpp
+0x13bf3a8 CMP w8,#5
+0x13bf3ac B.9 0x13c12c0
+0x13bf3b0 ADRP+LDR x22 -> 0x2b1d610 [field+0xf98]
+0x13bf3c8 BL 0x1295978 ; InitMethod?
+0x13bf3d0 MOVZ w1,#8
+0x13bf3d4 BL 0x1295a70 ; ArrayNew?
+0x13bf3e4 BL 0x1ebdcac ; InitArray/il2cpp
+0x13bf3ec CMP w8,#6
+0x13bf3f0 B.9 0x13c12c0
+0x13bf400 BL 0x1295978 ; InitMethod?
+0x13bf418 BL 0x1295978 ; InitMethod?
+0x13bf420 MOVZ w1,#7
+0x13bf424 BL 0x1295a70 ; ArrayNew?
+0x13bf438 BL 0x1295a70 ; ArrayNew?
+0x13bf458 BL 0x1295978 ; InitMethod?
+0x13bf464 BL 0x1295a70 ; ArrayNew?
+0x13bf46c CMP w8,#1
+0x13bf470 B.9 0x13c12c0
+0x13bf474 ADRP+LDR x22 -> 0x2b1c890 [field+0x218]
+0x13bf48c BL 0x1295978 ; InitMethod?
+0x13bf494 MOVZ w1,#8
+0x13bf498 BL 0x1295a70 ; ArrayNew?
+0x13bf4a8 BL 0x1ebdcac ; InitArray/il2cpp
+0x13bf4b0 CMP w8,#2
+0x13bf4b4 B.9 0x13c12c0
+0x13bf4c8 BL 0x1295978 ; InitMethod?
+0x13bf4d0 MOVZ w1,#8
+0x13bf4d4 BL 0x1295a70 ; ArrayNew?
+0x13bf4e4 BL 0x1ebdcac ; InitArray/il2cpp
+0x13bf4ec CMP w8,#3
+0x13bf4f0 B.9 0x13c12c0
+0x13bf504 BL 0x1295978 ; InitMethod?
+0x13bf50c MOVZ w1,#8
+0x13bf510 BL 0x1295a70 ; ArrayNew?
+0x13bf520 BL 0x1ebdcac ; InitArray/il2cpp
+0x13bf528 CMP w8,#4
+0x13bf52c B.9 0x13c12c0
+0x13bf530 ADRP+LDR x25 -> 0x2b1c590 [field+-0xe8]
+0x13bf548 BL 0x1295978 ; InitMethod?
+0x13bf550 MOVZ w1,#11
+0x13bf554 BL 0x1295a70 ; ArrayNew?
+0x13bf564 BL 0x1ebdcac ; InitArray/il2cpp
+0x13bf56c CMP w8,#5
+0x13bf570 B.9 0x13c12c0
+0x13bf584 BL 0x1295978 ; InitMethod?
+0x13bf58c MOVZ w1,#8
+0x13bf590 BL 0x1295a70 ; ArrayNew?
+0x13bf5a0 BL 0x1ebdcac ; InitArray/il2cpp
+0x13bf5a8 CMP w8,#6
+0x13bf5ac B.9 0x13c12c0
+
+==== dns$$rereward 0x13becc4 size=0x240 ====
+0x13becc8 BL 0x1ebdcac ; InitArray/il2cpp
+0x13becd0 CMP w8,#5
+0x13becd4 B.9 0x13c12c0
+0x13becd8 ADRP+LDR x22 -> 0x2b1c690 [myurl]
+0x13becf0 BL 0x1295978 ; InitMethod?
+0x13becf8 MOVZ w1,#4
+0x13becfc BL 0x1295a70 ; ArrayNew?
+0x13bed0c BL 0x1ebdcac ; InitArray/il2cpp
+0x13bed14 CMP w8,#6
+0x13bed18 B.9 0x13c12c0
+0x13bed1c ADRP+LDR x22 -> 0x2b1c7a8 [field+0x130]
+0x13bed34 BL 0x1295978 ; InitMethod?
+0x13bed3c MOVZ w1,#4
+0x13bed40 BL 0x1295a70 ; ArrayNew?
+0x13bed50 BL 0x1ebdcac ; InitArray/il2cpp
+0x13bed58 CMP w8,#7
+0x13bed5c B.9 0x13c12c0
+0x13bed60 ADRP+LDR x22 -> 0x2b1c5b8 [field+-0xc0]
+0x13bed78 BL 0x1295978 ; InitMethod?
+0x13bed80 MOVZ w1,#4
+0x13bed84 BL 0x1295a70 ; ArrayNew?
+0x13bed94 BL 0x1ebdcac ; InitArray/il2cpp
+0x13bed9c CMP w8,#8
+0x13beda0 B.9 0x13c12c0
+0x13bedb4 BL 0x1295978 ; InitMethod?
+0x13bedbc MOVZ w1,#4
+0x13bedc0 BL 0x1295a70 ; ArrayNew?
+0x13bedd0 BL 0x1ebdcac ; InitArray/il2cpp
+0x13bedd8 CMP w8,#9
+0x13beddc B.9 0x13c12c0
+0x13bee0c BL 0x1295978 ; InitMethod?
+0x13bee24 BL 0x1295978 ; InitMethod?
+0x13bee2c MOVZ w1,#21
+0x13bee30 BL 0x1295a70 ; ArrayNew?
+0x13bee40 BL 0x1ebdcac ; InitArray/il2cpp
+0x13bee58 BL 0x1295978 ; InitMethod?
+0x13bee60 MOVZ w1,#10
+0x13bee64 BL 0x1295a70 ; ArrayNew?
+0x13bee74 BL 0x1ebdcac ; InitArray/il2cpp
+0x13bee8c BL 0x1295978 ; InitMethod?
+0x13bee94 MOVZ w1,#8
+0x13bee98 BL 0x1295a70 ; ArrayNew?
+0x13beea8 BL 0x1ebdcac ; InitArray/il2cpp
+0x13beec0 BL 0x1295978 ; InitMethod?
+0x13beec8 MOVZ w1,#8
+0x13beecc BL 0x1295a70 ; ArrayNew?
+0x13beedc BL 0x1ebdcac ; InitArray/il2cpp
+0x13beef4 BL 0x1295978 ; InitMethod?
+0x13bef00 MOVZ w9,#1106247680
+
+==== dns$$rename 0x13beb5c size=0xc0 ====
+0x13beb5c MOVZ w1,#10
+0x13beb64 BL 0x1295a70 ; ArrayNew?
+0x13beb74 BL 0x1ebdcac ; InitArray/il2cpp
+0x13beb84 ADRP+LDR x22 -> 0x2b1c898 [field+0x220]
+0x13beb9c BL 0x1295978 ; InitMethod?
+0x13beba4 MOVZ w1,#10
+0x13beba8 BL 0x1295a70 ; ArrayNew?
+0x13bebb8 BL 0x1ebdcac ; InitArray/il2cpp
+0x13bebc0 CMP w8,#1
+0x13bebc4 B.9 0x13c12c0
+0x13bebc8 ADRP+LDR x22 -> 0x2b1c678 [af]
+0x13bebe0 BL 0x1295978 ; InitMethod?
+0x13bebe8 MOVZ w1,#4
+0x13bebec BL 0x1295a70 ; ArrayNew?
+0x13bebfc BL 0x1ebdcac ; InitArray/il2cpp
+0x13bec04 CMP w8,#2
+0x13bec08 B.9 0x13c12c0
+0x13bec0c ADRP+LDR x22 -> 0x2b1c650 [field+-0x28]
+
+==== wide BL to DecryptDES / EncryptDES / UnBase64 ====
+
+==== ScriptString len==8 printable (DES key candidates) ====
+'!DOCTYPE'
+'#######0'
+'#comment'
+'$Domain='
+'$Version'
+'&prodId='
+'-----END'
+'--MM-ddZ'
+'--depth-'
+'--moving'
+'--scroll'
+'@version'
+'ASMO-708'
+'Accepted'
+'Albanian'
+'Armenian'
+'AttrOnly'
+'BEVEL_ON'
+'BaseType'
+'ByRefNew'
+'Capacity'
+'Comparer'
+'Complete'
+'Conflict'
+'Continue'
+'Cornsilk'
+'Croatian'
+'DarkBlue'
+'DarkCyan'
+'DarkGray'
+'DataType'
+'DateTime'
+'December'
+'DeepPink'
+'Delegate'
+'Designer'
+'Disabled'
+'Document'
+'Dropdown'
+'Duration'
+'ECMA-114'
+'ECMA-118'
+'ELOT_928'
+'ENTITIES'
+'EPROCLIM'
+'EREFUSED'
+'EXTERNAL'
+'Elements'
+'Estonian'
+'Exponent'
+'February'
+'FieldObj'
+'Filipino'
+'FullPath'
+'GB231280'
+'Galician'
+'Georgian'
+'GetMatch'
+'GetRules'
+'GetValue'
+'GrayText'
+'Gujarati'
+'HasValue'
+'HashSize'
+'Honeydew'
+'HotTrack'
+'HttpOnly'
+'IBM-Thai'
+'IBM00858'
+'IBM00924'
+'IBM01047'
+'IBM01140'
+'IBM01141'
+'IBM01142'
+'IBM01143'
+'IBM01144'
+'IBM01145'
+'IBM01146'
+'IBM01147'
+'IBM01148'
+'IBM01149'
+'If-Match'
+'If-Range'
+'Infinity'
+'InfoText'
+'Instance'
+'InverseQ'
+'IsArabic'
+'IsArrows'
+'IsHebrew'
+'IsKanbun'
+'IsNested'
+'IsSyriac'
+'IsTelugu'
+'IsThaana'
+'Japanese'
+'KSC_5601'
+'KeyValue'
+'Language'
+'Lavender'
+'LessThan'
+'LineOnly'
+'Location'
+'MASK_TEX'
+'MenuText'
+'Moccasin'
+'MoveRule'
+'NMTOKENS'
+'NOTATION'
+'NewArray'
+'NotEqual'
+'Notation'
+'November'
+'Overflow'
+'PROPFIND'
+'Patindex'
+'Pictures'
+'Position'
+'RSA_KEYX'
+'RawImage'
+'ReadByte'
+'ReadOnly'
+'Relation'
+'RemoveOn'
+'Response'
+'Revision'
+'Romanian'
+'RunVoid0'
+'SEQUENCE'
+'Sanskrit'
+'Saturday'
+'SeaGreen'
+'SeaShell'
+'Selected'
+'TERMINFO'
+'Template'
+'Thursday'
+'TimeSpan'
+'ToObject'
+'ToString'
+'TopLevel'
+'TypeName'
+'US-ASCII'
+'UTF-16BE'
+'UTF-16LE'
+'UTF-32BE'
+'UTF-32LE'
+'Vertical'
+'Viewport'
+'_FaceTex'
+'_MainTex'
+'_Padding'
+'_Stencil'
+'_Version'
+'__Return'
+'__column'
+'__footer'
+'__header'
+'__slider'
+'__toggle'
+'__visual'
+'_options'
+'absolute'
+'abstract'
+'allnamef'
+'allnamel'
+'ancestor'
+'ascender'
+'assembly'
+'attackbt'
+'auth-int'
+'autoSize'
+'baseLine'
+'buydrug0'
+'buydrug_'
+'calendar'
+'callBack'
+'callback'
+'cantgift'
+'capacity'
+'changepw'
+'channels'
+'childkey'
+'codePage'
+'codepage'
+'collapse'
+'comparer'
+'config10'
+'config13'
+'config14'
+'config41'
+'contains'
+'continue'
+'contract'
+'cornsilk'
+'csGB2312'
+'csIBM037'
+'csIBM273'
+'csIBM277'
+'csIBM278'
+'csIBM280'
+'csIBM284'
+'csIBM285'
+'csIBM290'
+'csIBM297'
+'csIBM420'
+'csIBM423'
+'csIBM424'
+'csIBM500'
+'csIBM870'
+'csIBM871'
+'csIBM880'
+'csIBM905'
+'cyrillic'
+'darkblue'
+'darkcyan'
+'darkgray'
+'darkgrey'
+'dataItem'
+'dataType'
+'datatype'
+'dateData'
+'dateTime'
+'decimals'
+'deeppink'
+'delegate'
+'diffgram'
+'disabled'
+'disallow'
+'display0'
+'display1'
+'duration'
+'ease-out'
+'ellipsis'
+'encoding'
+'endIndex'
+'entities'
+'enumType'
+'event116'
+'event146'
+'event210'
+'event237'
+'eventt00'
+'eventt01'
+'eventt10'
+'eventt11'
+'eventt20'
+'eventt30'
+'eventt31'
+'eventt50'
+'eventt53'
+'eventt70'
+'eventt90'
+'eventt91'
+'explicit'
+'fileName'
+'flex-end'
+'fontSize'
+'function'
+'gameend0'
+'getClass'
+'getTitle'
+'getpost_'
+'giftbt01'
+'handlers'
+'hashCode'
+'hmacsha1'
+'honeydew'
+'hostName'
+'hostname'
+'implicit'
+'inactive'
+'infinity'
+'inserted'
+'instance'
+'intValue'
+'internal'
+'interval'
+'ints_key'
+'inverted'
+'ipString'
+'iso-ir-6'
+'itemType'
+'itembt00'
+'job1dead'
+'journey1'
+'keyValue'
+'keypairs'
+'ks-c5601'
+'language'
+'lavender'
+'level_l9'
+'level_s0'
+'level_s1'
+'lifetime'
+'linggent'
+'listener'
+'loopback'
+'lowValue'
+'material'
+'maxCount'
+'maxItems'
+'maxValue'
+'md5-sess'
+'metadata'
+'minItems'
+'minValue'
+'moccasin'
+'modified'
+'ms_Kanji'
+'mscorlib'
+'newError'
+'newItems'
+'nillable'
+'nistP192'
+'nistP224'
+'nmtokens'
+'notation'
+'numBytes'
+'objectID'
+'offsetIn'
+'oidValue'
+'oldItems'
+'oldValue'
+'oldsword'
+'op_False'
+'operator'
+'optional'
+'outArray'
+'overflow'
+'override'
+'packages'
+'pagetext'
+'parentId'
+'particle'
+'password'
+'pet_brow'
+'pet_ehue'
+'pet_esat'
+'pet_eval'
+'pet_exp1'
+'pet_type'
+'pet_yang'
+'petnamef'
+'petnamel'
+'platform'
+'position'
+'posterr_'
+'preserve'
+'products'
+'property'
+'provider'
+'quantity'
+'quitgame'
+'ranklist'
+'readType'
+'readonly'
+'redefine'
+'relation'
+'relative'
+'remoteEP'
+'repeat-x'
+'repeat-y'
+'required'
+'requires'
+'resolver'
+'revision'
+'richText'
+'rijndael'
+'rowOrder'
+'savegame'
+'saveover'
+'savetime'
+'scrollTo'
+'seagreen'
+'seashell'
+'selected'
+'selector'
+'sequence'
+'setFrame'
+'settings'
+'sf_value'
+'sortable'
+'sortkey1'
+'sortkey2'
+'soul_eye'
+'soul_mou'
+'soulname'
+'startPos'
+'swordage'
+'swordev0'
+'tabindex'
+'tattoo10'
+'tempitem'
+'template'
+'textOnly'
+'textarea'
+'toString'
+'tocheck1'
+'tocheck2'
+'topRight'
+'typeData'
+'typeInfo'
+'typeName'
+'tzm-latn'
+'unitytls'
+'upbutton'
+'us-ascii'
+'useitem1'
+'useitem2'
+'username'
+'utf-16BE'
+'utf-32BE'
+'variable'
+'version='
+'volatile'
+'vsmacros'
+'waiticon'
+'waitsave'
+'wordWrap'
+'wrongpw1'
+'wrongpw2'
+'wrongpw3'
+'wrongpw4'
+'wrongpw5'
+'wrongpw6'
+'x-Europa'
+'x-cp1250'
+'x-cp1251'
+'x-euc-cn'
+'x-euc-jp'
+'x-mac-ce'
+'x-x-big5'
+'xAdvance'
+'yyyy-MM-'
+'yyyy-MMZ'
+'yyyyMMdd'
+key b'12345678' in meta=109581 so=7540539
+key b'87654321' in meta=-1 so=-1
+key b'abcdefgh' in meta=109618 so=-1
+key b'ABCDEFGH' in meta=109592 so=-1
+key b'xiuxian1' in meta=-1 so=-1
+key b'password' in meta=238745 so=9931207
+key b'00000000' in meta=132759 so=125588
+
+==== stores to dns.af (static+0) / lf (static+8) ====
+STATIC_BASE 0x2b1c678
+af LDR 0x13bcf64 person$$commenevent@0x13a98a0
+af LDR 0x13bcf70 person$$commenevent@0x13a98a0
+af LDR 0x13bebc8 dns$$rename@0x13beb5c
+af LDR 0x13f5664 root$$cjourney@0x13f4fb0
+af hits 4
+lf LDR 0x13bcf70 person$$commenevent@0x13a98a0
+lf LDR 0x13bcf7c person$$commenevent@0x13a98a0
+lf LDR 0x13c0568 dns$$GetMd5Hash@0x13c04a8
+lf hits 3
+
+==== URL-like ScriptString ====
+'$is_native_api_available'
+'.com'
+'.database.chinacloudapi.cn'
+'.database.cloudapi.de'
+'.database.usgovcloudapi.net'
+'<META http-equiv="Content-Type"'
+"Expected schema root. Make sure the root element is <schema> and the namespace is 'http://www.w3.org/2001/XMLSchema' for an XSD schema or 'urn:schemas"
+'Prefix "xml" is reserved for use by XML and can be mapped only to namespace name "http://www.w3.org/XML/1998/namespace".'
+"The 'xmlns' attribute is bound to the reserved namespace 'http://www.w3.org/2000/xmlns/'."
+"The prefix 'xml' is bound to the namespace name 'http://www.w3.org/XML/1998/namespace'. Other prefixes must not be bound to this namespace name, and i"
+"The prefix 'xmlns' is bound to the namespace name 'http://www.w3.org/2000/xmlns/'. It must not be declared. Other prefixes must not be bound to this n"
+"The root element of a W3C XML Schema should be <schema> and its namespace should be 'http://www.w3.org/2001/XMLSchema'."
+'The target namespace of an attribute declaration, whether local or global, must not match http://www.w3.org/2001/XMLSchema-instance.'
+"To use Unity's dashboard services, you need to link your Unity project to a project ID. To do this, go to Project Settings to select your organization"
+"Type '{0}' is not allowed here. See https://go.microsoft.com/fwlink/?linkid=2132227 for more details."
+'UniWebViewSafeBrowsing.Show is called but the current device does \n                not support Safe Browsing. \n                This might be due to Ch'
+'com.android.billingclient.api.AcknowledgePurchaseParams'
+'com.android.billingclient.api.AcknowledgePurchaseResponseListener'
+'com.android.billingclient.api.BillingClient'
+'com.android.billingclient.api.BillingClientStateListener'
+'com.android.billingclient.api.BillingFlowParams'
+'com.android.billingclient.api.BillingFlowParams$ProductDetailsParams'
+'com.android.billingclient.api.BillingFlowParams$SubscriptionUpdateParams'
+'com.android.billingclient.api.ConsumeParams'
+'com.android.billingclient.api.ConsumeResponseListener'
+'com.android.billingclient.api.PendingPurchasesParams'
+'com.android.billingclient.api.ProductDetailsResponseListener'
+'com.android.billingclient.api.Purchase$PurchaseState'
+'com.android.billingclient.api.PurchasesResponseListener'
+'com.android.billingclient.api.PurchasesUpdatedListener'
+'com.android.billingclient.api.QueryProductDetailsParams'
+'com.android.billingclient.api.QueryProductDetailsParams$Product'
+'com.android.billingclient.api.QueryPurchasesParams'
+'com.unity.purchasing.common.IUnityCallback'
+'ec192wapi'
+'http'
+'http://'
+'http://bacp.felisworks.com:14430/hhz/'
+'http://james.newtonking.com/projects/json'
+'http://microsoft.com/wsdl/types/'
+'http://schemas.microsoft.com/clr/assem/'
+'http://schemas.microsoft.com/clr/ns/'
+'http://schemas.microsoft.com/clr/nsassem/'
+'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'
+'http://schemas.xmlsoap.org/soap/encoding/'
+'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'
+'http://schemas.xmlsoap.org/wsdl/'
+'http://www.w3.org/'
+'http://www.w3.org/1999/XMLSchema-instance'
+'http://www.w3.org/2000/09/xmldsig#dsa-sha1'
+'http://www.w3.org/2000/09/xmldsig#hmac-sha1'
+'http://www.w3.org/2000/09/xmldsig#rsa-sha1'
+'http://www.w3.org/2000/09/xmldsig#sha1'
+'http://www.w3.org/2000/10/XMLSchema-instance'
+'http://www.w3.org/2000/xmlns/'
+'http://www.w3.org/2001/04/xmldsig-more#hmac-ripemd160'
+'http://www.w3.org/2001/04/xmldsig-more#hmac-sha256'
+'http://www.w3.org/2001/04/xmldsig-more#hmac-sha384'
+'http://www.w3.org/2001/04/xmldsig-more#hmac-sha512'
+'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256'
+'http://www.w3.org/2001/04/xmldsig-more#rsa-sha384'
+'http://www.w3.org/2001/04/xmldsig-more#rsa-sha512'
+'http://www.w3.org/2001/04/xmldsig-more#sha384'
+'http://www.w3.org/2001/04/xmlenc#sha256'
+'http://www.w3.org/2001/04/xmlenc#sha512'
+'http://www.w3.org/2001/XMLSchema'
+'http://www.w3.org/2001/XMLSchema#string'
+'http://www.w3.org/2001/XMLSchema-instance'
+'http://www.w3.org/2003/11/xpath-datatypes'
+'http://www.w3.org/XML/1998/namespace'
+'https'
+'https://access.line.me/oauth2/v2.1/login'
+'https://accounts.google.com/o/oauth2/v2/auth'
+'https://api.line.me/oauth2/v2.1/token'
+'https://api.twitter.com/2/oauth2/token'
+'https://bac.felisworks.com:14433/hhz/'
+'https://discord.com/api/oauth2/authorize'
+'https://discord.com/api/oauth2/token'
+'https://github.com/login/oauth/access_token'
+'https://github.com/login/oauth/authorize'
+'https://graph.facebook.com/v14.0/oauth/access_token'
+'https://localhost/'
+'https://oauth2.googleapis.com/token'
+'https://twitter.com/i/oauth2/authorize'
+'https://www.facebook.com/connect/login_success.html'
+'https://www.facebook.com/v14.0/dialog/oauth'
+
+==== assets tree file count ====
+entries 4
+
+==== search repo for unity data ====
+*.unity3d 0 []
+sharedassets* 0 []
+level0 0 []
+data.unity3d 0 []
+*.assets 0 []
+globalgamemanagers* 0 []
+Traceback (most recent call last):
+  File "D:\ZM\xiuxian-idle-h5\tools\_probe_trace.py", line 201, in <module>
+    (ROOT / "tools/_probe_trace_out.txt").write_text("\n".join(OUT), encoding="utf-8")
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\666\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py", line 555, in write_text
+    return PathBase.write_text(self, data, encoding, errors, newline)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\666\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py", line 651, in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\666\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py", line 537, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: 'D:\\ZM\\xiuxian-idle-h5\\tools\\_probe_trace_out.txt'

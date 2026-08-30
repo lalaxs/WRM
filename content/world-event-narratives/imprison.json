@@ -1,0 +1,19 @@
+[
+  {
+    "id": "imprison-0183",
+    "weight": 5,
+    "type": "imprison",
+    "actors": "solo",
+    "template": "{a}因触犯门规，被暂押在{loc}侧院思过。",
+    "statusAny": [
+      "imprisoned"
+    ]
+  },
+  {
+    "id": "solo-extra-13",
+    "weight": 8,
+    "type": "imprison",
+    "actors": "solo",
+    "template": "{a}被关在{loc}石室，每日只见一次送饭人。"
+  }
+]

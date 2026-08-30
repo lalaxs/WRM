@@ -1,0 +1,26 @@
+---
+description: H5 运行时依赖方向与模块清单约定
+globs: "{index.html,runtime-modules.js,core/**/*.js,content/**/*.js,ui/**/*.js,game*.js,scripts/sync-release.js}"
+alwaysApply: false
+---
+
+# 运行时地基
+
+权威源：`runtime-modules.js`。
+
+## 依赖方向（只允许向下）
+
+`platform → content → core → game(GameAPI) → ui`
+
+- UI 只经 `window.GameAPI`，禁止直接碰 `core/`、`content/`、`SaveSystem`、`tap.*`
+- content 禁止依赖 core/game/ui
+- core 禁止依赖 game/ui
+- game 禁止直接操作 DOM
+
+## 改加载链时
+
+1. 先改 `runtime-modules.js`（`BOOT_SCRIPTS` / 延后清单）
+2. 再改 `index.html` 使之一致
+3. 跑 `npm run test:runtime`
+
+延后模块（草药、UI 页、战斗引擎、`styles-game.css`）只走 `LazyContent`，不要写回首屏同步 script。

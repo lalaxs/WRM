@@ -692,9 +692,7 @@
     formationBase: '阵基，布置阵法所需的核心材料。'
   };
 
-  const records = {};
-  orderedItemIds.forEach(function (id) {
-    const materialRow = MATERIAL_ITEMS_BY_ID[id] || null;
+  function buildItemRecord(id, materialRow) {
     const artRow = ITEM_ART_CONTENT &&
       typeof ITEM_ART_CONTENT.get === 'function'
       ? ITEM_ART_CONTENT.get(id)
@@ -705,7 +703,7 @@
       ? 'equipment'
       : TECHNIQUE_BOOK_IDS.has(id) ? 'technique'
       : CONSUMABLE_IDS.has(id) ? 'consumable' : 'material';
-    records[id] = {
+    const record = {
       id: id,
       name: materialRow && materialRow.name ? materialRow.name : NAMES[id],
       category: category,
@@ -724,16 +722,16 @@
         : CATEGORY_QUALITY[category]
     };
     if (artRow) {
-      records[id].iconSrc = artRow.icon50 || artRow.icon100 || '';
-      records[id].iconSrc50 = artRow.icon50 || artRow.icon100 || '';
-      records[id].iconSrc100 = artRow.icon100 || artRow.icon50 || '';
+      record.iconSrc = artRow.icon50 || artRow.icon100 || '';
+      record.iconSrc50 = artRow.icon50 || artRow.icon100 || '';
+      record.iconSrc100 = artRow.icon100 || artRow.icon50 || '';
     }
     if (STAGE3_EQUIPMENT[id]) {
-      records[id].tier = STAGE3_EQUIPMENT[id].tier;
-      records[id].equipmentSlot = STAGE3_EQUIPMENT[id].slot;
+      record.tier = STAGE3_EQUIPMENT[id].tier;
+      record.equipmentSlot = STAGE3_EQUIPMENT[id].slot;
     }
     if (TECHNIQUE_BOOKS[id]) {
-      records[id].techniqueId = TECHNIQUE_BOOKS[id];
+      record.techniqueId = TECHNIQUE_BOOKS[id];
     }
     if (materialRow) {
       [
@@ -742,18 +740,23 @@
         'melvorName', 'potionTier', 'charges', 'melvor',
         'useAction', 'unlockFlag', 'heal'
       ].forEach(function (key) {
-        if (materialRow[key] != null) records[id][key] = materialRow[key];
+        if (materialRow[key] != null) record[key] = materialRow[key];
       });
       if (materialRow.equipmentSlot) {
-        records[id].equipmentSlot = materialRow.equipmentSlot;
+        record.equipmentSlot = materialRow.equipmentSlot;
       }
     }
     if (LEGACY_PROTOTYPE_ID_SET.has(id)) {
-      records[id].legacyDesign = true;
-      records[id].designStatus = 'legacy_prototype';
+      record.legacyDesign = true;
+      record.designStatus = 'legacy_prototype';
     }
+    return deepFreeze(record);
+  }
+
+  const ITEMS = {};
+  orderedItemIds.forEach(function (id) {
+    ITEMS[id] = buildItemRecord(id, MATERIAL_ITEMS_BY_ID[id] || null);
   });
-  const ITEMS = deepFreeze(records);
 
   function get(itemId) {
     return ITEMS[itemId] || null;
@@ -766,12 +769,33 @@
       : items.filter(function (item) { return item.category === category; }));
   }
 
+  function syncFromMaterials() {
+    const materialApi = (typeof MaterialContent !== 'undefined' && MaterialContent)
+      ? MaterialContent
+      : MATERIAL_CONTENT;
+    if (!materialApi || typeof materialApi.itemRows !== 'function') {
+      return { ok: false, added: 0 };
+    }
+    let added = 0;
+    materialApi.itemRows().forEach(function (row) {
+      if (!row || typeof row.id !== 'string' || !row.id || ITEMS[row.id]) {
+        return;
+      }
+      MATERIAL_ITEMS_BY_ID[row.id] = row;
+      ITEMS[row.id] = buildItemRecord(row.id, row);
+      added += 1;
+    });
+    return { ok: true, added: added };
+  }
+
   return Object.freeze({
     ITEMS: ITEMS,
     CATEGORIES: CATEGORIES,
     QUALITY: QUALITY,
     LEGACY_PROTOTYPE_IDS: LEGACY_PROTOTYPE_IDS,
     get: get,
-    list: list
+    list: list,
+    syncFromMaterials: syncFromMaterials,
+    absorbHerbloreParity: syncFromMaterials
   });
 });

@@ -1,0 +1,754 @@
+[
+  {
+    "id": "quarrel-0069",
+    "weight": 1,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}在{loc}替{b}出头，化解一场无端纠缠。散去后对方道谢发紧，像不愿欠，又记在了心上。",
+    "affinityMax": 30
+  },
+  {
+    "id": "quarrel-0070",
+    "weight": 1,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}同{b}在{loc}为机缘归属争执起来，不欢而散。",
+    "affinityMax": 30
+  },
+  {
+    "id": "quarrel-0071",
+    "weight": 1,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}在{loc}当众驳回{b}的说法，气氛陡然发僵。",
+    "affinityMax": 30
+  },
+  {
+    "id": "quarrel-0072",
+    "weight": 1,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}因门规解释不同而起口角。",
+    "affinityMax": 30
+  },
+  {
+    "id": "quarrel-chicheng-1",
+    "weight": 1,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}性子直，在{loc}与{b}谁也不肯让，最后闹得不愉快。",
+    "personalityAny": [
+      "chicheng"
+    ],
+    "affinityMax": 40
+  },
+  {
+    "id": "quarrel-zhizhuo-1",
+    "weight": 1,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}性子倔，在{loc}与{b}谁也不肯让，最后闹得不愉快。",
+    "personalityAny": [
+      "zhizhuo"
+    ],
+    "affinityMax": 40
+  },
+  {
+    "id": "quarrel-jiaojin-1",
+    "weight": 1,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}性子傲，在{loc}与{b}谁也不肯让，最后闹得不愉快。",
+    "personalityAny": [
+      "jiaojin"
+    ],
+    "affinityMax": 40
+  },
+  {
+    "id": "pair-persona-2",
+    "weight": 10,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}讲究体面，{b}口无遮拦，二人在{loc}当众争执起来。",
+    "personalityA": [
+      "jiaojin"
+    ],
+    "personalityB": [
+      "chicheng"
+    ]
+  },
+  {
+    "id": "generic-quarrel-1",
+    "weight": 8,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}为谁先入洞府在{loc}吵了起来。"
+  },
+  {
+    "id": "generic-quarrel-2",
+    "weight": 8,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}认为{b}坏了规矩，在{loc}当众指责。"
+  },
+  {
+    "id": "generic-quarrel-3",
+    "weight": 8,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}同{b}在{loc}因借贷未还会面，言语间刀锋相对。"
+  },
+  {
+    "id": "scene-quarrel-0-0",
+    "weight": 9,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}山门因一句旧话顶撞起来。旁人劝开后，{a}先走，走了几步又停，终究没回头。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-quarrel-0-1",
+    "weight": 9,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}厢房廊下因一句旧话顶撞起来。旁人劝开后，{a}先走，走了几步又停，终究没回头。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-quarrel-0-2",
+    "weight": 9,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}摊位旁因一句旧话顶撞起来。旁人劝开后，{a}先走，走了几步又停，终究没回头。",
+    "regionTypes": [
+      "market"
+    ]
+  },
+  {
+    "id": "scene-quarrel-0-3",
+    "weight": 9,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}林径因一句旧话顶撞起来。旁人劝开后，{a}先走，走了几步又停，终究没回头。",
+    "regionTypes": [
+      "wilderness"
+    ]
+  },
+  {
+    "id": "scene-quarrel-0-4",
+    "weight": 9,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}渡口因一句旧话顶撞起来。旁人劝开后，{a}先走，走了几步又停，终究没回头。",
+    "regionTypes": [
+      "town"
+    ]
+  },
+  {
+    "id": "scene-quarrel-0-5",
+    "weight": 9,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}丹房外因一句旧话顶撞起来。旁人劝开后，{a}先走，走了几步又停，终究没回头。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-quarrel-0-6",
+    "weight": 9,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}剑冢前因一句旧话顶撞起来。旁人劝开后，{a}先走，走了几步又停，终究没回头。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-quarrel-0-7",
+    "weight": 9,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}灵田边因一句旧话顶撞起来。旁人劝开后，{a}先走，走了几步又停，终究没回头。",
+    "regionTypes": [
+      "town",
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-quarrel-1-0",
+    "weight": 9,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}山门争执门中事务，话越说越冲。最后{b}把声音压下去，只丢下一句「随你」。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-quarrel-1-1",
+    "weight": 9,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}厢房廊下争执门中事务，话越说越冲。最后{b}把声音压下去，只丢下一句「随你」。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-quarrel-1-2",
+    "weight": 9,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}摊位旁争执门中事务，话越说越冲。最后{b}把声音压下去，只丢下一句「随你」。",
+    "regionTypes": [
+      "market"
+    ]
+  },
+  {
+    "id": "scene-quarrel-1-3",
+    "weight": 9,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}林径争执门中事务，话越说越冲。最后{b}把声音压下去，只丢下一句「随你」。",
+    "regionTypes": [
+      "wilderness"
+    ]
+  },
+  {
+    "id": "scene-quarrel-1-4",
+    "weight": 9,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}渡口争执门中事务，话越说越冲。最后{b}把声音压下去，只丢下一句「随你」。",
+    "regionTypes": [
+      "town"
+    ]
+  },
+  {
+    "id": "scene-quarrel-1-5",
+    "weight": 9,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}丹房外争执门中事务，话越说越冲。最后{b}把声音压下去，只丢下一句「随你」。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-quarrel-1-6",
+    "weight": 9,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}剑冢前争执门中事务，话越说越冲。最后{b}把声音压下去，只丢下一句「随你」。",
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "scene-quarrel-1-7",
+    "weight": 9,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}灵田边争执门中事务，话越说越冲。最后{b}把声音压下去，只丢下一句「随你」。",
+    "regionTypes": [
+      "town",
+      "sectBase"
+    ]
+  },
+  {
+    "id": "persona-tag-chicheng-enemy",
+    "weight": 11,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}在{loc}对着{b}明说：今日的账，今日清。",
+    "personalityAny": [
+      "chicheng"
+    ],
+    "tagAny": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "persona-tag-qingleng-enemy",
+    "weight": 11,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}在{loc}看了{b}一眼，便别过脸去。",
+    "personalityAny": [
+      "qingleng"
+    ],
+    "tagAny": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "persona-tag-rechen-enemy",
+    "weight": 11,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}在{loc}仍想劝{b}罢手，话到嘴边又硬了。",
+    "personalityAny": [
+      "rechen"
+    ],
+    "tagAny": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "persona-tag-shuaituo-enemy",
+    "weight": 11,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}在{loc}对{b}摊手：打也行，不打我走。",
+    "personalityAny": [
+      "shuaituo"
+    ],
+    "tagAny": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "persona-tag-zhizhuo-enemy",
+    "weight": 11,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}在{loc}记下{b}的话，说他日必有回应。",
+    "personalityAny": [
+      "zhizhuo"
+    ],
+    "tagAny": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "persona-tag-renhou-enemy",
+    "weight": 11,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}在{loc}仍劝{b}和解，被拒绝后轻轻叹气。",
+    "personalityAny": [
+      "renhou"
+    ],
+    "tagAny": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "persona-tag-jiaojin-enemy",
+    "weight": 11,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}在{loc}对{b}只留一句：「你不配。」",
+    "personalityAny": [
+      "jiaojin"
+    ],
+    "tagAny": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "persona-tag-wenya-enemy",
+    "weight": 11,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}在{loc}对{b}仍保持礼数，只是话里带刺。",
+    "personalityAny": [
+      "wenya"
+    ],
+    "tagAny": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "quarrel-love-2101",
+    "weight": 15,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}拌嘴，话越说越小，刺却越来越尖。散开后谁都没有先回头，脚步却越来越慢。",
+    "tagAny": [
+      "lover",
+      "partner"
+    ]
+  },
+  {
+    "id": "quarrel-love-2102",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "本是约会，却在{loc}因一句误会僵住。{a}想解释，{b}偏不听。",
+    "tagAny": [
+      "lover",
+      "impressed",
+      "friend"
+    ],
+    "tagNone": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "quarrel-love-2103",
+    "weight": 13,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}说你总这样，{b}说你也是。风过{loc}，争吵忽然停住，谁都没再开口。",
+    "tagAny": [
+      "lover",
+      "partner"
+    ]
+  },
+  {
+    "id": "quarrel-love-2104",
+    "weight": 13,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}为护{b}出头，回来却被{b}骂莽撞。两人在{loc}吵得厉害。最后{b}声音发哑，先伸手碰了碰他伤口。",
+    "tagAny": [
+      "lover",
+      "life-debt"
+    ]
+  },
+  {
+    "id": "quarrel-love-2105",
+    "weight": 12,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}迟到，{b}在{loc}等得手冰凉。见面第一句不是关心，是质问。说完两人同时愣住，都听出了自己的慌。",
+    "tagAny": [
+      "lover",
+      "friend",
+      "impressed"
+    ]
+  },
+  {
+    "id": "quarrel-love-2106",
+    "weight": 12,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "冷战第三日，{a}与{b}在{loc}撞见。彼此点头极淡，擦肩后都放慢了步。",
+    "tagAny": [
+      "lover",
+      "partner"
+    ]
+  },
+  {
+    "id": "quarrel-love-2107",
+    "weight": 11,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}因一句试探吵起来。不是恨，是太在意。分开时袖口还残留着对方抓过的褶皱。",
+    "tagAny": [
+      "friend",
+      "impressed"
+    ],
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 28
+  },
+  {
+    "id": "quarrel-chicheng-cause-1",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}因{b}隐瞒伤势，在{loc}当众质问，声音发硬。争到一半却先自己住了声，话锋戛然而止。",
+    "personalityAny": [
+      "chicheng"
+    ],
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "life-debt",
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "quarrel-chicheng-cause-2",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}为是否该冒险争执，谁都不让。散开后{a}仍回头看了一眼，像怕对方真去。",
+    "personalityAny": [
+      "chicheng"
+    ],
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "life-debt",
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "quarrel-qingleng-cause-1",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}因{b}越界插手，在{loc}冷声驳回，话短却刺人。对方怔住，{a}却先移开了视线。",
+    "personalityAny": [
+      "qingleng"
+    ],
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "life-debt",
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "quarrel-qingleng-cause-2",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}因立场不合沉默对峙，谁都不肯先退。最后只丢下一句“随你”，脚步却不稳。",
+    "personalityAny": [
+      "qingleng"
+    ],
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "life-debt",
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "quarrel-rechen-cause-1",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}因{b}泼冷水，在{loc}一时急了，嗓门抬高。争完却立刻后悔，伸手想拦，对方已走开半步。",
+    "personalityAny": [
+      "rechen"
+    ],
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "life-debt",
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "quarrel-rechen-cause-2",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}为行程吵起来，热忱撞上固执。散场后{a}仍念叨“我不是那个意思”。",
+    "personalityAny": [
+      "rechen"
+    ],
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "life-debt",
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "quarrel-shuaituo-cause-1",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}嫌{b}太拘束，在{loc}出言讥刺，对方反唇。争到痛快处，{a}却先收了笑，像被戳中。",
+    "personalityAny": [
+      "shuaituo"
+    ],
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "life-debt",
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "quarrel-shuaituo-cause-2",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}为规矩与自由争执，谁都不服。最后{a}摆手走开，脚步却比平日沉。",
+    "personalityAny": [
+      "shuaituo"
+    ],
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "life-debt",
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "quarrel-zhizhuo-cause-1",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}因{b}半途改主意，在{loc}斥其不专，言辞锋利。对方反驳时，{a}脸沉了下来。",
+    "personalityAny": [
+      "zhizhuo"
+    ],
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "life-debt",
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "quarrel-zhizhuo-cause-2",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}为坚持与变通大吵，谁都不退。散开后仍回头，像要把那句话补完。",
+    "personalityAny": [
+      "zhizhuo"
+    ],
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "life-debt",
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "quarrel-renhou-cause-1",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}因{b}伤人过重，在{loc}少见地沉下脸争执。对方顶了两句，见{a}眼眶发红，竟先软了。",
+    "personalityAny": [
+      "renhou"
+    ],
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "life-debt",
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "quarrel-renhou-cause-2",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}为护短之事起了争执，仁厚撞上意气。散后{a}仍给人留下伤药，未留名。",
+    "personalityAny": [
+      "renhou"
+    ],
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "life-debt",
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "quarrel-jiaojin-cause-1",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}因{b}当众驳了面子，在{loc}冷笑质问，气势压人。争到一半却先失了声，像怕再说重。",
+    "personalityAny": [
+      "jiaojin"
+    ],
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "life-debt",
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "quarrel-jiaojin-cause-2",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}互不相让，骄矜撞上硬气。散开后{a}摔袖而去，手却在发抖。",
+    "personalityAny": [
+      "jiaojin"
+    ],
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "life-debt",
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "quarrel-wenya-cause-1",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}因{b}失礼伤人，在{loc}仍保持礼数，话却一句比一句冷。对方听完，脸先白了。",
+    "personalityAny": [
+      "wenya"
+    ],
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "life-debt",
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "quarrel-wenya-cause-2",
+    "weight": 14,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}争执路线，谁都不肯先失态。散时互道“告辞”，脚步却都放得很重。",
+    "personalityAny": [
+      "wenya"
+    ],
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "life-debt",
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "quarrel-warm-1",
+    "weight": 18,
+    "type": "quarrel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}因一句吃味的话顶撞起来。吵到一半，{b}忽然住声，像怕再说下去就回不了头。",
+    "arcAny": [
+      "warm",
+      "bond",
+      "strain",
+      "mend"
+    ]
+  }
+]

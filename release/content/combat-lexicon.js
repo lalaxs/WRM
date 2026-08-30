@@ -38,7 +38,7 @@
 
   const STAT_KEYS = deepFreeze([
     'maxHp', 'maxQi', 'attack', 'defense', 'accuracy', 'evasion',
-    'critChance', 'critDamage', 'actionIntervalTicks',
+    'critChance', 'critDamage', 'actionIntervalTicks', 'cooldownReduction',
     'damageReduction', 'healingPower', 'healingTaken', 'shieldPower',
     'qiRegen', 'controlAccuracy', 'controlResistance', 'ailmentPower',
     'ailmentResistance', 'cleansePower', 'threatGain', 'protectionWeight'

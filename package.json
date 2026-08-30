@@ -2,7 +2,12 @@
   "name": "xiuxian-idle-h5",
   "private": true,
   "scripts": {
+    "dev": "node scripts/preview.js",
+    "preview": "node scripts/preview.js",
+    "build:event-slots": "node tools/_build_event_slots.js",
+    "build:event-templates": "node tools/_build_event_slots.js && node tools/_build_event_templates.js",
     "test": "node tests/selftest_all.js",
+    "test:runtime": "node tests/selftest_runtime_modules.js",
     "sync-release": "node scripts/sync-release.js",
     "package:h5": "node scripts/package-h5.js"
   }

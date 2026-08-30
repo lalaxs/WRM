@@ -51,7 +51,20 @@
   ]);
   const SUPPLY_SLOTS = Object.freeze(['food', 'pill', 'talisman']);
   const ACTIVE_SLOT_COUNT = 3;
-  const PASSIVE_SLOT_COUNT = 3;
+  const PASSIVE_SLOT_COUNT = 5;
+  const CANONICAL_ENEMY_STATUSES = Object.freeze({
+    shock: true,
+    slow: true,
+    burn: true,
+    poison: true,
+    weaken: true
+  });
+  const CANONICAL_SELF_BUFFS = Object.freeze({
+    haste: true,
+    shield: true,
+    inspire: true,
+    guard: true
+  });
 
   function own(value, key) {
     return Object.prototype.hasOwnProperty.call(value, key);
@@ -391,11 +404,11 @@
   function readCondition(value) {
     if (!plainRecord(value)) return null;
     const type = dataValue(value, 'type');
-    if (type === 'always') {
-      return exactDataKeys(value, ['type']) ? { type: 'always' } : null;
+    if (type === 'always' || type === 'selfMissingShield') {
+      return exactDataKeys(value, ['type']) ? { type: type } : null;
     }
     if (type === 'selfHpBelow' || type === 'enemyHpBelow' ||
-        type === 'selfQiAbove') {
+        type === 'selfQiAbove' || type === 'selfQiBelow') {
       if (!exactDataKeys(value, ['type', 'threshold'])) return null;
       const threshold = dataValue(value, 'threshold');
       const minimum = type === 'selfQiAbove' ? 0 : 0.01;
@@ -406,17 +419,21 @@
         ? { type: type, threshold: threshold }
         : null;
     }
-    if (type === 'enemyHasStatus') {
+    if (type === 'enemyHasStatus' || type === 'enemyMissingStatus') {
       if (!exactDataKeys(value, ['type', 'statusId'])) return null;
       const statusId = dataValue(value, 'statusId');
-      return typeof statusId === 'string' && statusId.trim().length > 0
+      return typeof statusId === 'string' &&
+        statusId.trim().length > 0 &&
+        own(CANONICAL_ENEMY_STATUSES, statusId)
         ? { type: type, statusId: statusId }
         : null;
     }
     if (type === 'selfMissingBuff') {
       if (!exactDataKeys(value, ['type', 'buffId'])) return null;
       const buffId = dataValue(value, 'buffId');
-      return typeof buffId === 'string' && buffId.trim().length > 0
+      return typeof buffId === 'string' &&
+        buffId.trim().length > 0 &&
+        own(CANONICAL_SELF_BUFFS, buffId)
         ? { type: type, buffId: buffId }
         : null;
     }
@@ -913,7 +930,7 @@
         { techniqueId: null, condition: { type: 'always' } },
         { techniqueId: null, condition: { type: 'always' } }
       ],
-      passiveTechniques: [null, null, null],
+      passiveTechniques: [null, null, null, null, null],
       supplies: {
         food: {
           itemId: null,

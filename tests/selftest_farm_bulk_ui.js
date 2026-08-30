@@ -296,9 +296,7 @@ sandbox.window = sandbox;
 sandbox.globalThis = sandbox;
 
 vm.createContext(sandbox);
-vm.runInContext(fs.readFileSync('ui.js', 'utf8'), sandbox, {
-  filename: 'ui.js'
-});
+require('./ui_scripts').loadUiScripts(vm, sandbox);
 
 const styleSource = fs.readFileSync('styles.css', 'utf8');
 const farmFieldCss = cssBlock(styleSource, '.farm-field');

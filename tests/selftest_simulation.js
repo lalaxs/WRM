@@ -817,7 +817,6 @@ const canonicalBoundary = StateModel.normalize({
           instanceId: 'spot-9',
           skillId: 'herb',
           entryId: 'mushroomWood',
-          quality: 'fine',
           capacity: 8,
           remaining: 4
         }
@@ -841,8 +840,9 @@ const canonicalBoundary = StateModel.normalize({
   lastActionStop: { key: 'caiyao', reason: 'manual', atMs: 5999 }
 }, 10000);
 ok(canonicalBoundary.player.inventory.stacks.herbBundle === 9 &&
-   canonicalBoundary.systems.gathering.spots.herb.entryId ===
-     'mushroomWood',
+   canonicalBoundary.systems.gathering.spots.herb[0].entryId ===
+     'mushroomWood' &&
+   !('quality' in canonicalBoundary.systems.gathering.spots.herb[0]),
   'canonical Stage 2 locations override legacy aliases while item aliases merge');
 
 const gatheringMergeInput = {
@@ -860,7 +860,7 @@ const gatheringMergeInput = {
     gathering: {
       spots: JSON.parse(
         '{"herb":{"instanceId":"spot-8","skillId":"herb",' +
-        '"entryId":"mushroomWood","quality":"rare",' +
+        '"entryId":"mushroomWood",' +
         '"capacity":9,"remaining":4},' +
         '"prototype":{"id":"canonical-special"}}'
       ),
@@ -874,10 +874,11 @@ const gatheringMergeInput = {
 const gatheringMergeBefore = JSON.stringify(gatheringMergeInput);
 const gatheringMerged = StateModel.normalize(gatheringMergeInput, 0);
 ok(
-  gatheringMerged.systems.gathering.spots.herb.entryId ===
+  gatheringMerged.systems.gathering.spots.herb[0].entryId ===
     'mushroomWood' &&
-  gatheringMerged.systems.gathering.spots.mining.entryId ===
-    'copper',
+  gatheringMerged.systems.gathering.spots.mining[0].entryId ===
+    'copper' &&
+  !('quality' in gatheringMerged.systems.gathering.spots.herb[0]),
   'legacy and canonical spots merge by key with canonical precedence'
 );
 ok(
@@ -2644,7 +2645,6 @@ const crossVmGathering = browserSandbox.StateModel.normalize({
           instanceId: 'spot-2',
           skillId: 'mining',
           entryId: 'copper',
-          quality: 'common',
           capacity: 4,
           remaining: 3
         }
@@ -2655,11 +2655,12 @@ const crossVmGathering = browserSandbox.StateModel.normalize({
   }
 }, 1);
 ok(
-  crossVmGathering.systems.gathering.spots.herb.entryId ===
+  crossVmGathering.systems.gathering.spots.herb[0].entryId ===
     'parityHerb1' &&
-  crossVmGathering.systems.gathering.spots.mining.entryId ===
+  crossVmGathering.systems.gathering.spots.mining[0].entryId ===
     'copper' &&
-  crossVmGathering.systems.gathering.fishStocks.spiritCarp === 4,
+  crossVmGathering.systems.gathering.fishStocks.spiritCarp === 4 &&
+  !('quality' in crossVmGathering.systems.gathering.spots.mining[0]),
   'browser StateModel merges cross-context gathering records'
 );
 ok(typeof browserSandbox.Simulation.advance === 'function',
@@ -3252,19 +3253,37 @@ const preAnchorV2Load = SaveSystem.load({
     return key === SaveSystem.SNAPSHOT_KEY ? preAnchorV2 : null;
   }
 }, 1500);
-const preAnchorV2Model = StateModel.normalize(
-  preAnchorV2Load.snapshot,
-  1500
-);
 ok(
-  preAnchorV2Load.source === 'snapshot' &&
-    preAnchorV2Load.migrated === true &&
+  preAnchorV2Load.source === 'empty' &&
+    preAnchorV2Load.migrated === false &&
     preAnchorV2Load.writeProtected === false &&
-    preAnchorV2Model.current.elapsedAnchorMs === null &&
-    preAnchorV2Model.player.moodAnchorMs === null &&
-    preAnchorV2Model.systems.gathering.fishRecoverAnchorMs === null &&
-    preAnchorV2Model.systems.world.tickAnchorMs === null,
-  'pre-anchor schema-v2 snapshots remain compatible and lazily establish anchors'
+    preAnchorV2Load.snapshot.player === null,
+  'pre-anchor schema-v2 snapshots are rejected instead of migrated'
+);
+const preAnchorV5 = JSON.parse(JSON.stringify(persistedTimeHalfSnapshot));
+delete preAnchorV5.current.elapsedAnchorMs;
+delete preAnchorV5.current.elapsedBaseSeconds;
+delete preAnchorV5.player.moodAnchorMs;
+delete preAnchorV5.player.moodBase;
+delete preAnchorV5.systems.gathering.fishRecoverAnchorMs;
+delete preAnchorV5.systems.gathering.fishRecoverBaseSeconds;
+delete preAnchorV5.systems.world.tickAnchorMs;
+delete preAnchorV5.systems.world.tickBaseSeconds;
+preAnchorV5.systems.homestead.farm.plots.forEach(function (plot) {
+  delete plot.remainingAnchorMs;
+  delete plot.remainingBaseSeconds;
+});
+preAnchorV5.systems.parallel.jobs.forEach(function (job) {
+  delete job.remainingAnchorMs;
+  delete job.remainingBaseSeconds;
+});
+const preAnchorV5Model = StateModel.normalize(preAnchorV5, 1500);
+ok(
+  preAnchorV5Model.current.elapsedAnchorMs === null &&
+    preAnchorV5Model.player.moodAnchorMs === null &&
+    preAnchorV5Model.systems.gathering.fishRecoverAnchorMs === null &&
+    preAnchorV5Model.systems.world.tickAnchorMs === null,
+  'same-version v5 models without anchors remain compatible and lazily establish anchors'
 );
 const persistedTimeResumed = advanceMillisecondPartitions(
   StateModel.normalize(persistedTimeHalfReloaded, 1500),

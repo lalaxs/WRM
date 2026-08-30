@@ -1,0 +1,276 @@
+=== float consts (VA as used in ADRP+LDR; file = VA-DELTA if in so) ===
+get_exp1s_s2 VA 0x72a614 file 0x726614 = 0.0 raw=0x0
+get_exp1s_s4 VA 0x72a618 file 0x726618 = 2.610551328295338e-37 raw=0x2b1aa38
+getexps_tag2 VA 0x72a5c8 file 0x7265c8 = 0.0 raw=0x0
+getexps_tag19_and_level VA 0x72a6bc file 0x7266bc = 0.0 raw=0x0
+
+=== try raw file offset = VA (no delta) ===
+get_exp1s_s2 file=0x72a614 = 0.05000000074505806
+get_exp1s_s4 file=0x72a618 = 7300.0
+getexps_tag2 file=0x72a5c8 = 1.0499999523162842
+getexps_tag19_and_level file=0x72a6bc = 0.20000000298023224
+
+=== ELF program headers ===
+LOAD flags=0x4 off=0x0 vaddr=0x0 filesz=0x10871b4 memsz=0x10871b4 delta=0x0
+  -> 0x72A614 file 0x72a614 = 0.05000000074505806
+  get_exp1s_s2 = 0.05000000074505806
+  get_exp1s_s4 = 7300.0
+  getexps_tag2 = 1.0499999523162842
+  getexps_tag19_and_level = 0.20000000298023224
+LOAD flags=0x5 off=0x10871b4 vaddr=0x108b1b4 filesz=0x19249ec memsz=0x19249ec delta=0x4000
+LOAD flags=0x6 off=0x29abba0 vaddr=0x29b3ba0 filesz=0x1b5838 memsz=0x1b5838 delta=0x8000
+LOAD flags=0x6 off=0x2b613d8 vaddr=0x2b6d3d8 filesz=0x1b3f58 memsz=0x3d5798 delta=0xc000
+
+0x42c80000 as float = 100.0
+
+==== root.addday dual-cult path @ 0x13ec4f0..0x13ec620 ====
+0x013ec4f0: mov      x0, x20
+0x013ec4f4: mov      x1, xzr
+0x013ec4f8: bl       #0x13cd924
+0x013ec4fc: mov      w1, #2
+0x013ec500: mov      x0, x20
+0x013ec504: mov      x2, xzr
+0x013ec508: mov      v8.16b, v0.16b
+0x013ec50c: bl       #0x13cbbe8
+0x013ec510: ldr      s0, [x20, #0x90]
+0x013ec514: fcmp     s0, s8
+0x013ec518: b.lt     #0x13ec77c
+0x013ec51c: mov      x0, x19
+0x013ec520: mov      x1, x20
+0x013ec524: bl       #0x13f892c
+0x013ec528: tbz      w0, #0, #0x13ec77c
+0x013ec52c: mov      x0, x20
+0x013ec530: mov      x1, xzr
+0x013ec534: bl       #0x13d3c34
+0x013ec538: mov      x0, x19
+0x013ec53c: bl       #0x13e28dc
+0x013ec540: fadd     s0, s8, s0
+0x013ec544: mov      x0, x19
+0x013ec548: bl       #0x13e2930
+0x013ec54c: ldr      s0, [x20, #0x90]
+0x013ec550: fsub     s0, s0, s8
+0x013ec554: b        #0x13ec7a0
+0x013ec558: mov      x0, x20
+0x013ec55c: mov      x1, xzr
+0x013ec560: bl       #0x13cd924
+0x013ec564: ldr      s9, [x20, #0x90]
+0x013ec568: mov      v8.16b, v0.16b
+0x013ec56c: fcmp     s9, s0
+0x013ec570: b.ge     #0x13ec588
+0x013ec574: mov      x0, x20
+0x013ec578: mov      x1, xzr
+0x013ec57c: bl       #0x13cba9c
+0x013ec580: fcmp     s9, s0
+0x013ec584: b.lt     #0x13ec8d8
+0x013ec588: mov      x0, x19
+0x013ec58c: mov      x1, x20
+0x013ec590: bl       #0x13f892c
+0x013ec594: tbz      w0, #0, #0x13ec8d8
+0x013ec598: ldr      s0, [x20, #0x90]
+0x013ec59c: mov      x0, x19
+0x013ec5a0: mov      w1, wzr
+0x013ec5a4: fcmp     s8, s0
+0x013ec5a8: fcsel    s8, s0, s8, gt
+0x013ec5ac: bl       #0x13ef178
+0x013ec5b0: ldrb     w8, [x20, #0xe0]
+0x013ec5b4: cbz      w8, #0x13ec5c4
+0x013ec5b8: mov      x0, x20
+0x013ec5bc: mov      x1, xzr
+0x013ec5c0: bl       #0x13d3c34
+0x013ec5c4: mov      x0, x19
+0x013ec5c8: bl       #0x13e28dc
+0x013ec5cc: fadd     s0, s8, s0
+0x013ec5d0: mov      x0, x19
+0x013ec5d4: bl       #0x13e2930
+0x013ec5d8: ldr      s0, [x20, #0x90]
+0x013ec5dc: mov      x0, x20
+0x013ec5e0: mov      x1, xzr
+0x013ec5e4: fsub     s0, s0, s8
+0x013ec5e8: bl       #0x13cbb28
+0x013ec5ec: ldr      s0, [x20, #0x88]
+0x013ec5f0: mov      x0, x20
+0x013ec5f4: mov      x1, xzr
+0x013ec5f8: fadd     s0, s8, s0
+0x013ec5fc: bl       #0x13cba58
+0x013ec600: ldr      w8, [x20, #0x30]
+0x013ec604: mov      x0, x20
+0x013ec608: mov      x1, xzr
+0x013ec60c: add      w8, w8, #1
+0x013ec610: str      w8, [x20, #0x30]
+0x013ec614: bl       #0x13cc234
+0x013ec618: ldr      s1, [x20, #0x34]
+0x013ec61c: mov      x0, x20
+
+==== root.addday @ 0x13ec740 ====
+0x013ec740: bl       #0x277c1dc
+0x013ec744: scvtf    s0, w0
+0x013ec748: mov      x0, x21
+0x013ec74c: mov      x1, xzr
+0x013ec750: bl       #0x13cc2c8
+0x013ec754: mov      w1, #2
+0x013ec758: mov      x0, x21
+0x013ec75c: mov      x2, xzr
+0x013ec760: bl       #0x13cbbe8
+0x013ec764: mov      x0, x21
+0x013ec768: mov      w1, wzr
+0x013ec76c: mov      x2, xzr
+0x013ec770: bl       #0x13cc098
+0x013ec774: mov      w23, #3
+0x013ec778: b        #0x13ed080
+0x013ec77c: ldr      s0, [x20, #0x88]
+0x013ec780: ldr      s1, [x20, #0xd0]
+0x013ec784: mov      x0, x20
+0x013ec788: mov      x1, xzr
+0x013ec78c: fadd     s0, s0, s1
+0x013ec790: bl       #0x13cba58
+0x013ec794: ldr      s0, [x20, #0x90]
+0x013ec798: ldr      s1, [x20, #0xd0]
+0x013ec79c: fadd     s0, s0, s1
+0x013ec7a0: mov      x0, x20
+0x013ec7a4: mov      x1, xzr
+0x013ec7a8: bl       #0x13cbb28
+0x013ec7ac: ldr      x0, [x27]
+0x013ec7b0: cbz      x0, #0x13ec36c
+0x013ec7b4: ldr      x1, [x22]
+0x013ec7b8: mov      x2, xzr
+0x013ec7bc: bl       #0x13be1f4
+0x013ec7c0: ldr      x8, [x23]
+0x013ec7c4: mov      w21, w0
+0x013ec7c8: ldr      w9, [x8, #0xe0]
+0x013ec7cc: cbnz     w9, #0x13ec7dc
+0x013ec7d0: mov      x0, x8
+0x013ec7d4: bl       #0x1299700
+0x013ec7d8: ldr      x8, [x23]
+0x013ec7dc: ldr      x8, [x8, #0xb8]
+0x013ec7e0: scvtf    s1, w21
+0x013ec7e4: ldr      s0, [x8, #0x158]
+0x013ec7e8: fcmp     s0, s1
+0x013ec7ec: b.pl     #0x13eb820
+0x013ec7f0: ldr      x0, [x27]
+0x013ec7f4: cbz      x0, #0x13ec36c
+0x013ec7f8: ldr      x1, [x22]
+0x013ec7fc: mov      w2, wzr
+0x013ec800: mov      x3, xzr
+0x013ec804: bl       #0x13c8ea4
+0x013ec808: mov      x0, xzr
+0x013ec80c: bl       #0x277c264
+0x013ec810: mov      x0, x19
+0x013ec814: mov      v8.16b, v0.16b
+0x013ec818: bl       #0x13e35f0
+0x013ec81c: ldr      w8, [x20, #0xc4]
+0x013ec820: cmp      w0, w8
+0x013ec824: b.ge     #0x13ecb70
+0x013ec828: adrp     x8, #0x72a000
+0x013ec82c: ldr      s0, [x8, #0x6a4]
+0x013ec830: fcmp     s8, s0
+0x013ec834: b.pl     #0x13ecd70
+0x013ec838: mov      w1, #1
+0x013ec83c: mov      x0, x19
+
+==== root.addday @ 0x13ec880 ====
+0x013ec880: b.eq     #0x13ed228
+0x013ec884: ldr      w9, [x20, #0x74]
+0x013ec888: cmp      w8, #2
+0x013ec88c: str      w9, [x1, #0x24]
+0x013ec890: b.ls     #0x13ed228
+0x013ec894: ldr      w9, [x20, #0x70]
+0x013ec898: cmp      w8, #3
+0x013ec89c: str      w9, [x1, #0x28]
+0x013ec8a0: b.eq     #0x13ed228
+0x013ec8a4: ldr      w8, [x20, #0x1c]
+0x013ec8a8: mov      x0, x19
+0x013ec8ac: str      w8, [x1, #0x2c]
+0x013ec8b0: bl       #0x13f26b4
+0x013ec8b4: ldr      x0, [x21]
+0x013ec8b8: mov      w1, #4
+0x013ec8bc: bl       #0x1299670
+0x013ec8c0: cbz      x0, #0x13ec36c
+0x013ec8c4: ldr      w8, [x0, #0x18]
+0x013ec8c8: mov      x1, x0
+0x013ec8cc: cbz      w8, #0x13ed228
+0x013ec8d0: mov      w9, #0xdf
+0x013ec8d4: b        #0x13ecffc
+0x013ec8d8: mov      w1, #1
+0x013ec8dc: mov      x0, x19
+0x013ec8e0: bl       #0x13ef178
+0x013ec8e4: ldr      s0, [x20, #0x90]
+0x013ec8e8: ldr      s1, [x20, #0xd0]
+0x013ec8ec: mov      x0, x20
+0x013ec8f0: mov      x1, xzr
+0x013ec8f4: fadd     s0, s0, s1
+0x013ec8f8: bl       #0x13cbb28
+0x013ec8fc: ldr      w8, [x20, #0xe4]
+0x013ec900: ldr      w9, [x20, #0x2c]
+0x013ec904: add      w8, w8, #1
+0x013ec908: cmp      w8, w9
+0x013ec90c: str      w8, [x20, #0xe4]
+0x013ec910: b.le     #0x13ecb08
+0x013ec914: mov      x0, x19
+0x013ec918: mov      x1, x20
+0x013ec91c: mov      x2, xzr
+0x013ec920: str      wzr, [x20, #0xe4]
+0x013ec924: bl       #0x13d6b2c
+0x013ec928: b        #0x13ecb08
+0x013ec92c: mov      x0, x20
+0x013ec930: mov      x1, xzr
+0x013ec934: bl       #0x13cc234
+0x013ec938: mov      w8, #0x42c60000
+0x013ec93c: fmov     s1, w8
+0x013ec940: fcmp     s0, s1
+0x013ec944: b.ne     #0x13eca1c
+0x013ec948: mov      x0, x20
+0x013ec94c: mov      x1, xzr
+0x013ec950: bl       #0x13cc98c
+0x013ec954: mov      w8, #0x42200000
+0x013ec958: fmov     s1, w8
+0x013ec95c: fcmp     s0, s1
+0x013ec960: b.lt     #0x13eca1c
+0x013ec964: ldr      x0, [x20, #0x78]
+0x013ec968: cbz      x0, #0x13ec36c
+0x013ec96c: adrp     x21, #0x2b20000
+0x013ec970: ldr      x21, [x21, #0x1e8]
+0x013ec974: mov      w1, #0xd
+0x013ec978: ldr      x2, [x21]
+0x013ec97c: bl       #0x18fbe0c
+
+==== getexps / set_expsx xrefs ====
+getexps called from 0x13cb058
+getexps called from 0x13cb728
+getexps called from 0x13cb940
+getexps called from 0x13d2408
+getexps called from 0x13f0ee8
+
+set_expsx @ 0x13CD91C
+0x013cd914: ldr      s0, [x0, #0x188]
+0x013cd918: ret      
+0x013cd91c: str      s0, [x0, #0x188]
+0x013cd920: b        #0x13cb3fc
+
+==== STR to person+0x188 (_expsx) in game range ====
+STRS @0x13cd91c rt=s0 rn=x0
+
+==== metadata blobs size 40 (10 ints) near known ====
+meta 0x48a9b8 ints=[10, 21, 81, 126, 252, 648, 1004, 4320, 14400, 14400]
+  floats=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+meta 0x48b5d8 ints=[1065353216, 1067030938, 1068708659, 1070386381, 1072064102, 1073741824, 1074580685, 1075419546, 1076258406, 1076258406]
+  floats=[1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.6]
+meta 0x48a660 ints=[1, 2, 3, 4, 5, 6, 7, 8, 9, 9]
+  floats=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+meta 0x48ace8 ints=[0, 5, 0, 0, 7, 0, 0, 12, 0, 0]
+  floats=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+==== dns.init stores to +0x230 (exp) / +0x160 (level_exp1max) / +0x120 ====
+
+=== person+0x21 context: likely packed flags after cc ===
+fields: cc@0x24, _fly@0x28 — 0x10..0x23 may be generated backing for props
+
+==== get_live / get_d / get_leave ====
+-- get_d --
+0x013caa44: ldrb     w0, [x0, #0x20]
+0x013caa48: ret      
+-- get_live --
+0x013cab40: ldrb     w0, [x0, #0x21]
+0x013cab44: ret      
+-- get_leave --
+0x013cadb0: ldrb     w0, [x0, #0x22]
+0x013cadb4: ret      

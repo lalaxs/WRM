@@ -459,6 +459,44 @@
   define(records, 'pillGuard', '丹护心诀', 'passive', 5, ['pill'], 11,
     0, 0, { supplyHealingBonus: 0.15 });
 
+  function assignSect(sectId, ids) {
+    ids.forEach(function (id) {
+      if (records[id]) records[id].sectId = sectId;
+    });
+  }
+
+  assignSect('taixuan-sword', [
+    'cloudPiercingSword', 'returningWaveSword', 'swordHeart',
+    'supremeMysticSword', 'flowingLightThirteen', 'flyingSwordChase',
+    'myriadSwordsSky', 'endlessSwordHeart', 'swordReturnOrigin'
+  ]);
+  assignSect('baicao-valley', [
+    'stopBleedArt', 'boneCorrosionNeedle', 'medicalMind',
+    'clearSpringArt', 'bonePoisonMist', 'woodVitalityArt', 'witheredSpring',
+    'myriadPoisonTrue', 'woodSharedLife'
+  ]);
+  assignSect('tiangong-pavilion', [
+    'spiritArmorArray', 'flameThunderArray', 'earthArrayHeart',
+    'fourSymbolsWard', 'starfallArray', 'spiritLockMechanism',
+    'heavenlyNetLock', 'heavenlyCalculation', 'mechanismMastery'
+  ]);
+  assignSect('spirit-beast-mountain', [
+    'beastWard', 'beastCommandRoar', 'sharedFateBond',
+    'lifeFeedback', 'beastEcho', 'beastWarSpirit', 'hundredBeastRush',
+    'spiritCompanion', 'myriadBeastHeart'
+  ]);
+  assignSect('qingyin-palace', [
+    'calmingMelody', 'crescentSoundBlade', 'clearMindScore',
+    'purifyingMelody', 'tearingSevenStrings', 'springRiverHarmony',
+    'highMountainsFlowingWater', 'killingToneBone', 'lingeringSound'
+  ]);
+  // 红尘阁尚未入可选宗门表，仍标记归属便于日后接入。
+  assignSect('hongchen-pavilion', [
+    'heartLink', 'confusingGaze', 'knowingIntent',
+    'spiritResonance', 'drunkenRedDust', 'longSleeveDance',
+    'allBeingsFavor', 'confusingHeartTrue', 'redDustMirror'
+  ]);
+
   const VALIDATION_POOL_IDS = Object.freeze([
     'stoneBreakingFist', 'returningWindSlash', 'gatheringBreath', 'clearHeartArt',
     'bodyBarrier', 'flowingFirePalm', 'spiritNeedle', 'bindingTalisman',
@@ -523,6 +561,13 @@
     }).filter(Boolean));
   }
 
+  function listBySect(sectId) {
+    if (typeof sectId !== 'string') return Object.freeze([]);
+    return Object.freeze(Object.values(TECHNIQUES).filter(function (row) {
+      return row.sectId === sectId;
+    }));
+  }
+
   // Milky Way Idle cumulative XP to reach each level (Abilities share the skill table).
   // Source: https://milkywayidle.wiki.gg/wiki/Experience and community experience.json
   const MWI_CUMULATIVE_XP = Object.freeze([
@@ -574,6 +619,7 @@
     list: list,
     listValidationPool: listValidationPool,
     listRoadmap: listRoadmap,
+    listBySect: listBySect,
     xpNeed: xpNeed
   });
 });

@@ -164,8 +164,8 @@ files.forEach((file) => {
     filename: file
   });
 });
-vm.runInContext(fs.readFileSync('game.js', 'utf8'), sandbox, {
-  filename: 'game.js'
+['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+  vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
 });
 
 const harness = sandbox.__GameTestHarness;

@@ -9,86 +9,11 @@ const vm = require('vm');
 
 const sourceRoot = path.join(__dirname, '..');
 const releaseRoot = path.join(sourceRoot, 'release');
+const RuntimeModules = require('../runtime-modules.js');
 const packageAssetExtensions = new Set([
   '.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.json'
 ]);
-const runtimeFiles = [
-  'index.html',
-  'game.json',
-  'project.config.json',
-  'platform.js',
-  'AdManager.js',
-  'game.js',
-  'ui.js',
-  'styles.css',
-  'nie-manifest.js',
-  'content/herblore-parity.js',
-  'content/item-art.js',
-  'content/materials.js',
-  'content/combat-lexicon.js',
-  'content/equipment.js',
-  'content/items.js',
-  'content/life-skills.js',
-  'content/gathering.js',
-  'content/recipes.js',
-  'content/homestead.js',
-  'content/combat.js',
-  'content/techniques.js',
-  'content/realms.js',
-  'content/regions.js',
-  'content/sects.js',
-  'content/npc-generation.js',
-  'content/social-interactions.js',
-  'content/event-templates.js',
-  'content/lifecycle.js',
-  'core/stage2-state.js',
-  'core/stage3-state.js',
-  'core/npc-generator.js',
-  'core/npc-roster.js',
-  'core/stage4-state.js',
-  'core/relationships.js',
-  'core/npc-combat-config.js',
-  'core/combat-party.js',
-  'core/random.js',
-  'core/equipment.js',
-  'core/inventory.js',
-  'core/skill-progression.js',
-  'core/social.js',
-  'core/event-engine.js',
-  'core/npc-simulation.js',
-  'core/sect-simulation.js',
-  'core/gathering.js',
-  'core/production.js',
-  'core/farm.js',
-  'core/formations.js',
-  'core/spirit-beasts.js',
-  'core/combat-loadouts.js',
-  'core/techniques.js',
-  'core/combat-stats.js',
-  'core/combat-engine.js',
-  'core/team-combat-snapshot.js',
-  'core/team-combat-engine.js',
-  'core/team-combat-consequences.js',
-  'core/combat-rewards.js',
-  'core/combat-progress.js',
-  'core/breakthrough.js',
-  'core/save-system.js',
-  'core/simulation-report.js',
-  'core/state-model.js',
-  'core/simulation.js',
-  'core/game-rules.js',
-  'core/stage2-rules.js',
-  'core/stage3-rules.js',
-  'core/stage4-rules.js',
-  'core/lineage.js',
-  'core/inheritance-hall.js',
-  'core/legacy-transition.js',
-  'core/stage5-rules.js',
-  ...listPackageAssetFiles('NIE'),
-  ...listPackageAssetFiles('assets')
-];
-const generatedDirectories = ['core', 'content', 'NIE', 'assets'];
-const exactAllowlist = runtimeFiles;
+const generatedDirectories = ['core', 'content', 'ui', 'NIE', 'assets'];
 
 function compareNames(left, right) {
   return left < right ? -1 : left > right ? 1 : 0;
@@ -150,6 +75,9 @@ function listPackageAssetFiles(relativeDirectory) {
     .sort(compareNames);
 }
 
+const runtimeFiles = RuntimeModules.buildPackageFiles(listPackageAssetFiles);
+const exactAllowlist = runtimeFiles;
+
 function verifyReleaseMirror() {
   const errors = [];
   if (!isRealDirectory(releaseRoot)) {
@@ -177,7 +105,7 @@ function verifyReleaseMirror() {
       continue;
     }
 
-    const targetFiles = listRegularFiles(targetDirectory);
+    const targetFiles = listRegularFiles(targetDirectory).sort(compareNames);
     const expectedFiles = runtimeFiles
       .filter((relativePath) =>
         relativePath.startsWith(relativeDirectory + '/')
@@ -281,6 +209,8 @@ function loadSynchronizerForFixture(fixtureRoot, fsModule) {
   const fixtureRequire = function (id) {
     if (id === 'fs') return fsModule;
     if (id === 'path') return path;
+    // sync-release resolves RuntimeModules relative to scripts/
+    if (id === '../runtime-modules.js') return RuntimeModules;
     throw new Error(`unexpected fixture dependency: ${id}`);
   };
   fixtureRequire.main = null;

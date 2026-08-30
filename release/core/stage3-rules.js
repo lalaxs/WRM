@@ -53,6 +53,9 @@
   'use strict';
 
   const TICK_SECONDS = 0.25;
+  // Offline combat advances multiple ticks per simulation step (Melvor-style
+  // O(actions) batching). Online stays at one tick so the UI can animate.
+  const OFFLINE_COMBAT_BATCH_TICKS = 40;
   const EMPTY_SECT = Object.freeze({
     sectId: null,
     favoredTechniqueIds: Object.freeze([]),
@@ -382,6 +385,7 @@
           'amount',
           'critical',
           'techniqueId',
+          'hit',
           'code'
         ]
         : [
@@ -390,7 +394,8 @@
           'targetId',
           'amount',
           'critical',
-          'techniqueId'
+          'techniqueId',
+          'hit'
         ];
       if (!exactKeys(value, keys) ||
           EVENT_TYPES.indexOf(type) < 0 ||
@@ -399,6 +404,7 @@
           !Number.isFinite(dataValue(value, 'amount')) ||
           dataValue(value, 'amount') < 0 ||
           typeof dataValue(value, 'critical') !== 'boolean' ||
+          typeof dataValue(value, 'hit') !== 'boolean' ||
           (dataValue(value, 'techniqueId') !== null &&
            typeof dataValue(value, 'techniqueId') !== 'string') ||
           (warning &&
@@ -629,6 +635,93 @@
       Array.isArray(dataValue(teams, 'enemies'));
   }
 
+  function fxSideForUnit(session, unitId) {
+    if (unitId === 'player') return 'player';
+    if (unitId === 'enemy') return 'enemy';
+    if (isTeamSession(session)) {
+      const allies = dataValue(dataValue(session, 'teams'), 'allies');
+      const enemies = dataValue(dataValue(session, 'teams'), 'enemies');
+      if (Array.isArray(allies)) {
+        for (let index = 0; index < allies.length; index++) {
+          if (dataValue(allies[index], 'id') === unitId) return 'player';
+        }
+      }
+      if (Array.isArray(enemies)) {
+        for (let index = 0; index < enemies.length; index++) {
+          if (dataValue(enemies[index], 'id') === unitId) return 'enemy';
+        }
+      }
+    }
+    if (typeof unitId === 'string' && unitId.indexOf('ally') === 0) {
+      return 'player';
+    }
+    return 'enemy';
+  }
+
+  function appendCombatFxActions(state, session, events) {
+    const system = combatSystem(state);
+    if (!system || !plainRecord(session) || !Array.isArray(events) ||
+        events.length === 0) {
+      return;
+    }
+    if (!Array.isArray(system.fxActions)) system.fxActions = [];
+    let nextId = Number.isSafeInteger(system.nextFxActionId) &&
+      system.nextFxActionId > 0
+      ? system.nextFxActionId
+      : 1;
+    for (let index = 0; index < events.length; index++) {
+      const ev = events[index];
+      if (!plainRecord(ev)) continue;
+      const type = dataValue(ev, 'type');
+      if (type !== 'damage' && type !== 'heal' && type !== 'status' &&
+          type !== 'restore_qi' && type !== 'supply') {
+        continue;
+      }
+      const sourceId = dataValue(ev, 'sourceId');
+      const targetId = dataValue(ev, 'targetId');
+      if (typeof sourceId !== 'string' || typeof targetId !== 'string') {
+        continue;
+      }
+      const techniqueId = dataValue(ev, 'techniqueId');
+      const amount = Number(dataValue(ev, 'amount'));
+      const safeAmount = Number.isFinite(amount) && amount > 0 ? amount : 0;
+      const critical = dataValue(ev, 'critical') === true;
+      const rawHit = dataValue(ev, 'hit');
+      let skillType = 'other';
+      let damage = 0;
+      let heal = 0;
+      let hit = true;
+      if (type === 'damage') {
+        skillType = 'attack';
+        damage = safeAmount;
+        hit = typeof rawHit === 'boolean' ? rawHit : safeAmount > 0;
+      } else if (type === 'heal') {
+        skillType = 'heal';
+        heal = safeAmount;
+        hit = true;
+      } else {
+        skillType = 'other';
+        hit = true;
+      }
+      system.fxActions.push({
+        id: nextId,
+        side: fxSideForUnit(session, sourceId),
+        targetSide: fxSideForUnit(session, targetId),
+        sourceId: sourceId,
+        targetId: targetId,
+        techniqueId: typeof techniqueId === 'string' ? techniqueId : null,
+        skillType: skillType,
+        hit: hit,
+        damage: damage,
+        heal: heal,
+        critical: critical
+      });
+      nextId += 1;
+    }
+    system.nextFxActionId = nextId;
+    while (system.fxActions.length > 48) system.fxActions.shift();
+  }
+
   function startFailure(code, state) {
     return {
       ok: false,
@@ -686,6 +779,10 @@
       'advanceTick',
       'deps.CombatEngine'
     );
+    const createEnemy = safe.CombatEngine &&
+      typeof safe.CombatEngine.createEnemy === 'function'
+      ? safe.CombatEngine.createEnemy
+      : null;
     const startRegion = requireFunction(
       safe.CombatProgress,
       'startRegion',
@@ -867,11 +964,23 @@
         clearSession(state);
         return { status: 'stop', reason: 'injured' };
       }
-      if (combatSystem(state).pendingLoot !== null) {
-        clearSession(state);
-        return { status: 'stop', reason: 'requirements_invalid' };
-      }
+      // 待领取战利品不再清掉战斗；挂机循环继续，仅禁止新开一场（canStart）
       return { status: 'ready', reason: null };
+    }
+
+    function isOfflineSource(helpers) {
+      return !!(helpers &&
+        helpers.report &&
+        helpers.report.source === 'offline');
+    }
+
+    function combatTimeBoundary(state, helpers) {
+      const first = Math.max(
+        0,
+        TICK_SECONDS - finite(state.current.elapsed, 0)
+      );
+      if (!isOfflineSource(helpers)) return first;
+      return first + (OFFLINE_COMBAT_BATCH_TICKS - 1) * TICK_SECONDS;
     }
 
     function elapseCombat(state, seconds) {
@@ -1405,6 +1514,35 @@
       return next;
     }
 
+    function legacyEnemyBase(session, enemyUnit) {
+      const enemyId = dataValue(enemyUnit, 'sourceId');
+      const bossPhase = nonNegativeInteger(dataValue(session, 'bossPhase'))
+        ? dataValue(session, 'bossPhase')
+        : 0;
+      const previous = dataValue(session, 'enemy');
+      if (plainRecord(previous) &&
+          dataValue(previous, 'id') === enemyId &&
+          nonNegativeInteger(dataValue(previous, 'phase')) &&
+          Number.isFinite(dataValue(previous, 'attack')) &&
+          Number.isFinite(dataValue(previous, 'defense')) &&
+          Number.isFinite(dataValue(previous, 'accuracy')) &&
+          Number.isFinite(dataValue(previous, 'evasion')) &&
+          nonNegativeInteger(dataValue(previous, 'attackIntervalTicks')) &&
+          nonNegativeInteger(dataValue(previous, 'cooldownTicks')) &&
+          plainRecord(dataValue(previous, 'buffs')) &&
+          plainRecord(dataValue(previous, 'statuses'))) {
+        return previous;
+      }
+      if (typeof createEnemy !== 'function' || typeof enemyId !== 'string') {
+        return null;
+      }
+      try {
+        return createEnemy(enemyId, bossPhase);
+      } catch (error) {
+        return null;
+      }
+    }
+
     function synchronizeTeamCompatibility(session, exposeEnemy) {
       if (!isTeamSession(session)) return null;
       const player = teamUnit(session, 'allies', 'player');
@@ -1426,12 +1564,14 @@
       if (exposeEnemy === false) {
         next.enemy = null;
       } else {
-        const compatibleEnemy = compatibilityUnit(
-          dataValue(session, 'enemy'),
-          enemy,
-          true
-        );
+        // 间隔结束后旧 enemy 常为 null/残缺；必须重建完整 actor，否则第二场击杀会校验失败并清会话
+        const baseEnemy = legacyEnemyBase(session, enemy);
+        const compatibleEnemy = compatibilityUnit(baseEnemy, enemy, true);
         if (!compatibleEnemy) return null;
+        const bossPhase = nonNegativeInteger(dataValue(session, 'bossPhase'))
+          ? dataValue(session, 'bossPhase')
+          : 0;
+        compatibleEnemy.phase = bossPhase;
         next.enemy = compatibleEnemy;
       }
       return next;
@@ -1580,7 +1720,7 @@
       return true;
     }
 
-    function completeCombat(state, descriptor, helpers) {
+    function completeCombatOnce(state, descriptor, helpers) {
       const session = activeSession(state);
       if (!session) {
         clearSession(state);
@@ -1600,11 +1740,20 @@
           }
           return { stopReason: null };
         }
-        const tick = certifiedFrozenCall(
-          teamAdvanceTick,
-          trustedTeamAdvanceTick || teamAdvanceTick,
-          [session, { rngState: state.rngState }]
-        );
+        let tick;
+        if (isOfflineSource(helpers)) {
+          try {
+            tick = teamAdvanceTick(session, { rngState: state.rngState });
+          } catch (error) {
+            tick = null;
+          }
+        } else {
+          tick = certifiedFrozenCall(
+            teamAdvanceTick,
+            trustedTeamAdvanceTick || teamAdvanceTick,
+            [session, { rngState: state.rngState }]
+          );
+        }
         if (!tick || tick.ok !== true ||
             !isTeamSession(tick.session) ||
             !uint32(tick.rngState) ||
@@ -1629,6 +1778,9 @@
         helpers.report.combat.ticks++;
         helpers.report.combat.damageDealt += tick.metrics.damageDealt || 0;
         helpers.report.combat.damageTaken += tick.metrics.damageTaken || 0;
+        if (!isOfflineSource(helpers)) {
+          appendCombatFxActions(state, synchronized, tick.events);
+        }
         if (tick.outcome === 'continue') return { stopReason: null };
         const consequence = certifiedFrozenCall(
           applyTeamConsequences,
@@ -1702,8 +1854,10 @@
           clearSession(state);
           return { stopReason: 'requirements_invalid' };
         }
-        if (progress.code === 'requirements_invalid') {
+        if (progress.warning) {
           addWarning(candidateReport, progress.warning);
+        }
+        if (progress.code === 'requirements_invalid') {
           candidateReport.combat.retreatReason =
             progress.warning || 'requirements_invalid';
           replaceRecord(state, candidate);
@@ -1754,28 +1908,56 @@
       }
 
       let tick;
-      tick = certifiedFrozenCall(
-        advanceTick,
-        trustedAdvanceTick,
-        [
+      if (isOfflineSource(helpers)) {
+        // Offline hot path: one engine call, no dual certification / deep
+        // canonical clones. Semantics still come from the same advanceTick.
+        try {
+          tick = advanceTick(
+            session,
+            {
+              playerInventory: state.player.inventory,
+              rngState: state.rngState
+            }
+          );
+        } catch (error) {
+          tick = null;
+        }
+        if (!tick ||
+            tick.ok !== true ||
+            TICK_OUTCOMES.indexOf(tick.outcome) < 0 ||
+            !uint32(tick.rngState) ||
+            !tick.session ||
+            !tick.playerInventory ||
+            !tick.gains ||
+            !tick.costs ||
+            !tick.metrics) {
+          clearSession(state);
+          return { stopReason: 'requirements_invalid' };
+        }
+      } else {
+        tick = certifiedFrozenCall(
+          advanceTick,
+          trustedAdvanceTick,
+          [
+            session,
+            {
+              playerInventory: state.player.inventory,
+              rngState: state.rngState
+            }
+          ]
+        );
+        tick = validateTick(
           session,
-          {
-            playerInventory: state.player.inventory,
-            rngState: state.rngState
-          }
-        ]
-      );
-      tick = validateTick(
-        session,
-        state.player.inventory,
-        tick
-      );
-      if (!tick) {
-        clearSession(state);
-        return { stopReason: 'requirements_invalid' };
+          state.player.inventory,
+          tick
+        );
+        if (!tick) {
+          clearSession(state);
+          return { stopReason: 'requirements_invalid' };
+        }
       }
       if (tick.outcome === 'continue' &&
-          Object.keys(tick.gains.techniqueXp).length === 0) {
+          Object.keys(tick.gains.techniqueXp || {}).length === 0) {
         if (!reportEngine(helpers.report, tick)) {
           clearSession(state);
           return { stopReason: 'requirements_invalid' };
@@ -1784,6 +1966,9 @@
         state.systems.combat.session = tick.session;
         state.player.inventory = tick.playerInventory;
         state.rngState = tick.rngState;
+        if (!isOfflineSource(helpers)) {
+          appendCombatFxActions(state, tick.session, tick.events);
+        }
         return { stopReason: null };
       }
 
@@ -1818,6 +2003,9 @@
         return { stopReason: 'requirements_invalid' };
       }
       candidate = xpState;
+      if (!isOfflineSource(helpers)) {
+        appendCombatFxActions(candidate, tick.session, tick.events);
+      }
 
       if (tick.outcome === 'continue') {
         replaceRecord(state, candidate);
@@ -1895,8 +2083,10 @@
         clearSession(state);
         return { stopReason: 'requirements_invalid' };
       }
-      if (progress.code === 'requirements_invalid') {
+      if (progress.warning) {
         addWarning(candidateReport, progress.warning);
+      }
+      if (progress.code === 'requirements_invalid') {
         candidateReport.combat.retreatReason =
           progress.warning || 'requirements_invalid';
         replaceRecord(state, candidate);
@@ -1908,6 +2098,38 @@
       return { stopReason: null };
     }
 
+    function completeCombat(state, descriptor, helpers) {
+      if (!isOfflineSource(helpers)) {
+        return completeCombatOnce(state, descriptor, helpers);
+      }
+      const endMs = helpers.nowMs();
+      let result = { stopReason: null };
+      let guard = 0;
+      const maxBatch = OFFLINE_COMBAT_BATCH_TICKS + 2;
+      while (
+        state.current &&
+        activeSession(state) &&
+        finite(state.current.elapsed, 0) + 1e-12 >= TICK_SECONDS &&
+        guard < maxBatch
+      ) {
+        guard++;
+        const remainingElapsed = finite(state.current.elapsed, 0);
+        const tickEndMs = endMs -
+          Math.max(0, remainingElapsed - TICK_SECONDS) * 1000;
+        const tickHelpers = {
+          report: helpers.report,
+          random: helpers.random,
+          stopCurrent: helpers.stopCurrent,
+          nowMs: function () {
+            return tickEndMs;
+          }
+        };
+        result = completeCombatOnce(state, descriptor, tickHelpers);
+        if (result && result.stopReason != null) break;
+      }
+      return result;
+    }
+
     const rules = Object.freeze({
       start: start,
       getAction: getAction,
@@ -1915,10 +2137,7 @@
         if (selectedRules(descriptor) !== rules) {
           return baseRules.nextBoundary(state, descriptor, helpers);
         }
-        return Math.max(
-          0,
-          TICK_SECONDS - finite(state.current.elapsed, 0)
-        );
+        return combatTimeBoundary(state, helpers);
       },
       elapse: function (state, descriptor, seconds, helpers) {
         if (selectedRules(descriptor) !== rules) {

@@ -1,0 +1,9 @@
+[
+  {
+    "id": "found-0120",
+    "weight": 6,
+    "type": "found",
+    "actors": "pair",
+    "template": "{a}在{loc}找回失联多日的{b}，两人相对无言。"
+  }
+]

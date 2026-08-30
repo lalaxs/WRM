@@ -16,9 +16,14 @@
     return model && model.systems && model.systems.npcs &&
       model.systems.npcs.records && model.systems.npcs.records[npcId] || null;
   }
+  function relationshipsApi() {
+    return Relationships ||
+      (typeof globalThis !== 'undefined' ? globalThis.Relationships : null);
+  }
   function pair(model, npcId) {
-    return Relationships && Relationships.queryPair
-      ? Relationships.queryPair(model, 'player', npcId)
+    const api = relationshipsApi();
+    return api && api.queryPair
+      ? api.queryPair(model, 'player', npcId)
       : null;
   }
   function eligible(model, npcId) {
@@ -40,8 +45,9 @@
     const team = systems.teamCombat || { companionIds: [null, null, null] };
     const records = systems.npcs && systems.npcs.records || {};
     const ids = Object.keys(records);
-    const pairs = Relationships && typeof Relationships.queryPairs === 'function'
-      ? Relationships.queryPairs(model, 'player', ids)
+    const api = relationshipsApi();
+    const pairs = api && typeof api.queryPairs === 'function'
+      ? api.queryPairs(model, 'player', ids)
       : null;
     return {
       slots: team.companionIds.map(function (npcId, slotIndex) {
@@ -53,10 +59,11 @@
         };
       }),
       eligible: ids.filter(function (npcId) {
-        return eligibleParts(records[npcId], pairs ? pairs[npcId] : pair(model, npcId));
+        const relation = pairs && pairs[npcId] ? pairs[npcId] : pair(model, npcId);
+        return eligibleParts(records[npcId], relation);
       }).map(function (npcId) {
         const person = npc(model, npcId);
-        const relation = pairs ? pairs[npcId] : pair(model, npcId);
+        const relation = pairs && pairs[npcId] ? pairs[npcId] : pair(model, npcId);
         const metrics = relation.firstToSecond || {};
         return {
           npcId: npcId,

@@ -53,6 +53,10 @@
   'use strict';
 
   const TICK_SECONDS = 0.25;
+  // Offline combat advances multiple ticks per simulation step (Melvor-style
+  // O(actions) batching). Online stays at one tick so the UI can animate.
+  // 480 tick ≈ 120s 战斗；12h 离线约 360 次 complete，显著低于旧值 40（约 4320 次）。
+  const OFFLINE_COMBAT_BATCH_TICKS = 480;
   const EMPTY_SECT = Object.freeze({
     sectId: null,
     favoredTechniqueIds: Object.freeze([]),
@@ -776,11 +780,10 @@
       'advanceTick',
       'deps.CombatEngine'
     );
-    const createEnemy = requireFunction(
-      safe.CombatEngine,
-      'createEnemy',
-      'deps.CombatEngine'
-    );
+    const createEnemy = safe.CombatEngine &&
+      typeof safe.CombatEngine.createEnemy === 'function'
+      ? safe.CombatEngine.createEnemy
+      : null;
     const startRegion = requireFunction(
       safe.CombatProgress,
       'startRegion',
@@ -964,6 +967,21 @@
       }
       // 待领取战利品不再清掉战斗；挂机循环继续，仅禁止新开一场（canStart）
       return { status: 'ready', reason: null };
+    }
+
+    function isOfflineSource(helpers) {
+      return !!(helpers &&
+        helpers.report &&
+        helpers.report.source === 'offline');
+    }
+
+    function combatTimeBoundary(state, helpers) {
+      const first = Math.max(
+        0,
+        TICK_SECONDS - finite(state.current.elapsed, 0)
+      );
+      if (!isOfflineSource(helpers)) return first;
+      return first + (OFFLINE_COMBAT_BATCH_TICKS - 1) * TICK_SECONDS;
     }
 
     function elapseCombat(state, seconds) {
@@ -1703,7 +1721,7 @@
       return true;
     }
 
-    function completeCombat(state, descriptor, helpers) {
+    function completeCombatOnce(state, descriptor, helpers) {
       const session = activeSession(state);
       if (!session) {
         clearSession(state);
@@ -1723,11 +1741,20 @@
           }
           return { stopReason: null };
         }
-        const tick = certifiedFrozenCall(
-          teamAdvanceTick,
-          trustedTeamAdvanceTick || teamAdvanceTick,
-          [session, { rngState: state.rngState }]
-        );
+        let tick;
+        if (isOfflineSource(helpers)) {
+          try {
+            tick = teamAdvanceTick(session, { rngState: state.rngState });
+          } catch (error) {
+            tick = null;
+          }
+        } else {
+          tick = certifiedFrozenCall(
+            teamAdvanceTick,
+            trustedTeamAdvanceTick || teamAdvanceTick,
+            [session, { rngState: state.rngState }]
+          );
+        }
         if (!tick || tick.ok !== true ||
             !isTeamSession(tick.session) ||
             !uint32(tick.rngState) ||
@@ -1752,7 +1779,9 @@
         helpers.report.combat.ticks++;
         helpers.report.combat.damageDealt += tick.metrics.damageDealt || 0;
         helpers.report.combat.damageTaken += tick.metrics.damageTaken || 0;
-        appendCombatFxActions(state, synchronized, tick.events);
+        if (!isOfflineSource(helpers)) {
+          appendCombatFxActions(state, synchronized, tick.events);
+        }
         if (tick.outcome === 'continue') return { stopReason: null };
         const consequence = certifiedFrozenCall(
           applyTeamConsequences,
@@ -1880,28 +1909,56 @@
       }
 
       let tick;
-      tick = certifiedFrozenCall(
-        advanceTick,
-        trustedAdvanceTick,
-        [
+      if (isOfflineSource(helpers)) {
+        // Offline hot path: one engine call, no dual certification / deep
+        // canonical clones. Semantics still come from the same advanceTick.
+        try {
+          tick = advanceTick(
+            session,
+            {
+              playerInventory: state.player.inventory,
+              rngState: state.rngState
+            }
+          );
+        } catch (error) {
+          tick = null;
+        }
+        if (!tick ||
+            tick.ok !== true ||
+            TICK_OUTCOMES.indexOf(tick.outcome) < 0 ||
+            !uint32(tick.rngState) ||
+            !tick.session ||
+            !tick.playerInventory ||
+            !tick.gains ||
+            !tick.costs ||
+            !tick.metrics) {
+          clearSession(state);
+          return { stopReason: 'requirements_invalid' };
+        }
+      } else {
+        tick = certifiedFrozenCall(
+          advanceTick,
+          trustedAdvanceTick,
+          [
+            session,
+            {
+              playerInventory: state.player.inventory,
+              rngState: state.rngState
+            }
+          ]
+        );
+        tick = validateTick(
           session,
-          {
-            playerInventory: state.player.inventory,
-            rngState: state.rngState
-          }
-        ]
-      );
-      tick = validateTick(
-        session,
-        state.player.inventory,
-        tick
-      );
-      if (!tick) {
-        clearSession(state);
-        return { stopReason: 'requirements_invalid' };
+          state.player.inventory,
+          tick
+        );
+        if (!tick) {
+          clearSession(state);
+          return { stopReason: 'requirements_invalid' };
+        }
       }
       if (tick.outcome === 'continue' &&
-          Object.keys(tick.gains.techniqueXp).length === 0) {
+          Object.keys(tick.gains.techniqueXp || {}).length === 0) {
         if (!reportEngine(helpers.report, tick)) {
           clearSession(state);
           return { stopReason: 'requirements_invalid' };
@@ -1910,7 +1967,9 @@
         state.systems.combat.session = tick.session;
         state.player.inventory = tick.playerInventory;
         state.rngState = tick.rngState;
-        appendCombatFxActions(state, tick.session, tick.events);
+        if (!isOfflineSource(helpers)) {
+          appendCombatFxActions(state, tick.session, tick.events);
+        }
         return { stopReason: null };
       }
 
@@ -1945,7 +2004,9 @@
         return { stopReason: 'requirements_invalid' };
       }
       candidate = xpState;
-      appendCombatFxActions(candidate, tick.session, tick.events);
+      if (!isOfflineSource(helpers)) {
+        appendCombatFxActions(candidate, tick.session, tick.events);
+      }
 
       if (tick.outcome === 'continue') {
         replaceRecord(state, candidate);
@@ -2038,6 +2099,38 @@
       return { stopReason: null };
     }
 
+    function completeCombat(state, descriptor, helpers) {
+      if (!isOfflineSource(helpers)) {
+        return completeCombatOnce(state, descriptor, helpers);
+      }
+      const endMs = helpers.nowMs();
+      let result = { stopReason: null };
+      let guard = 0;
+      const maxBatch = OFFLINE_COMBAT_BATCH_TICKS + 2;
+      while (
+        state.current &&
+        activeSession(state) &&
+        finite(state.current.elapsed, 0) + 1e-12 >= TICK_SECONDS &&
+        guard < maxBatch
+      ) {
+        guard++;
+        const remainingElapsed = finite(state.current.elapsed, 0);
+        const tickEndMs = endMs -
+          Math.max(0, remainingElapsed - TICK_SECONDS) * 1000;
+        const tickHelpers = {
+          report: helpers.report,
+          random: helpers.random,
+          stopCurrent: helpers.stopCurrent,
+          nowMs: function () {
+            return tickEndMs;
+          }
+        };
+        result = completeCombatOnce(state, descriptor, tickHelpers);
+        if (result && result.stopReason != null) break;
+      }
+      return result;
+    }
+
     const rules = Object.freeze({
       start: start,
       getAction: getAction,
@@ -2045,10 +2138,7 @@
         if (selectedRules(descriptor) !== rules) {
           return baseRules.nextBoundary(state, descriptor, helpers);
         }
-        return Math.max(
-          0,
-          TICK_SECONDS - finite(state.current.elapsed, 0)
-        );
+        return combatTimeBoundary(state, helpers);
       },
       elapse: function (state, descriptor, seconds, helpers) {
         if (selectedRules(descriptor) !== rules) {

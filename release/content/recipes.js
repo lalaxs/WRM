@@ -29,21 +29,36 @@
     return null;
   }
 
-  const MATERIAL_CONTENT = loadMaterialContent();
+  function loadFishingParityContent() {
+    if (typeof globalThis !== 'undefined' && globalThis.FishingParityContent) {
+      return globalThis.FishingParityContent;
+    }
+    if (typeof require === 'function') {
+      try {
+        return require('./fishing-parity.js');
+      } catch (err) {
+        return null;
+      }
+    }
+    return null;
+  }
 
-  const FISH_SPECIES_ORDER = [
-    'spiritCarp', 'spiritShrimp', 'silverTrout', 'greenBass', 'darkCatfish',
-    'sunsetSalmon', 'thunderEel', 'spiritLobster', 'swordfish', 'dragonFish'
-  ];
+  const MATERIAL_CONTENT = loadMaterialContent();
+  const FISHING_PARITY_CONTENT = loadFishingParityContent();
+
+  const FISH_SPECIES_ORDER = FISHING_PARITY_CONTENT && FISHING_PARITY_CONTENT.COOKABLE
+    ? Object.keys(FISHING_PARITY_CONTENT.COOKABLE)
+    : [
+      'spiritCarp', 'spiritShrimp', 'silverTrout', 'greenBass', 'darkCatfish',
+      'sunsetSalmon', 'thunderEel', 'spiritLobster', 'swordfish', 'dragonFish'
+    ];
   const LEGACY_PROTOTYPE_RECIPE_IDS = deepFreeze([
     'alchemy:healingPill', 'alchemy:qiGatheringPill',
     'alchemy:foundationPill', 'alchemy:goldCorePill',
     'alchemy:nascentSoulPill', 'alchemy:spiritTransformationPill',
     'alchemy:voidRefiningPill', 'alchemy:bodyIntegrationPill',
     'alchemy:mahayanaPill',
-    'cooking:grilledCarp', 'cooking:shrimpSoup', 'cooking:spiritRiceMeal',
-    'cooking:troutFeast', 'cooking:lobsterBanquet',
-    'cooking:dragonFishBanquet', 'cooking:beastFeed',
+    'cooking:shrimpSoup',
     'talisman:talismanPaper', 'talisman:gatheringTalisman',
     'talisman:hasteTalisman', 'talisman:wardTalisman',
     'talisman:healingTalisman', 'talisman:beastLureTalisman'
@@ -125,27 +140,6 @@
     define('forging', 'formationBase', '阵基', 20, 20,
       { jadeShard: 3, spiritWood: 3 }),
 
-    define('cooking', 'grilledCarp', '烤灵鲤', 1, 6,
-      { spiritCarp: 2 }),
-    define('cooking', 'shrimpSoup', '灵虾汤', 5, 8,
-      { spiritShrimp: 2, spiritMushroom: 1 }),
-    define('cooking', 'spiritRiceMeal', '灵米饭', 10, 10,
-      { spiritRice: 3, spiritHoney: 1 }),
-    define('cooking', 'troutFeast', '银鳟宴', 20, 14,
-      { silverTrout: 2, lingzhi: 1 }),
-    define('cooking', 'lobsterBanquet', '灵龙虾宴', 40, 22,
-      { spiritLobster: 2, spiritFruit: 1 }),
-    define('cooking', 'dragonFishBanquet', '龙鱼宴', 70, 36,
-      { dragonFish: 1, bloodGinsengFruit: 1, goldenLingzhi: 1 }),
-    define('cooking', 'beastFeed', '灵兽口粮', 12, 10,
-      { spiritRice: 2 }, {
-        outputQuantity: 2,
-        ingredientChoices: [{
-          quantity: 1,
-          itemIds: FISH_SPECIES_ORDER.slice()
-        }]
-      }),
-
     define('talisman', 'talismanPaper', '空白符纸', 1, 8,
       { willowWood: 2 }, { outputQuantity: 4 }),
     define('talisman', 'gatheringTalisman', '采灵符', 5, 10,
@@ -171,6 +165,30 @@
       { formationBase: 1, beastHide: 2, spiritEgg: 2 })
   ];
 
+  if (!(FISHING_PARITY_CONTENT && typeof FISHING_PARITY_CONTENT.recipeRows === 'function')) {
+    rows.push(
+      define('cooking', 'grilledCarp', '烤灵鲤', 1, 6, { spiritCarp: 2 }),
+      define('cooking', 'shrimpSoup', '灵虾汤', 5, 8,
+        { spiritShrimp: 2, spiritMushroom: 1 }),
+      define('cooking', 'spiritRiceMeal', '灵米饭', 10, 10,
+        { spiritRice: 3, spiritHoney: 1 }),
+      define('cooking', 'troutFeast', '银鳟宴', 20, 14,
+        { silverTrout: 2, lingzhi: 1 }),
+      define('cooking', 'lobsterBanquet', '灵龙虾宴', 40, 22,
+        { spiritLobster: 2, spiritFruit: 1 }),
+      define('cooking', 'dragonFishBanquet', '龙鱼宴', 70, 36,
+        { dragonFish: 1, bloodGinsengFruit: 1, goldenLingzhi: 1 }),
+      define('cooking', 'beastFeed', '灵兽口粮', 12, 10,
+        { spiritRice: 2 }, {
+          outputQuantity: 2,
+          ingredientChoices: [{
+            quantity: 1,
+            itemIds: FISH_SPECIES_ORDER.slice()
+          }]
+        })
+    );
+  }
+
   const materialRecipes = MATERIAL_CONTENT && typeof MATERIAL_CONTENT.recipeRows === 'function'
     ? MATERIAL_CONTENT.recipeRows()
     : [];
@@ -186,18 +204,34 @@
     ));
   });
 
+  const fishingRecipes = FISHING_PARITY_CONTENT &&
+    typeof FISHING_PARITY_CONTENT.recipeRows === 'function'
+    ? FISHING_PARITY_CONTENT.recipeRows()
+    : [];
+  fishingRecipes.forEach(function (recipe) {
+    rows.push(define(
+      recipe.skillId,
+      recipe.outputId,
+      recipe.name,
+      recipe.unlockLevel,
+      recipe.baseSeconds,
+      recipe.ingredients,
+      recipe.options
+    ));
+  });
+
+  // Keep a hidden legacy alias for old shrimpSoup inventory/tooltips.
+  rows.push(define('cooking', 'shrimpSoup', '灵虾汤', 5, 8,
+    { spiritShrimp: 2, spiritMushroom: 1 }));
+
+  const RECIPES = {};
   rows.forEach(function (recipe) {
     if (LEGACY_PROTOTYPE_RECIPE_ID_SET.has(recipe.id)) {
       recipe.legacyDesign = true;
       recipe.designStatus = 'legacy_prototype';
     }
+    RECIPES[recipe.id] = deepFreeze(recipe);
   });
-
-  const records = {};
-  rows.forEach(function (recipe) {
-    records[recipe.id] = recipe;
-  });
-  const RECIPES = deepFreeze(records);
 
   function get(recipeId) {
     return RECIPES[recipeId] || null;
@@ -224,11 +258,44 @@
     list(null, options).forEach(visitor);
   }
 
+  function syncFromMaterials() {
+    const materialApi = (typeof globalThis !== 'undefined' && globalThis.MaterialContent)
+      ? globalThis.MaterialContent
+      : MATERIAL_CONTENT;
+    if (!materialApi || typeof materialApi.recipeRows !== 'function') {
+      return { ok: false, added: 0 };
+    }
+    let added = 0;
+    materialApi.recipeRows().forEach(function (recipe) {
+      if (!recipe || !recipe.skillId || !recipe.outputId) return;
+      const id = recipe.skillId + ':' + recipe.outputId;
+      if (RECIPES[id]) return;
+      const built = define(
+        recipe.skillId,
+        recipe.outputId,
+        recipe.name,
+        recipe.unlockLevel,
+        recipe.baseSeconds,
+        recipe.ingredients,
+        recipe.options
+      );
+      if (LEGACY_PROTOTYPE_RECIPE_ID_SET.has(built.id)) {
+        built.legacyDesign = true;
+        built.designStatus = 'legacy_prototype';
+      }
+      RECIPES[built.id] = deepFreeze(built);
+      added += 1;
+    });
+    return { ok: true, added: added };
+  }
+
   return Object.freeze({
     RECIPES: RECIPES,
     LEGACY_PROTOTYPE_RECIPE_IDS: LEGACY_PROTOTYPE_RECIPE_IDS,
     get: get,
     list: list,
-    eachRecipe: eachRecipe
+    eachRecipe: eachRecipe,
+    syncFromMaterials: syncFromMaterials,
+    absorbHerbloreParity: syncFromMaterials
   });
 });

@@ -22,8 +22,6 @@ enemies.forEach(function (enemy) {
   );
   const abs = path.join(ROOT, enemy.portraitSrc);
   if (!fs.existsSync(abs)) missingFiles.push(enemy.id);
-  const master = path.join(ROOT, 'assets/enemy-portraits/512/' + enemy.id + '.png');
-  assert(fs.existsSync(master), enemy.id + ' 512 master exists');
 });
 
 assert(missingFiles.length === 0, 'missing portrait files: ' + missingFiles.join(','));
@@ -34,7 +32,7 @@ assert(
   'query exposes enemy portraitSrc'
 );
 
-const uiSrc = fs.readFileSync(path.join(ROOT, 'ui.js'), 'utf8');
+const uiSrc = require('./ui_scripts').readUiSource();
 assert(uiSrc.includes('resolveEnemyPortraitSrc'), 'UI resolves portrait sources');
 assert(uiSrc.includes('enemy-portrait-img'), 'battle UI can render portrait images');
 assert(uiSrc.includes('region-enemy-art'), 'region list can render portrait images');

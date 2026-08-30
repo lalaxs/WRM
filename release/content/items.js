@@ -27,6 +27,18 @@
     return null;
   }
 
+  function loadFishingParityContent() {
+    if (typeof FishingParityContent !== 'undefined') return FishingParityContent;
+    if (typeof require === 'function') {
+      try {
+        return require('./fishing-parity.js');
+      } catch (error) {
+        return null;
+      }
+    }
+    return null;
+  }
+
   function loadItemArtContent() {
     if (typeof ItemArtContent !== 'undefined') return ItemArtContent;
     if (typeof require === 'function') {
@@ -40,11 +52,16 @@
   }
 
   const MATERIAL_CONTENT = loadMaterialContent();
+  const FISHING_PARITY_CONTENT = loadFishingParityContent();
   const ITEM_ART_CONTENT = loadItemArtContent();
-  const MATERIAL_ITEM_ROWS = MATERIAL_CONTENT &&
+  const MATERIAL_ITEM_ROWS = (MATERIAL_CONTENT &&
     typeof MATERIAL_CONTENT.itemRows === 'function'
     ? MATERIAL_CONTENT.itemRows()
-    : [];
+    : []).concat(
+    FISHING_PARITY_CONTENT && typeof FISHING_PARITY_CONTENT.itemRows === 'function'
+      ? FISHING_PARITY_CONTENT.itemRows()
+      : []
+  );
   const MATERIAL_ITEMS_BY_ID = {};
   MATERIAL_ITEM_ROWS.forEach(function (row) {
     if (row && typeof row.id === 'string') {
@@ -187,20 +204,117 @@
     ascensionBlade: '飞升刃',
     heavenlyRobe: '天劫仙衣',
     immortalJade: '登仙玉',
-    'techniqueBook:cloudPiercingSword': '穿云剑诀秘卷',
-    'techniqueBook:returningWindSlash': '回风斩秘卷',
     'techniqueBook:stoneBreakingFist': '碎石拳秘卷',
-    'techniqueBook:spiritNeedle': '灵犀针秘卷',
-    'techniqueBook:clearHeartArt': '清心诀秘卷',
-    'techniqueBook:gatheringBreath': '聚息功秘卷',
-    'techniqueBook:thunderSeal': '雷印秘卷',
-    'techniqueBook:bindingTalisman': '定身符法秘卷',
-    'techniqueBook:beastEcho': '灵兽回响秘卷',
-    'techniqueBook:starfallArray': '星落阵诀秘卷',
+    'techniqueBook:returningWindSlash': '回风斩秘卷',
+    'techniqueBook:gatheringBreath': '小周天吐纳术秘卷',
+    'techniqueBook:clearHeartArt': '回春术秘卷',
+    'techniqueBook:bodyBarrier': '护体罡气秘卷',
+    'techniqueBook:flowingFirePalm': '流火掌秘卷',
+    'techniqueBook:spiritNeedle': '破甲指秘卷',
+    'techniqueBook:bindingTalisman': '缚灵术秘卷',
+    'techniqueBook:cloudPiercingSword': '穿云破岳剑秘卷',
+    'techniqueBook:returningWaveSword': '回风叠浪剑秘卷',
+    'techniqueBook:stopBleedArt': '止血回元术秘卷',
+    'techniqueBook:boneCorrosionNeedle': '腐骨针秘卷',
+    'techniqueBook:spiritArmorArray': '灵甲符阵秘卷',
+    'techniqueBook:flameThunderArray': '炎雷阵秘卷',
+    'techniqueBook:beastWard': '灵契护主秘卷',
+    'techniqueBook:beastCommandRoar': '裂阵兽吼秘卷',
+    'techniqueBook:calmingMelody': '宁神曲秘卷',
+    'techniqueBook:crescentSoundBlade': '弦月音刃秘卷',
+    'techniqueBook:heartLink': '同心引秘卷',
+    'techniqueBook:confusingGaze': '迷心眸秘卷',
     'techniqueBook:steadyBreath': '稳息心法秘卷',
     'techniqueBook:ironBody': '铁身功秘卷',
+    'techniqueBook:sharpEye': '明目诀秘卷',
     'techniqueBook:swiftShadow': '疾影诀秘卷',
-    'techniqueBook:swordHeart': '剑心通明秘卷',
+    'techniqueBook:nurtureEssence': '养元诀秘卷',
+    'techniqueBook:battleHeart': '百战心法秘卷',
+    'techniqueBook:swordHeart': '剑骨铮鸣秘卷',
+    'techniqueBook:medicalMind': '岐黄心法秘卷',
+    'techniqueBook:earthArrayHeart': '坤元阵心秘卷',
+    'techniqueBook:sharedFateBond': '同命灵契秘卷',
+    'techniqueBook:clearMindScore': '澄心谱秘卷',
+    'techniqueBook:knowingIntent': '知意诀秘卷',
+    'techniqueBook:thunderSeal': '惊雷印秘卷',
+    'techniqueBook:clearTruthArt': '清心还真诀秘卷',
+    'techniqueBook:eightDirectionsSword': '八方落剑诀秘卷',
+    'techniqueBook:blackTortoiseWard': '玄龟镇岳诀秘卷',
+    'techniqueBook:hiddenEdge': '藏锋诀秘卷',
+    'techniqueBook:heartGuardArt': '护心诀秘卷',
+    'techniqueBook:endlessCycleArt': '周天不息法秘卷',
+    'techniqueBook:lastStandArt': '绝处逢生诀秘卷',
+    'techniqueBook:supremeMysticSword': '太玄一剑秘卷',
+    'techniqueBook:flowingLightThirteen': '流光十三式秘卷',
+    'techniqueBook:flyingSwordChase': '飞剑逐影秘卷',
+    'techniqueBook:myriadSwordsSky': '万剑凌霄秘卷',
+    'techniqueBook:endlessSwordHeart': '无间剑心秘卷',
+    'techniqueBook:swordReturnOrigin': '御剑归元秘卷',
+    'techniqueBook:clearSpringArt': '清心回春诀秘卷',
+    'techniqueBook:bonePoisonMist': '腐骨毒雾秘卷',
+    'techniqueBook:woodVitalityArt': '青木护生诀秘卷',
+    'techniqueBook:witheredSpring': '枯木逢春秘卷',
+    'techniqueBook:myriadPoisonTrue': '万毒真解秘卷',
+    'techniqueBook:woodSharedLife': '草木同生秘卷',
+    'techniqueBook:fourSymbolsWard': '四象护阵秘卷',
+    'techniqueBook:starfallArray': '星落杀阵秘卷',
+    'techniqueBook:spiritLockMechanism': '锁灵机关秘卷',
+    'techniqueBook:heavenlyNetLock': '天罗锁灵机秘卷',
+    'techniqueBook:heavenlyCalculation': '天机演算秘卷',
+    'techniqueBook:mechanismMastery': '机括精研秘卷',
+    'techniqueBook:lifeFeedback': '生息反哺秘卷',
+    'techniqueBook:beastEcho': '灵兽回响秘卷',
+    'techniqueBook:beastWarSpirit': '兽群战意秘卷',
+    'techniqueBook:hundredBeastRush': '百兽奔袭秘卷',
+    'techniqueBook:spiritCompanion': '御灵真诀秘卷',
+    'techniqueBook:myriadBeastHeart': '万兽灵心秘卷',
+    'techniqueBook:purifyingMelody': '涤尘清音秘卷',
+    'techniqueBook:tearingSevenStrings': '裂帛七弦秘卷',
+    'techniqueBook:springRiverHarmony': '春江和鸣秘卷',
+    'techniqueBook:highMountainsFlowingWater': '高山流水秘卷',
+    'techniqueBook:killingToneBone': '杀音入骨秘卷',
+    'techniqueBook:lingeringSound': '余音绕梁秘卷',
+    'techniqueBook:spiritResonance': '灵犀相契秘卷',
+    'techniqueBook:drunkenRedDust': '醉红尘秘卷',
+    'techniqueBook:longSleeveDance': '长袖善舞秘卷',
+    'techniqueBook:allBeingsFavor': '众生倾意秘卷',
+    'techniqueBook:confusingHeartTrue': '惑心真解秘卷',
+    'techniqueBook:redDustMirror': '红尘心鉴秘卷',
+    'techniqueBook:pillGuard': '丹护心诀秘卷',
+    'techniqueBook:returningWindSlash': '回风斩秘卷',
+    'techniqueBook:gatheringBreath': '小周天吐纳术秘卷',
+    'techniqueBook:clearHeartArt': '回春术秘卷',
+    'techniqueBook:bodyBarrier': '护体罡气秘卷',
+    'techniqueBook:flowingFirePalm': '流火掌秘卷',
+    'techniqueBook:spiritNeedle': '破甲指秘卷',
+    'techniqueBook:bindingTalisman': '缚灵术秘卷',
+    'techniqueBook:cloudPiercingSword': '穿云破岳剑秘卷',
+    'techniqueBook:returningWaveSword': '回风叠浪剑秘卷',
+    'techniqueBook:stopBleedArt': '止血回元术秘卷',
+    'techniqueBook:boneCorrosionNeedle': '腐骨针秘卷',
+    'techniqueBook:spiritArmorArray': '灵甲符阵秘卷',
+    'techniqueBook:flameThunderArray': '炎雷阵秘卷',
+    'techniqueBook:beastWard': '灵契护主秘卷',
+    'techniqueBook:beastCommandRoar': '裂阵兽吼秘卷',
+    'techniqueBook:calmingMelody': '宁神曲秘卷',
+    'techniqueBook:crescentSoundBlade': '弦月音刃秘卷',
+    'techniqueBook:heartLink': '同心引秘卷',
+    'techniqueBook:confusingGaze': '迷心眸秘卷',
+    'techniqueBook:steadyBreath': '稳息心法秘卷',
+    'techniqueBook:ironBody': '铁身功秘卷',
+    'techniqueBook:sharpEye': '明目诀秘卷',
+    'techniqueBook:swiftShadow': '疾影诀秘卷',
+    'techniqueBook:nurtureEssence': '养元诀秘卷',
+    'techniqueBook:battleHeart': '百战心法秘卷',
+    'techniqueBook:swordHeart': '剑骨铮鸣秘卷',
+    'techniqueBook:medicalMind': '岐黄心法秘卷',
+    'techniqueBook:earthArrayHeart': '坤元阵心秘卷',
+    'techniqueBook:sharedFateBond': '同命灵契秘卷',
+    'techniqueBook:clearMindScore': '澄心谱秘卷',
+    'techniqueBook:knowingIntent': '知意诀秘卷',
+    'techniqueBook:thunderSeal': '惊雷印秘卷',
+    'techniqueBook:beastEcho': '灵兽回响秘卷',
+    'techniqueBook:starfallArray': '星落杀阵秘卷',
     'techniqueBook:pillGuard': '丹护心诀秘卷',
     'techniqueBook:spiritCompanion': '灵契心经秘卷',
     herbBundle: '散装药材',
@@ -240,22 +354,83 @@
   };
 
   const TECHNIQUE_BOOKS = {
-    'techniqueBook:cloudPiercingSword': 'cloudPiercingSword',
-    'techniqueBook:returningWindSlash': 'returningWindSlash',
     'techniqueBook:stoneBreakingFist': 'stoneBreakingFist',
-    'techniqueBook:spiritNeedle': 'spiritNeedle',
-    'techniqueBook:clearHeartArt': 'clearHeartArt',
+    'techniqueBook:returningWindSlash': 'returningWindSlash',
     'techniqueBook:gatheringBreath': 'gatheringBreath',
-    'techniqueBook:thunderSeal': 'thunderSeal',
+    'techniqueBook:clearHeartArt': 'clearHeartArt',
+    'techniqueBook:bodyBarrier': 'bodyBarrier',
+    'techniqueBook:flowingFirePalm': 'flowingFirePalm',
+    'techniqueBook:spiritNeedle': 'spiritNeedle',
     'techniqueBook:bindingTalisman': 'bindingTalisman',
-    'techniqueBook:beastEcho': 'beastEcho',
-    'techniqueBook:starfallArray': 'starfallArray',
+    'techniqueBook:cloudPiercingSword': 'cloudPiercingSword',
+    'techniqueBook:returningWaveSword': 'returningWaveSword',
+    'techniqueBook:stopBleedArt': 'stopBleedArt',
+    'techniqueBook:boneCorrosionNeedle': 'boneCorrosionNeedle',
+    'techniqueBook:spiritArmorArray': 'spiritArmorArray',
+    'techniqueBook:flameThunderArray': 'flameThunderArray',
+    'techniqueBook:beastWard': 'beastWard',
+    'techniqueBook:beastCommandRoar': 'beastCommandRoar',
+    'techniqueBook:calmingMelody': 'calmingMelody',
+    'techniqueBook:crescentSoundBlade': 'crescentSoundBlade',
+    'techniqueBook:heartLink': 'heartLink',
+    'techniqueBook:confusingGaze': 'confusingGaze',
     'techniqueBook:steadyBreath': 'steadyBreath',
     'techniqueBook:ironBody': 'ironBody',
+    'techniqueBook:sharpEye': 'sharpEye',
     'techniqueBook:swiftShadow': 'swiftShadow',
+    'techniqueBook:nurtureEssence': 'nurtureEssence',
+    'techniqueBook:battleHeart': 'battleHeart',
     'techniqueBook:swordHeart': 'swordHeart',
-    'techniqueBook:pillGuard': 'pillGuard',
-    'techniqueBook:spiritCompanion': 'spiritCompanion'
+    'techniqueBook:medicalMind': 'medicalMind',
+    'techniqueBook:earthArrayHeart': 'earthArrayHeart',
+    'techniqueBook:sharedFateBond': 'sharedFateBond',
+    'techniqueBook:clearMindScore': 'clearMindScore',
+    'techniqueBook:knowingIntent': 'knowingIntent',
+    'techniqueBook:thunderSeal': 'thunderSeal',
+    'techniqueBook:clearTruthArt': 'clearTruthArt',
+    'techniqueBook:eightDirectionsSword': 'eightDirectionsSword',
+    'techniqueBook:blackTortoiseWard': 'blackTortoiseWard',
+    'techniqueBook:hiddenEdge': 'hiddenEdge',
+    'techniqueBook:heartGuardArt': 'heartGuardArt',
+    'techniqueBook:endlessCycleArt': 'endlessCycleArt',
+    'techniqueBook:lastStandArt': 'lastStandArt',
+    'techniqueBook:supremeMysticSword': 'supremeMysticSword',
+    'techniqueBook:flowingLightThirteen': 'flowingLightThirteen',
+    'techniqueBook:flyingSwordChase': 'flyingSwordChase',
+    'techniqueBook:myriadSwordsSky': 'myriadSwordsSky',
+    'techniqueBook:endlessSwordHeart': 'endlessSwordHeart',
+    'techniqueBook:swordReturnOrigin': 'swordReturnOrigin',
+    'techniqueBook:clearSpringArt': 'clearSpringArt',
+    'techniqueBook:bonePoisonMist': 'bonePoisonMist',
+    'techniqueBook:woodVitalityArt': 'woodVitalityArt',
+    'techniqueBook:witheredSpring': 'witheredSpring',
+    'techniqueBook:myriadPoisonTrue': 'myriadPoisonTrue',
+    'techniqueBook:woodSharedLife': 'woodSharedLife',
+    'techniqueBook:fourSymbolsWard': 'fourSymbolsWard',
+    'techniqueBook:starfallArray': 'starfallArray',
+    'techniqueBook:spiritLockMechanism': 'spiritLockMechanism',
+    'techniqueBook:heavenlyNetLock': 'heavenlyNetLock',
+    'techniqueBook:heavenlyCalculation': 'heavenlyCalculation',
+    'techniqueBook:mechanismMastery': 'mechanismMastery',
+    'techniqueBook:lifeFeedback': 'lifeFeedback',
+    'techniqueBook:beastEcho': 'beastEcho',
+    'techniqueBook:beastWarSpirit': 'beastWarSpirit',
+    'techniqueBook:hundredBeastRush': 'hundredBeastRush',
+    'techniqueBook:spiritCompanion': 'spiritCompanion',
+    'techniqueBook:myriadBeastHeart': 'myriadBeastHeart',
+    'techniqueBook:purifyingMelody': 'purifyingMelody',
+    'techniqueBook:tearingSevenStrings': 'tearingSevenStrings',
+    'techniqueBook:springRiverHarmony': 'springRiverHarmony',
+    'techniqueBook:highMountainsFlowingWater': 'highMountainsFlowingWater',
+    'techniqueBook:killingToneBone': 'killingToneBone',
+    'techniqueBook:lingeringSound': 'lingeringSound',
+    'techniqueBook:spiritResonance': 'spiritResonance',
+    'techniqueBook:drunkenRedDust': 'drunkenRedDust',
+    'techniqueBook:longSleeveDance': 'longSleeveDance',
+    'techniqueBook:allBeingsFavor': 'allBeingsFavor',
+    'techniqueBook:confusingHeartTrue': 'confusingHeartTrue',
+    'techniqueBook:redDustMirror': 'redDustMirror',
+    'techniqueBook:pillGuard': 'pillGuard'
   };
 
   const EQUIPMENT_IDS = new Set([
@@ -279,13 +454,10 @@
   ]);
 
   const LEGACY_PROTOTYPE_IDS = deepFreeze([
-    'spiritCarp', 'spiritShrimp', 'silverTrout', 'greenBass', 'darkCatfish',
-    'sunsetSalmon', 'thunderEel', 'spiritLobster', 'dragonFish',
     'healingPill', 'qiGatheringPill', 'foundationPill', 'goldCorePill',
     'nascentSoulPill', 'spiritTransformationPill', 'voidRefiningPill',
     'bodyIntegrationPill', 'mahayanaPill',
-    'grilledCarp', 'shrimpSoup', 'spiritRiceMeal', 'troutFeast',
-    'lobsterBanquet', 'dragonFishBanquet', 'beastFeed',
+    'shrimpSoup',
     'talismanPaper', 'gatheringTalisman', 'hasteTalisman',
     'wardTalisman', 'healingTalisman', 'beastLureTalisman'
   ]);
@@ -392,14 +564,101 @@
     bodySeal: '🔮', abyssSword: '⚔️', mahayanaRobe: '🥋', daoPendant: '💍',
     ascensionBlade: '🗡️', heavenlyRobe: '🥋', immortalJade: '💍',
     // 功法书
-    'techniqueBook:cloudPiercingSword': '📕', 'techniqueBook:returningWindSlash': '📕',
-    'techniqueBook:stoneBreakingFist': '📕', 'techniqueBook:spiritNeedle': '📕',
-    'techniqueBook:clearHeartArt': '📕', 'techniqueBook:gatheringBreath': '📕',
-    'techniqueBook:thunderSeal': '📕', 'techniqueBook:bindingTalisman': '📕',
-    'techniqueBook:beastEcho': '📕', 'techniqueBook:starfallArray': '📕',
+    'techniqueBook:stoneBreakingFist': '📕',
+    'techniqueBook:returningWindSlash': '📕',
+    'techniqueBook:gatheringBreath': '📕',
+    'techniqueBook:clearHeartArt': '📕',
+    'techniqueBook:bodyBarrier': '📕',
+    'techniqueBook:flowingFirePalm': '📕',
+    'techniqueBook:spiritNeedle': '📕',
+    'techniqueBook:bindingTalisman': '📕',
+    'techniqueBook:cloudPiercingSword': '📕',
+    'techniqueBook:returningWaveSword': '📕',
+    'techniqueBook:stopBleedArt': '📕',
+    'techniqueBook:boneCorrosionNeedle': '📕',
+    'techniqueBook:spiritArmorArray': '📕',
+    'techniqueBook:flameThunderArray': '📕',
+    'techniqueBook:beastWard': '📕',
+    'techniqueBook:beastCommandRoar': '📕',
+    'techniqueBook:calmingMelody': '📕',
+    'techniqueBook:crescentSoundBlade': '📕',
+    'techniqueBook:heartLink': '📕',
+    'techniqueBook:confusingGaze': '📕',
+    'techniqueBook:steadyBreath': '📕',
+    'techniqueBook:ironBody': '📕',
+    'techniqueBook:sharpEye': '📕',
+    'techniqueBook:swiftShadow': '📕',
+    'techniqueBook:nurtureEssence': '📕',
+    'techniqueBook:battleHeart': '📕',
+    'techniqueBook:swordHeart': '📕',
+    'techniqueBook:medicalMind': '📕',
+    'techniqueBook:earthArrayHeart': '📕',
+    'techniqueBook:sharedFateBond': '📕',
+    'techniqueBook:clearMindScore': '📕',
+    'techniqueBook:knowingIntent': '📕',
+    'techniqueBook:thunderSeal': '📕',
+    'techniqueBook:clearTruthArt': '📕',
+    'techniqueBook:eightDirectionsSword': '📕',
+    'techniqueBook:blackTortoiseWard': '📕',
+    'techniqueBook:hiddenEdge': '📕',
+    'techniqueBook:heartGuardArt': '📕',
+    'techniqueBook:endlessCycleArt': '📕',
+    'techniqueBook:lastStandArt': '📕',
+    'techniqueBook:supremeMysticSword': '📕',
+    'techniqueBook:flowingLightThirteen': '📕',
+    'techniqueBook:flyingSwordChase': '📕',
+    'techniqueBook:myriadSwordsSky': '📕',
+    'techniqueBook:endlessSwordHeart': '📕',
+    'techniqueBook:swordReturnOrigin': '📕',
+    'techniqueBook:clearSpringArt': '📕',
+    'techniqueBook:bonePoisonMist': '📕',
+    'techniqueBook:woodVitalityArt': '📕',
+    'techniqueBook:witheredSpring': '📕',
+    'techniqueBook:myriadPoisonTrue': '📕',
+    'techniqueBook:woodSharedLife': '📕',
+    'techniqueBook:fourSymbolsWard': '📕',
+    'techniqueBook:starfallArray': '📕',
+    'techniqueBook:spiritLockMechanism': '📕',
+    'techniqueBook:heavenlyNetLock': '📕',
+    'techniqueBook:heavenlyCalculation': '📕',
+    'techniqueBook:mechanismMastery': '📕',
+    'techniqueBook:lifeFeedback': '📕',
+    'techniqueBook:beastEcho': '📕',
+    'techniqueBook:beastWarSpirit': '📕',
+    'techniqueBook:hundredBeastRush': '📕',
+    'techniqueBook:spiritCompanion': '📕',
+    'techniqueBook:myriadBeastHeart': '📕',
+    'techniqueBook:purifyingMelody': '📕',
+    'techniqueBook:tearingSevenStrings': '📕',
+    'techniqueBook:springRiverHarmony': '📕',
+    'techniqueBook:highMountainsFlowingWater': '📕',
+    'techniqueBook:killingToneBone': '📕',
+    'techniqueBook:lingeringSound': '📕',
+    'techniqueBook:spiritResonance': '📕',
+    'techniqueBook:drunkenRedDust': '📕',
+    'techniqueBook:longSleeveDance': '📕',
+    'techniqueBook:allBeingsFavor': '📕',
+    'techniqueBook:confusingHeartTrue': '📕',
+    'techniqueBook:redDustMirror': '📕',
+    'techniqueBook:pillGuard': '📕', 'techniqueBook:returningWindSlash': '📕',
+    'techniqueBook:gatheringBreath': '📕', 'techniqueBook:clearHeartArt': '📕',
+    'techniqueBook:bodyBarrier': '📕', 'techniqueBook:flowingFirePalm': '📕',
+    'techniqueBook:spiritNeedle': '📕', 'techniqueBook:bindingTalisman': '📕',
+    'techniqueBook:cloudPiercingSword': '📕', 'techniqueBook:returningWaveSword': '📕',
+    'techniqueBook:stopBleedArt': '📕', 'techniqueBook:boneCorrosionNeedle': '📕',
+    'techniqueBook:spiritArmorArray': '📕', 'techniqueBook:flameThunderArray': '📕',
+    'techniqueBook:beastWard': '📕', 'techniqueBook:beastCommandRoar': '📕',
+    'techniqueBook:calmingMelody': '📕', 'techniqueBook:crescentSoundBlade': '📕',
+    'techniqueBook:heartLink': '📕', 'techniqueBook:confusingGaze': '📕',
     'techniqueBook:steadyBreath': '📕', 'techniqueBook:ironBody': '📕',
-    'techniqueBook:swiftShadow': '📕', 'techniqueBook:swordHeart': '📕',
-    'techniqueBook:pillGuard': '📕', 'techniqueBook:spiritCompanion': '📕'
+    'techniqueBook:sharpEye': '📕', 'techniqueBook:swiftShadow': '📕',
+    'techniqueBook:nurtureEssence': '📕', 'techniqueBook:battleHeart': '📕',
+    'techniqueBook:swordHeart': '📕', 'techniqueBook:medicalMind': '📕',
+    'techniqueBook:earthArrayHeart': '📕', 'techniqueBook:sharedFateBond': '📕',
+    'techniqueBook:clearMindScore': '📕', 'techniqueBook:knowingIntent': '📕',
+    'techniqueBook:thunderSeal': '📕', 'techniqueBook:beastEcho': '📕',
+    'techniqueBook:starfallArray': '📕', 'techniqueBook:pillGuard': '📕',
+    'techniqueBook:spiritCompanion': '📕'
   };
   const ITEM_DESC = {
     lingshi: '修真界通行货币，用于交易与突破辅助。',
@@ -433,9 +692,7 @@
     formationBase: '阵基，布置阵法所需的核心材料。'
   };
 
-  const records = {};
-  orderedItemIds.forEach(function (id) {
-    const materialRow = MATERIAL_ITEMS_BY_ID[id] || null;
+  function buildItemRecord(id, materialRow) {
     const artRow = ITEM_ART_CONTENT &&
       typeof ITEM_ART_CONTENT.get === 'function'
       ? ITEM_ART_CONTENT.get(id)
@@ -446,7 +703,7 @@
       ? 'equipment'
       : TECHNIQUE_BOOK_IDS.has(id) ? 'technique'
       : CONSUMABLE_IDS.has(id) ? 'consumable' : 'material';
-    records[id] = {
+    const record = {
       id: id,
       name: materialRow && materialRow.name ? materialRow.name : NAMES[id],
       category: category,
@@ -465,35 +722,41 @@
         : CATEGORY_QUALITY[category]
     };
     if (artRow) {
-      records[id].iconSrc = artRow.icon50 || artRow.icon100 || '';
-      records[id].iconSrc50 = artRow.icon50 || artRow.icon100 || '';
-      records[id].iconSrc100 = artRow.icon100 || artRow.icon50 || '';
+      record.iconSrc = artRow.icon50 || artRow.icon100 || '';
+      record.iconSrc50 = artRow.icon50 || artRow.icon100 || '';
+      record.iconSrc100 = artRow.icon100 || artRow.icon50 || '';
     }
     if (STAGE3_EQUIPMENT[id]) {
-      records[id].tier = STAGE3_EQUIPMENT[id].tier;
-      records[id].equipmentSlot = STAGE3_EQUIPMENT[id].slot;
+      record.tier = STAGE3_EQUIPMENT[id].tier;
+      record.equipmentSlot = STAGE3_EQUIPMENT[id].slot;
     }
     if (TECHNIQUE_BOOKS[id]) {
-      records[id].techniqueId = TECHNIQUE_BOOKS[id];
+      record.techniqueId = TECHNIQUE_BOOKS[id];
     }
     if (materialRow) {
       [
         'tier', 'materialType', 'visualFamily', 'iconPromptKey',
         'artPrompt', 'artPriority', 'sourceTags', 'useTags',
-        'melvorName', 'potionTier', 'charges', 'melvor'
+        'melvorName', 'potionTier', 'charges', 'melvor',
+        'useAction', 'unlockFlag', 'heal'
       ].forEach(function (key) {
-        if (materialRow[key] != null) records[id][key] = materialRow[key];
+        if (materialRow[key] != null) record[key] = materialRow[key];
       });
       if (materialRow.equipmentSlot) {
-        records[id].equipmentSlot = materialRow.equipmentSlot;
+        record.equipmentSlot = materialRow.equipmentSlot;
       }
     }
     if (LEGACY_PROTOTYPE_ID_SET.has(id)) {
-      records[id].legacyDesign = true;
-      records[id].designStatus = 'legacy_prototype';
+      record.legacyDesign = true;
+      record.designStatus = 'legacy_prototype';
     }
+    return deepFreeze(record);
+  }
+
+  const ITEMS = {};
+  orderedItemIds.forEach(function (id) {
+    ITEMS[id] = buildItemRecord(id, MATERIAL_ITEMS_BY_ID[id] || null);
   });
-  const ITEMS = deepFreeze(records);
 
   function get(itemId) {
     return ITEMS[itemId] || null;
@@ -506,12 +769,33 @@
       : items.filter(function (item) { return item.category === category; }));
   }
 
+  function syncFromMaterials() {
+    const materialApi = (typeof MaterialContent !== 'undefined' && MaterialContent)
+      ? MaterialContent
+      : MATERIAL_CONTENT;
+    if (!materialApi || typeof materialApi.itemRows !== 'function') {
+      return { ok: false, added: 0 };
+    }
+    let added = 0;
+    materialApi.itemRows().forEach(function (row) {
+      if (!row || typeof row.id !== 'string' || !row.id || ITEMS[row.id]) {
+        return;
+      }
+      MATERIAL_ITEMS_BY_ID[row.id] = row;
+      ITEMS[row.id] = buildItemRecord(row.id, row);
+      added += 1;
+    });
+    return { ok: true, added: added };
+  }
+
   return Object.freeze({
     ITEMS: ITEMS,
     CATEGORIES: CATEGORIES,
     QUALITY: QUALITY,
     LEGACY_PROTOTYPE_IDS: LEGACY_PROTOTYPE_IDS,
     get: get,
-    list: list
+    list: list,
+    syncFromMaterials: syncFromMaterials,
+    absorbHerbloreParity: syncFromMaterials
   });
 });

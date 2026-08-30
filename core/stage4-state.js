@@ -9,7 +9,11 @@
       require('./npc-generator.js'),
       require('./npc-roster.js'),
       require('../content/equipment.js'),
-      require('./equipment.js')
+      require('./equipment.js'),
+      require('../content/social-interactions.js'),
+      require('../content/sect-offices.js'),
+      require('./sect-offices.js'),
+      require('./person-factory.js')
     )
     : factory(
       root && root.Stage3State,
@@ -19,7 +23,11 @@
       root && root.NpcGenerator,
       root && root.NpcRoster,
       root && root.EquipmentContent,
-      root && root.Equipment
+      root && root.Equipment,
+      root && root.SocialInteractionContent,
+      root && root.SectOfficeContent,
+      root && root.SectOffices,
+      root && root.PersonFactory
     );
   if (typeof module === 'object' && module.exports) module.exports = api;
   else if (root) root.Stage4State = api;
@@ -31,33 +39,77 @@
   NpcGenerator,
   NpcRoster,
   EquipmentContent,
-  Equipment
+  Equipment,
+  SocialInteractionContent,
+  SectOfficeContent,
+  SectOffices,
+  PersonFactory
 ) {
   'use strict';
 
   const VERSION = 5;
-  const PENDING_LIMIT = 20;
   const RESOLVED_RECENT_LIMIT = 100;
   const SUMMARY_LIMIT = 300;
   const EVOLUTION_LIMIT = 500;
+  const WORLD_EVENT_RETENTION = 400;
   const JSON_DEPTH_LIMIT = 128;
   const JSON_BRANCH_NODE_LIMIT = 250000;
   const JSON_ARRAY_LIMIT = 100000;
   const JSON_OBJECT_KEY_LIMIT = 10000;
   const JSON_STRING_LIMIT = 100000;
   const JSON_ISOLATION_DEPTH = 3;
-  const PARTICIPANT_LIMIT = 2000;
-  const EVENT_OPTION_LIMIT = 100;
   const MONTH_SECONDS = 30 * 24 * 60 * 60;
   const RELATION_KEYS = Object.freeze([
     'affection',
     'trust',
     'romanticAttachment',
-    'desire',
+    'closeness',
     'dependence',
     'loyalty',
     'jealousy',
-    'resentment'
+    'desire'
+  ]);
+  const ACTIVITY_STATUSES = Object.freeze([
+    'normal',
+    'injured',
+    'seclusion',
+    'travel',
+    'dating',
+    'exploring',
+    'imprisoned',
+    'missing',
+    'tribulation'
+  ]);
+  const RELATION_TAG_IDS = Object.freeze([
+    'friend',
+    'lover',
+    'partner',
+    'mentor',
+    'blood',
+    'enemy',
+    'dao-companion',
+    'close-friend',
+    'life-debt',
+    'impressed',
+    'acquainted'
+  ]);
+  const RELATION_ARC_STAGES = Object.freeze([
+    'spark',
+    'warm',
+    'bond',
+    'strain',
+    'mend',
+    'break'
+  ]);
+  const PREFERENCE_CATEGORIES = Object.freeze([
+    'herb',
+    'pill',
+    'artifact',
+    'talisman',
+    'ore',
+    'fish',
+    'wood',
+    'manual'
   ]);
   const RESTRICTION_TYPES = Object.freeze([
     'blood',
@@ -555,6 +607,18 @@
     return ids.length > 0 ? ids : [fallback];
   }
 
+  function canonicalizeSpiritualRootId(id) {
+    const aliases = NpcGenerationContent &&
+      NpcGenerationContent.SPIRITUAL_ROOT_ALIASES;
+    if (typeof id === 'string' && aliases && aliases[id]) return aliases[id];
+    return id;
+  }
+
+  function validSpiritualRootId(id) {
+    const ids = generationIds('SPIRITUAL_ROOTS', 'single');
+    return validId(canonicalizeSpiritualRootId(id), ids, 'single');
+  }
+
   function validId(id, ids, fallback) {
     return typeof id === 'string' && ids.includes(id) ? id : fallback;
   }
@@ -566,6 +630,7 @@
         id: sectId,
         leaderId: null,
         roleByNpcId: {},
+        officeHolders: {},
         power: 1,
         reputation: 0,
         lastChangedAt: 0
@@ -592,6 +657,7 @@
       player: {
         identity: { gender: 'female' },
         regionId: 'qinglan-town',
+        spiritualRootId: 'single',
         flags: { completedFirstAction: false },
         lifecycle: {
           currentLifeId: 'life-1',
@@ -617,7 +683,10 @@
         relationships: {
           edges: {},
           bonds: {},
-          restrictions: {}
+          restrictions: {},
+          npcAffinities: {},
+          tags: {},
+          arcs: {}
         },
         events: {
           nextId: 1,
@@ -642,7 +711,24 @@
             contribution: {},
             reputation: {},
             choiceEventOffered: false,
-            choiceAvailableAt: 0
+            choiceAvailableAt: 0,
+            discipleRank: 'disciple',
+            officeSlotId: 'disciple',
+            job: 0,
+            lifetimeContribution: 0,
+            mission: {
+              missionId: null,
+              stepIndex: 0,
+              status: 'idle',
+              combatKillBaseline: 0,
+              combatBaselines: {},
+              completedMissionIds: [],
+              boardPeriod: -1,
+              boardOfferIds: [],
+              boardStatuses: {},
+              boardResolved: {},
+              activeResolved: null
+            }
           },
           records: defaultSectRecords(),
           pairStates: {}
@@ -670,6 +756,19 @@
           backgroundAccumulator: 0,
           sectAccumulator: 0,
           eventAccumulator: 0,
+          monthAccumulator: 0,
+          nextWorldEventId: 1,
+          worldEvents: [],
+          calendar: {
+            year: 1,
+            month: 1,
+            monthAccumulator: 0,
+            yearEventBudget: 36,
+            yearEventsCreated: 0,
+            monthEventsCreated: 0,
+            npcYearAppearances: {},
+            playerLeapLastMonth: {}
+          },
           regions: defaultRegions()
         }
       }
@@ -688,6 +787,11 @@
       'qinglan-town'
     );
     cleanPlayer.flags = jsonRecord(rawFlags);
+    cleanPlayer.spiritualRootId = validSpiritualRootId(
+      dataValue(source, 'spiritualRootId')
+    );
+    cleanPlayer.kin = normalizeKin(dataValue(source, 'kin'));
+    cleanPlayer.familyId = cleanString(dataValue(source, 'familyId'), null);
     const rawLifecycle = isRecord(dataValue(source, 'lifecycle'))
       ? dataValue(source, 'lifecycle')
       : {};
@@ -923,6 +1027,29 @@
     };
   }
 
+  function normalizeKin(raw) {
+    const source = isRecord(raw) ? raw : {};
+    function cleanPersonRef(value) {
+      const id = cleanString(value, null);
+      if (!id) return null;
+      if (id === 'player' || /^npc-/.test(id)) return id;
+      return null;
+    }
+    return {
+      fa: cleanPersonRef(dataValue(source, 'fa')),
+      mo: cleanPersonRef(dataValue(source, 'mo')),
+      par: cleanPersonRef(dataValue(source, 'par')),
+      frs: sortedUniqueStrings(dataValue(source, 'frs'))
+        .filter(function (id) {
+          return id === 'player' || /^npc-/.test(id);
+        }),
+      ens: sortedUniqueStrings(dataValue(source, 'ens'))
+        .filter(function (id) {
+          return id === 'player' || /^npc-/.test(id);
+        })
+    };
+  }
+
   function normalizeNpc(raw, recordId) {
     const source = isRecord(raw) ? raw : {};
     const rawIdentity = isRecord(dataValue(source, 'identity'))
@@ -955,6 +1082,7 @@
       'ROMANCE_PRINCIPLES',
       'negotiable'
     );
+    const daoHeartTraits = generationIds('DAO_HEART_TRAITS', 'loyal');
     return {
       id: recordId,
       identity: {
@@ -1007,6 +1135,48 @@
         0,
         0
       ),
+      // 原版别名（与 realmStage/cultivation 双写；缺省时由修炼模块补齐）
+      level_l: finiteInteger(dataValue(source, 'level_l'), 0, 0, 9),
+      level_s: finiteInteger(dataValue(source, 'level_s'), 0, 0, 20),
+      exp1: finiteNumber(dataValue(source, 'exp1'), 0, 0),
+      history: (function () {
+        const rows = [];
+        jsonArray(dataValue(source, 'history')).forEach(function (row) {
+          if (!Array.isArray(row) || !row.length) return;
+          rows.push(row.slice(0, 6));
+        });
+        return rows.slice(-80);
+      })(),
+      cultivationEfficiency: (function () {
+        const raw = finiteNumber(
+          dataValue(source, 'cultivationEfficiency'),
+          0,
+          0
+        );
+        if (raw > 0) return Math.round(raw * 100) / 100;
+        const stage = finiteInteger(
+          dataValue(source, 'realmStage'),
+          0,
+          0
+        );
+        const rootId = validSpiritualRootId(
+          dataValue(source, 'spiritualRootId')
+        );
+        if (NpcGenerationContent &&
+            typeof NpcGenerationContent.cultivationEfficiencyFor ===
+              'function') {
+          return NpcGenerationContent.cultivationEfficiencyFor(
+            stage,
+            rootId,
+            0.5
+          );
+        }
+        return Math.round((0.6 + stage * 1.8 + stage * stage * 1.6) * 100) /
+          100;
+      })(),
+      spiritualRootId: validSpiritualRootId(
+        dataValue(source, 'spiritualRootId')
+      ),
       talentId: validId(
         dataValue(source, 'talentId'),
         talents,
@@ -1027,6 +1197,37 @@
         principles,
         principles[0]
       ),
+      traits: (function () {
+        const raw = sortedUniqueStrings(dataValue(source, 'traits'))
+          .filter(function (id) { return daoHeartTraits.indexOf(id) >= 0; })
+          .slice(0, 2);
+        if (raw.length > 0) return raw;
+        // 旧档无 traits：按 id 哈希派生 1~2 个稳定标签（同档结果一致）。
+        let hash = 0;
+        const seed = String(recordId || '');
+        for (let index = 0; index < seed.length; index++) {
+          hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+        }
+        const first = daoHeartTraits[hash % daoHeartTraits.length];
+        const second = daoHeartTraits[
+          ((hash >>> 4) + 3) % daoHeartTraits.length
+        ];
+        return second !== first ? [first, second] : [first];
+      })(),
+      parentIds: sortedUniqueStrings(dataValue(source, 'parentIds'))
+        .filter(function (id) {
+          return id === 'player' || /^npc-/.test(id);
+        })
+        .slice(0, 2),
+      mentorNpcId: (function () {
+        const mentorId = cleanString(
+          dataValue(source, 'mentorNpcId'),
+          null
+        );
+        if (!mentorId || mentorId === recordId) return null;
+        if (mentorId === 'player' || /^npc-/.test(mentorId)) return mentorId;
+        return null;
+      })(),
       regionId: validId(
         dataValue(source, 'regionId'),
         regionIds(),
@@ -1037,6 +1238,36 @@
         sectIds(),
         null
       ),
+      officeSlotId: (function () {
+        const sectId = validId(
+          dataValue(source, 'sectId'),
+          sectIds(),
+          null
+        );
+        const slotId = dataValue(source, 'officeSlotId');
+        if (!sectId || typeof slotId !== 'string') return null;
+        if (!SectOfficeContent ||
+            typeof SectOfficeContent.getSlot !== 'function') {
+          return null;
+        }
+        const slot = SectOfficeContent.getSlot(sectId, slotId);
+        return slot ? slot.id : null;
+      })(),
+      rogueTitleId: (function () {
+        const sectId = validId(
+          dataValue(source, 'sectId'),
+          sectIds(),
+          null
+        );
+        if (sectId) return null;
+        const titleId = dataValue(source, 'rogueTitleId');
+        if (typeof titleId !== 'string') return null;
+        return SectOfficeContent &&
+          typeof SectOfficeContent.getRogueTitle === 'function' &&
+          SectOfficeContent.getRogueTitle(titleId)
+          ? titleId
+          : null;
+      })(),
       familyId: cleanString(dataValue(source, 'familyId'), null),
       skills: skills,
       techniques: sortedUniqueStrings(dataValue(source, 'techniques')),
@@ -1044,6 +1275,21 @@
         dataValue(source, 'combatEquipment')
       ),
       combatProfile: normalizeNpcCombatProfile(dataValue(source, 'combatProfile')),
+      spiritPet: (function () {
+        const raw = dataValue(source, 'spiritPet');
+        if (!raw || typeof raw !== 'object') return null;
+        const stage = raw.stage === 'formed' || raw.stage === 'young' ||
+          raw.stage === 'egg'
+          ? raw.stage
+          : 'young';
+        return {
+          stage: stage,
+          youngName: typeof raw.youngName === 'string' ? raw.youngName : null,
+          formName: typeof raw.formName === 'string' ? raw.formName : null,
+          speciesHint: raw.speciesHint === 'phoenix' ? 'phoenix' : 'dragon',
+          bondedAtMonth: finiteInteger(raw.bondedAtMonth, 0, 0)
+        };
+      })(),
       inventorySummary: {
         wealthTier: finiteInteger(
           dataValue(inventorySource, 'wealthTier'),
@@ -1054,9 +1300,94 @@
           dataValue(inventorySource, 'notableItemIds')
         )
       },
-      biography: jsonArray(dataValue(source, 'biography')),
+      biography: (function () {
+        // 开局经历只保留出身；旧档 pregame 旧事不再展示/落盘。
+        return jsonArray(dataValue(source, 'biography')).filter(function (entry) {
+          if (!entry || typeof entry !== 'object') return true;
+          return entry.type !== 'pregame';
+        }).map(function (entry) {
+          if (!entry || typeof entry !== 'object' || entry.type !== 'origin') {
+            return entry;
+          }
+          if (typeof entry.text === 'string' &&
+              entry.text.indexOf('自此在修行路上留下姓名') >= 0 &&
+              typeof entry.regionId === 'string') {
+            const region = RegionContent &&
+              typeof RegionContent.get === 'function'
+              ? RegionContent.get(entry.regionId)
+              : null;
+            const name = region && region.name
+              ? region.name
+              : entry.text.replace(/^出生于/, '').replace(/，.*$/, '').replace(/。$/, '');
+            return Object.assign({}, entry, {
+              text: '出生于' + name + '。'
+            });
+          }
+          return entry;
+        });
+      })(),
       keyEventIds: sortedUniqueStrings(dataValue(source, 'keyEventIds')),
       status: status,
+      activityStatus: ACTIVITY_STATUSES.indexOf(
+        dataValue(source, 'activityStatus')
+      ) >= 0
+        ? dataValue(source, 'activityStatus')
+        : 'normal',
+      birthdayMonth: finiteInteger(
+        dataValue(source, 'birthdayMonth'),
+        1,
+        1,
+        12
+      ),
+      birthdayDay: finiteInteger(
+        dataValue(source, 'birthdayDay'),
+        1,
+        1,
+        28
+      ),
+      metPlayer: dataValue(source, 'metPlayer') === true,
+      kin: normalizeKin(dataValue(source, 'kin')),
+      preferences: (function () {
+        const raw = isRecord(dataValue(source, 'preferences'))
+          ? dataValue(source, 'preferences')
+          : {};
+        const loveItemIds = sortedUniqueStrings(
+          dataValue(raw, 'loveItemIds')
+        ).slice(0, 2);
+        const likeCategories = [];
+        jsonArray(dataValue(raw, 'likeCategories')).forEach(function (cat) {
+          if (typeof cat === 'string' &&
+              PREFERENCE_CATEGORIES.indexOf(cat) >= 0 &&
+              likeCategories.indexOf(cat) < 0 &&
+              likeCategories.length < 2) {
+            likeCategories.push(cat);
+          }
+        });
+        if (likeCategories.length === 0 && loveItemIds.length === 0) {
+          let hash = 0;
+          const seed = String(recordId || '');
+          for (let index = 0; index < seed.length; index++) {
+            hash = (hash * 31 + seed.charCodeAt(index)) >>> 0;
+          }
+          const first = PREFERENCE_CATEGORIES[
+            hash % PREFERENCE_CATEGORIES.length
+          ];
+          const second = PREFERENCE_CATEGORIES[
+            ((hash >>> 4) + 3) % PREFERENCE_CATEGORIES.length
+          ];
+          likeCategories.push(first);
+          if (second !== first) likeCategories.push(second);
+        }
+        const dislike = dataValue(raw, 'dislikeCategory');
+        return {
+          loveItemIds: loveItemIds,
+          likeCategories: likeCategories,
+          dislikeCategory: typeof dislike === 'string' &&
+            PREFERENCE_CATEGORIES.indexOf(dislike) >= 0
+            ? dislike
+            : null
+        };
+      })(),
       lifecycle: jsonRecord(dataValue(source, 'lifecycle')),
       lastDetailedAt: finiteNumber(
         dataValue(source, 'lastDetailedAt'),
@@ -1177,12 +1508,19 @@
       const rawEdge = dataValue(rawEdges, key);
       const edge = {};
       RELATION_KEYS.forEach(function (metric) {
+        let raw = dataValue(rawEdge, metric);
+        if (metric === 'closeness' &&
+            raw == null &&
+            dataValue(rawEdge, 'resentment') != null) {
+          raw = dataValue(rawEdge, 'resentment');
+        }
         define(
           edge,
           metric,
-          finiteInteger(dataValue(rawEdge, metric), 0, 0, 100)
+          finiteInteger(raw, 0, 0, 100)
         );
       });
+      // v5 resentment discarded; closeness defaults to 0 unless already present.
       edge.lastChangedAt = finiteNumber(
         dataValue(rawEdge, 'lastChangedAt'),
         0,
@@ -1228,10 +1566,79 @@
       }
       define(restrictions, key, restriction);
     });
+    const npcAffinities = {};
+    const rawAffinities = dataValue(source, 'npcAffinities');
+    dataKeys(rawAffinities).forEach(function (key) {
+      if (!directionalPairKey(key, '>')) return;
+      const amount = finiteInteger(dataValue(rawAffinities, key), 0, -100, 100);
+      if (amount !== 0) define(npcAffinities, key, amount);
+    });
+    const tags = {};
+    const rawTags = dataValue(source, 'tags');
+    dataKeys(rawTags).forEach(function (rawKey) {
+      const key = unorderedPairKey(rawKey);
+      if (!key || own(tags, key)) return;
+      const list = [];
+      const seen = {};
+      jsonArray(dataValue(rawTags, rawKey)).forEach(function (tag) {
+        if (typeof tag !== 'string' ||
+            RELATION_TAG_IDS.indexOf(tag) < 0 ||
+            seen[tag]) {
+          return;
+        }
+        seen[tag] = true;
+        list.push(tag);
+      });
+      if (list.length) define(tags, key, list);
+    });
+    const arcs = {};
+    const rawArcs = dataValue(source, 'arcs');
+    dataKeys(rawArcs).forEach(function (rawKey) {
+      const key = unorderedPairKey(rawKey);
+      if (!key || own(arcs, key)) return;
+      const rawArc = dataValue(rawArcs, rawKey);
+      if (!isRecord(rawArc)) return;
+      const stage = cleanString(dataValue(rawArc, 'stage'), null);
+      if (!stage || RELATION_ARC_STAGES.indexOf(stage) < 0) return;
+      define(arcs, key, {
+        stage: stage,
+        lastEventMonth: finiteInteger(
+          dataValue(rawArc, 'lastEventMonth'),
+          0,
+          0,
+          1e9
+        ),
+        lastChronicleMonth: finiteInteger(
+          dataValue(rawArc, 'lastChronicleMonth'),
+          0,
+          0,
+          1e9
+        ),
+        eventCount: finiteInteger(
+          dataValue(rawArc, 'eventCount'),
+          0,
+          0,
+          1e6
+        ),
+        romanceBeat: [
+          'none',
+          'courting',
+          'gifted',
+          'jealous',
+          'confessed',
+          'bonded'
+        ].indexOf(cleanString(dataValue(rawArc, 'romanceBeat'), 'none')) >= 0
+          ? cleanString(dataValue(rawArc, 'romanceBeat'), 'none')
+          : 'none'
+      });
+    });
     return {
       edges: edges,
       bonds: bonds,
-      restrictions: restrictions
+      restrictions: restrictions,
+      npcAffinities: npcAffinities,
+      tags: tags,
+      arcs: arcs
     };
   }
 
@@ -1264,60 +1671,9 @@
     return { companionIds: companionIds, reactionLog: reactionLog };
   }
 
-  function normalizePending(value) {
-    const pending = jsonArray(value);
-    const result = [];
-    const ids = new Set();
-    for (let pendingIndex = 0;
-        pendingIndex < pending.length &&
-        result.length < PENDING_LIMIT;
-        pendingIndex++) {
-      const raw = pending[pendingIndex];
-      if (!isRecord(raw)) continue;
-      const id = cleanString(dataValue(raw, 'id'), null);
-      const options = dataValue(raw, 'options');
-      if (!id || ids.has(id) || !Array.isArray(options)) continue;
-      const cleanOptions = [];
-      const optionIds = new Set();
-      for (let optionIndex = 0;
-          optionIndex < options.length &&
-          cleanOptions.length < EVENT_OPTION_LIMIT;
-          optionIndex++) {
-        const rawOption = options[optionIndex];
-        if (!isRecord(rawOption)) continue;
-        const optionId = cleanString(dataValue(rawOption, 'id'), null);
-        if (!optionId ||
-            optionIds.has(optionId)) continue;
-        optionIds.add(optionId);
-        cleanOptions.push({
-          id: optionId,
-          label: cleanString(dataValue(rawOption, 'label'), optionId),
-          preview: cleanString(dataValue(rawOption, 'preview'), ''),
-          effects: jsonArray(dataValue(rawOption, 'effects'))
-        });
-      }
-      if (cleanOptions.length === 0) continue;
-      ids.add(id);
-      result.push({
-        id: id,
-        templateId: cleanString(dataValue(raw, 'templateId'), ''),
-        templateRevision: finiteInteger(
-          dataValue(raw, 'templateRevision'),
-          1,
-          1
-        ),
-        createdAt: finiteNumber(dataValue(raw, 'createdAt'), 0, 0),
-        participants: sortedUniqueStrings(
-          dataValue(raw, 'participants'),
-          PARTICIPANT_LIMIT
-        ),
-        context: jsonRecord(dataValue(raw, 'context')),
-        title: cleanString(dataValue(raw, 'title'), ''),
-        body: cleanString(dataValue(raw, 'body'), ''),
-        options: cleanOptions
-      });
-    }
-    return result;
+  function normalizePending() {
+    // 待决策已删除；读档一律清空遗留 pending。
+    return [];
   }
 
   function normalizeHistory(value) {
@@ -1533,6 +1889,27 @@
         const role = cleanString(dataValue(rawRoles, npcId), null);
         if (role) define(roles, npcId, role);
       });
+      const officeHolders = {};
+      const rawHolders = isRecord(dataValue(raw, 'officeHolders'))
+        ? dataValue(raw, 'officeHolders')
+        : {};
+      const slotDefs = SectOfficeContent &&
+        typeof SectOfficeContent.listSlots === 'function'
+        ? SectOfficeContent.listSlots(sectId)
+        : [];
+      slotDefs.forEach(function (slotDef) {
+        const rawList = dataValue(rawHolders, slotDef.id);
+        const holders = [];
+        jsonArray(rawList).forEach(function (npcId) {
+          if (typeof npcId !== 'string' ||
+              !own(npcs.records, npcId) ||
+              npcs.records[npcId].sectId !== sectId) {
+            return;
+          }
+          if (holders.indexOf(npcId) < 0) holders.push(npcId);
+        });
+        define(officeHolders, slotDef.id, holders);
+      });
       const leaderId = cleanString(dataValue(raw, 'leaderId'), null);
       define(records, sectId, {
         id: sectId,
@@ -1542,6 +1919,7 @@
           ? leaderId
           : null,
         roleByNpcId: roles,
+        officeHolders: officeHolders,
         power: finiteNumber(dataValue(raw, 'power'), 1, 1),
         reputation: finiteNumber(dataValue(raw, 'reputation'), 0),
         lastChangedAt: finiteNumber(
@@ -1584,10 +1962,146 @@
           dataValue(rawPlayer, 'choiceAvailableAt'),
           0,
           0
-        )
+        ),
+        discipleRank: (function () {
+          const rank = dataValue(rawPlayer, 'discipleRank');
+          const office = dataValue(rawPlayer, 'officeSlotId');
+          const raw = typeof rank === 'string' ? rank
+            : (typeof office === 'string' ? office : 'disciple');
+          const aliases = {
+            outer: 'disciple',
+            inner: 'disciple',
+            trueDisciple: 'elder',
+            true: 'elder',
+            steward: 'peak',
+            honor: 'leader'
+          };
+          const allowed = {
+            disciple: true,
+            elder: true,
+            peak: true,
+            leader: true
+          };
+          const mapped = aliases[raw] || raw;
+          return allowed[mapped] ? mapped : 'disciple';
+        })(),
+        officeSlotId: (function () {
+          const rank = dataValue(rawPlayer, 'discipleRank');
+          const office = dataValue(rawPlayer, 'officeSlotId');
+          const raw = typeof office === 'string' ? office
+            : (typeof rank === 'string' ? rank : 'disciple');
+          const aliases = {
+            outer: 'disciple',
+            inner: 'disciple',
+            trueDisciple: 'elder',
+            true: 'elder',
+            steward: 'peak',
+            honor: 'leader'
+          };
+          const allowed = {
+            disciple: true,
+            elder: true,
+            peak: true,
+            leader: true
+          };
+          const mapped = aliases[raw] || raw;
+          return allowed[mapped] ? mapped : 'disciple';
+        })(),
+        job: (function () {
+          const job = dataValue(rawPlayer, 'job');
+          if (typeof job === 'number' && job >= 0 && job <= 4) return job | 0;
+          const rank = dataValue(rawPlayer, 'discipleRank');
+          const office = dataValue(rawPlayer, 'officeSlotId');
+          const raw = typeof office === 'string' ? office
+            : (typeof rank === 'string' ? rank : 'disciple');
+          const map = {
+            disciple: 0, elder: 1, peak: 2, leader: 3, honor: 4,
+            outer: 0, inner: 0, trueDisciple: 1, true: 1, steward: 2
+          };
+          return typeof map[raw] === 'number' ? map[raw] : 0;
+        })(),
+        lifetimeContribution: finiteNumber(
+          dataValue(rawPlayer, 'lifetimeContribution'),
+          0,
+          0
+        ),
+        mission: normalizeSectMission(dataValue(rawPlayer, 'mission'))
       },
       records: records,
       pairStates: pairStates
+    };
+  }
+
+  function normalizeSectMission(value) {
+    const source = isRecord(value) ? value : {};
+    const completed = [];
+    const seen = new Set();
+    if (Array.isArray(dataValue(source, 'completedMissionIds'))) {
+      dataValue(source, 'completedMissionIds').forEach(function (id) {
+        if (typeof id !== 'string' || !id || seen.has(id)) return;
+        seen.add(id);
+        completed.push(id);
+      });
+    }
+    const status = dataValue(source, 'status');
+    const boardOfferIds = [];
+    if (Array.isArray(dataValue(source, 'boardOfferIds'))) {
+      dataValue(source, 'boardOfferIds').forEach(function (id) {
+        if (typeof id === 'string' && id) boardOfferIds.push(id);
+      });
+    }
+    const boardStatuses = {};
+    const rawStatuses = dataValue(source, 'boardStatuses');
+    if (isRecord(rawStatuses)) {
+      dataKeys(rawStatuses).sort().forEach(function (key) {
+        const value = dataValue(rawStatuses, key);
+        if (value === 'available' || value === 'active' ||
+            value === 'completed') {
+          define(boardStatuses, key, value);
+        }
+      });
+    }
+    const combatBaselines = {};
+    const rawBaselines = dataValue(source, 'combatBaselines');
+    if (isRecord(rawBaselines)) {
+      dataKeys(rawBaselines).sort().forEach(function (key) {
+        define(
+          combatBaselines,
+          key,
+          finiteInteger(dataValue(rawBaselines, key), 0, 0)
+        );
+      });
+    }
+    const boardResolved = {};
+    const rawResolved = dataValue(source, 'boardResolved');
+    if (isRecord(rawResolved)) {
+      dataKeys(rawResolved).sort().forEach(function (key) {
+        const row = dataValue(rawResolved, key);
+        if (!isRecord(row) || typeof row.id !== 'string') return;
+        define(boardResolved, key, jsonRecord(row));
+      });
+    }
+    const activeResolvedRaw = dataValue(source, 'activeResolved');
+    const activeResolved = isRecord(activeResolvedRaw) &&
+      typeof dataValue(activeResolvedRaw, 'id') === 'string'
+      ? jsonRecord(activeResolvedRaw)
+      : null;
+    return {
+      missionId: cleanString(dataValue(source, 'missionId'), null),
+      stepIndex: finiteInteger(dataValue(source, 'stepIndex'), 0, 0),
+      status: status === 'active' ? 'active' : 'idle',
+      combatKillBaseline: finiteInteger(
+        dataValue(source, 'combatKillBaseline'),
+        0,
+        0
+      ),
+      combatBaselines: combatBaselines,
+      completedMissionIds: completed,
+      boardPeriod: finiteInteger(dataValue(source, 'boardPeriod'), -1, -1),
+      boardOfferIds: boardOfferIds,
+      boardStatuses: boardStatuses,
+      boardResolved: boardResolved,
+      activeResolved: activeResolved
     };
   }
 
@@ -1639,6 +2153,45 @@
     };
   }
 
+  function normalizeWorldEvent(entry, index) {
+    const source = isRecord(entry) ? entry : {};
+    const participants = [];
+    jsonArray(dataValue(source, 'participants')).forEach(function (id) {
+      if (typeof id === 'string' && id.length && participants.length < 3) {
+        participants.push(id);
+      }
+    });
+    const tags = [];
+    jsonArray(dataValue(source, 'tags')).forEach(function (tag) {
+      if (typeof tag === 'string' && tag.length && tags.length < 12) {
+        tags.push(tag);
+      }
+    });
+    const category = cleanString(dataValue(source, 'category'), null);
+    const rawEventId = dataValue(source, 'eventId');
+    const parsedEventId = Number(rawEventId);
+    const eventId = rawEventId == null || !Number.isFinite(parsedEventId)
+      ? 0
+      : Math.floor(parsedEventId);
+    return {
+      id: cleanString(dataValue(source, 'id'), 'we-' + (index + 1)),
+      month: finiteInteger(dataValue(source, 'month'), 0, 0),
+      visibleFromMonth: finiteInteger(
+        dataValue(source, 'visibleFromMonth'),
+        finiteInteger(dataValue(source, 'month'), 0, 0),
+        0
+      ),
+      type: cleanString(dataValue(source, 'type'), 'meet'),
+      participants: participants,
+      location: cleanString(dataValue(source, 'location'), null),
+      narrative: cleanString(dataValue(source, 'narrative'), ''),
+      source: dataValue(source, 'source') === 'player' ? 'player' : 'world',
+      category: category,
+      tags: tags,
+      eventId: eventId
+    };
+  }
+
   function normalizeWorld(value, cleanWorld) {
     const source = isRecord(value) ? value : {};
     const world = isRecord(cleanWorld) ? cleanWorld : {};
@@ -1666,6 +2219,76 @@
       dataValue(source, 'eventAccumulator'),
       0,
       0
+    );
+    world.monthAccumulator = finiteNumber(
+      dataValue(source, 'monthAccumulator'),
+      0,
+      0
+    );
+    const rawCalendar = isRecord(dataValue(source, 'calendar'))
+      ? dataValue(source, 'calendar')
+      : {};
+    const appearances = {};
+    const rawAppearances = dataValue(rawCalendar, 'npcYearAppearances');
+    dataKeys(rawAppearances).forEach(function (npcId) {
+      if (typeof npcId !== 'string') return;
+      appearances[npcId] = finiteInteger(
+        dataValue(rawAppearances, npcId),
+        0,
+        0,
+        99
+      );
+    });
+    const leapLast = {};
+    const rawLeap = dataValue(rawCalendar, 'playerLeapLastMonth');
+    dataKeys(rawLeap).forEach(function (npcId) {
+      if (typeof npcId !== 'string') return;
+      leapLast[npcId] = finiteInteger(
+        dataValue(rawLeap, npcId),
+        0,
+        0,
+        1e9
+      );
+    });
+    world.calendar = {
+      year: (function () {
+        const rawYear = finiteInteger(dataValue(rawCalendar, 'year'), 1, 1);
+        // 纠正早期占位默认年 342，统一从第 1 年计。
+        return rawYear === 342 ? 1 : rawYear;
+      })(),
+      month: finiteInteger(dataValue(rawCalendar, 'month'), 1, 1, 12),
+      monthAccumulator: finiteNumber(
+        dataValue(rawCalendar, 'monthAccumulator'),
+        finiteNumber(dataValue(source, 'monthAccumulator'), 0, 0),
+        0
+      ),
+      yearEventBudget: finiteInteger(
+        dataValue(rawCalendar, 'yearEventBudget'),
+        36,
+        10,
+        40
+      ),
+      yearEventsCreated: finiteInteger(
+        dataValue(rawCalendar, 'yearEventsCreated'),
+        0,
+        0
+      ),
+      monthEventsCreated: finiteInteger(
+        dataValue(rawCalendar, 'monthEventsCreated'),
+        0,
+        0
+      ),
+      npcYearAppearances: appearances,
+      playerLeapLastMonth: leapLast
+    };
+    const rawEvents = jsonArray(dataValue(source, 'worldEvents'));
+    world.worldEvents = rawEvents.map(normalizeWorldEvent).slice(
+      Math.max(0, rawEvents.length - WORLD_EVENT_RETENTION)
+    );
+    world.nextWorldEventId = finiteInteger(
+      dataValue(source, 'nextWorldEventId'),
+      world.worldEvents.length + 1,
+      1
     );
     const rawRegions = dataValue(source, 'regions');
     const regions = {};
@@ -1728,6 +2351,10 @@
           remainingSeconds: finiteNumber(job.remainingSeconds, 0, 0),
           totalSeconds: finiteNumber(job.totalSeconds, 0, 0),
           followupTemplateId: cleanString(job.followupTemplateId, null),
+          interactionId: cleanString(job.interactionId, null),
+          itemId: cleanString(job.itemId, null),
+          paidItemId: cleanString(job.paidItemId, null),
+          actionKey: cleanString(job.actionKey, null),
           context: jsonRecord(job.context),
           ready: job.ready === true,
           completionReported: job.completionReported === true
@@ -1857,7 +2484,7 @@
     const rawSystems = isRecord(dataValue(source, 'systems'))
       ? dataValue(source, 'systems')
       : {};
-    const clean = Stage3State.normalize(source, {
+    let clean = Stage3State.normalize(source, {
       preserveLegacyFields: stableBooleanOption(
         options,
         'preserveLegacyFields'
@@ -1900,60 +2527,203 @@
       dataValue(rawSystems, 'world'),
       clean.systems.world
     );
-    const rebalanced = NpcRoster &&
-      typeof NpcRoster.rebalance === 'function'
-      ? NpcRoster.rebalance(clean, {
+    migrateSocialMainActionToQueue(clean);
+    // clean is already a fresh normalized tree; rebalance in place.
+    if (NpcRoster &&
+        typeof NpcRoster.rebalanceInPlace === 'function') {
+      NpcRoster.rebalanceInPlace(clean, {
         target: clean.systems.npcs.activeTarget
-      })
-      : null;
-    return rebalanced || clean;
+      });
+    } else if (NpcRoster &&
+        typeof NpcRoster.rebalance === 'function') {
+      const rebalanced = NpcRoster.rebalance(clean, {
+        target: clean.systems.npcs.activeTarget
+      });
+      if (rebalanced) clean = rebalanced;
+    }
+    // 已有人口但玩家圈子为空时不再全图补种；圈子只靠 creatperson* / 偶遇扩。
+    clean = ensureSectOffices(clean);
+    // reconcile 可能补写宗门领袖等人物；再过一遍 NPC normalize，保证字段幂等。
+    clean.systems.npcs = normalizeNpcSystem(clean.systems.npcs);
+    return clean;
   }
 
-  function hasCompletedAction(source) {
-    const current = dataValue(source, 'current');
-    if (isRecord(current) &&
-        finiteInteger(dataValue(current, 'done'), 0, 0) > 0) {
-      return true;
+  function livingNpcNeedsOffice(person) {
+    if (!person || person.status !== 'living' || person.lifeStage === 'child') {
+      return false;
     }
-    const reports = [];
-    const archive = dataValue(source, 'reportArchive');
-    if (Array.isArray(archive)) reports.push.apply(reports, archive);
-    const pending = dataValue(source, 'pendingOfflineReports');
-    if (Array.isArray(pending)) reports.push.apply(reports, pending);
-    const envelope = dataValue(source, 'pendingOfflineReport');
-    if (isRecord(envelope) &&
-        Array.isArray(dataValue(envelope, 'reports'))) {
-      reports.push.apply(reports, dataValue(envelope, 'reports'));
+    if (person.sectId) {
+      return typeof person.officeSlotId !== 'string' ||
+        !person.officeSlotId;
     }
-    return reports.some(function (report) {
-      const action = dataValue(report, 'action');
-      return isRecord(action) &&
-        finiteInteger(dataValue(action, 'completed'), 0, 0) > 0;
+    return typeof person.rogueTitleId !== 'string' || !person.rogueTitleId;
+  }
+
+  function sectHasVacantOffice(model) {
+    if (!SectOfficeContent ||
+        typeof SectOfficeContent.listSlots !== 'function') {
+      return false;
+    }
+    const sects = model && model.systems && model.systems.sects &&
+      model.systems.sects.records;
+    if (!sects) return false;
+    return Object.keys(sects).some(function (sectId) {
+      const record = sects[sectId];
+      const holders = record && record.officeHolders
+        ? record.officeHolders
+        : {};
+      const slots = SectOfficeContent.listSlots(sectId) || [];
+      return slots.some(function (slot) {
+        if (slot.pool) return false;
+        const capacity = Math.max(1, Math.floor(Number(slot.capacity) || 1));
+        const filled = Array.isArray(holders[slot.id])
+          ? holders[slot.id].length
+          : 0;
+        return filled < capacity;
+      });
     });
   }
 
-  function migrateV4(model, options) {
-    const source = jsonRecord(model);
-    const candidate = jsonRecord(source);
-    candidate.schemaVersion = VERSION;
-    if (isRecord(candidate.player)) {
-      const flags = isRecord(candidate.player.flags)
-        ? candidate.player.flags
-        : {};
-      flags.completedFirstAction = hasCompletedAction(source);
-      candidate.player.flags = flags;
+  function ensureSectOffices(model) {
+    if (!SectOffices || typeof SectOffices.reconcile !== 'function') {
+      return model;
     }
+    const records = model && model.systems && model.systems.npcs &&
+      model.systems.npcs.records;
+    if (!records) return model;
+    const needs = Object.keys(records).some(function (id) {
+      return livingNpcNeedsOffice(records[id]);
+    }) || sectHasVacantOffice(model);
+    if (!needs) return model;
+    const result = SectOffices.reconcile(model, { inPlace: true });
+    return result && result.ok ? result.state : model;
+  }
+
+  // 旧版主动社交占主行动：迁移进并行队列，避免与主挂机抢槽。
+  function migrateSocialMainActionToQueue(clean) {
+    const current = isRecord(clean.current) ? clean.current : null;
+    const key = current && typeof current.key === 'string'
+      ? current.key
+      : null;
+    if (!key || key.indexOf('social:') !== 0) return;
+    const actionKey = normalizeActionKey(key);
+    if (!actionKey) {
+      clean.current = null;
+      return;
+    }
+    const parts = actionKey.split(':');
+    const npcId = parts[1];
+    const interactionId = parts[2];
+    const itemId = interactionId === 'gift' ? parts[3] : null;
+    const content = SocialInteractionContent &&
+      typeof SocialInteractionContent.get === 'function'
+      ? SocialInteractionContent.get(interactionId)
+      : null;
+    const total = content && Number.isFinite(content.durationSeconds)
+      ? content.durationSeconds
+      : 0;
+    const elapsed = Math.max(0, finiteNumber(current.elapsed, 0, 0));
+    const remaining = Math.max(0, total - elapsed);
+    if (!clean.systems.parallel ||
+        !Array.isArray(clean.systems.parallel.jobs)) {
+      clean.systems.parallel = { jobs: [] };
+    }
+    const already = clean.systems.parallel.jobs.some(function (job) {
+      return job && job.kind === 'social' && job.actionKey === actionKey;
+    });
+    if (!already && total > 0) {
+      const person = clean.systems.npcs &&
+        clean.systems.npcs.records &&
+        clean.systems.npcs.records[npcId];
+      const name = person && person.identity && person.identity.name
+        ? person.identity.name
+        : '对方';
+      const label = content &&
+        SocialInteractionContent &&
+        typeof SocialInteractionContent.getNarrative === 'function'
+        ? SocialInteractionContent.getNarrative(interactionId, 'progress', {
+          name: name,
+          pronoun: person && person.identity &&
+            person.identity.gender === 'male' ? '他' : '她'
+        })
+        : (content && content.label
+          ? content.label.replace('某人', name)
+          : '社交');
+      clean.systems.parallel.jobs.push({
+        id: 'social-job-migrated-' + actionKey.replace(/:/g, '-'),
+        kind: 'social',
+        npcId: npcId,
+        sourceEventId: null,
+        label: label,
+        remainingSeconds: remaining,
+        totalSeconds: total,
+        followupTemplateId: null,
+        interactionId: interactionId,
+        itemId: itemId,
+        paidItemId: null,
+        actionKey: actionKey,
+        context: {},
+        ready: remaining <= 0,
+        completionReported: false
+      });
+    }
+    clean.current = null;
+  }
+
+  function npcRecordCount(systems) {
+    const npcs = isRecord(systems) ? dataValue(systems, 'npcs') : null;
+    const records = isRecord(npcs) ? dataValue(npcs, 'records') : null;
+    return isRecord(records) ? dataKeys(records).length : 0;
+  }
+
+  function resolveBootstrapWorld(options) {
     const certifiedOptions = stableOptionsRecord(options);
     const injectedBootstrap = dataValue(
       certifiedOptions,
       'bootstrapWorld'
     );
     const defaultBootstrap = dataValue(NpcGenerator, 'bootstrap');
-    const bootstrapWorld = typeof injectedBootstrap === 'function'
+    return typeof injectedBootstrap === 'function'
       ? injectedBootstrap
       : defaultBootstrap;
-    if (dataValue(source, 'schemaVersion') === 4 &&
-        typeof bootstrapWorld === 'function') {
+  }
+
+  function applyBootstrapResult(candidate, result) {
+    if (!isRecord(result)) return candidate;
+    if (!isRecord(candidate.systems)) candidate.systems = {};
+    candidate.systems.npcs = {
+      nextId: dataValue(result, 'nextId'),
+      activeTarget: 40,
+      records: dataValue(result, 'records'),
+      activeIds: [],
+      backgroundIds: [],
+      backgroundCursor: 0
+    };
+    const nextSeed = dataValue(result, 'rngState');
+    if (Number.isInteger(nextSeed) &&
+        nextSeed > 0 &&
+        nextSeed <= 0xFFFFFFFF) {
+      candidate.rngState = nextSeed;
+    }
+    return candidate;
+  }
+
+  // 空人物池时按关系造人开局（对标 creatperson*），不再 bootstrap 全图陌生人。
+  // 若 options.bootstrapWorld 显式注入（自测），仍走旧注入路径。
+  function ensureWorldPopulation(model, options) {
+    const candidate = jsonRecord(model);
+    if (npcRecordCount(candidate.systems) > 0) {
+      // 已有人口：仍补写缺失的开局结识见闻（旧档常只剩一条「踏入旅途」）。
+      if (PersonFactory &&
+          typeof PersonFactory.ensureOpeningMeetStories === 'function') {
+        return PersonFactory.ensureOpeningMeetStories(candidate);
+      }
+      return candidate;
+    }
+    const certifiedOptions = stableOptionsRecord(options) || {};
+    const bootstrapWorld = resolveBootstrapWorld(options);
+    const injectedBootstrap = dataValue(certifiedOptions, 'bootstrapWorld');
+    if (typeof injectedBootstrap === 'function') {
       const count = NpcGenerationContent &&
         NpcGenerationContent.GENERATION_RULES
         ? NpcGenerationContent.GENERATION_RULES.bootstrapCount
@@ -1967,25 +2737,145 @@
           generation: NpcGenerationContent
         })
       });
-      if (isRecord(result)) {
-        if (!isRecord(candidate.systems)) candidate.systems = {};
-        candidate.systems.npcs = {
-          nextId: dataValue(result, 'nextId'),
-          activeTarget: 40,
-          records: dataValue(result, 'records'),
-          activeIds: [],
-          backgroundIds: [],
-          backgroundCursor: 0
-        };
-        const nextSeed = dataValue(result, 'rngState');
-        if (Number.isInteger(nextSeed) &&
-            nextSeed > 0 &&
-            nextSeed <= 0xFFFFFFFF) {
-          candidate.rngState = nextSeed;
+      return applyBootstrapResult(candidate, result);
+    }
+    if (PersonFactory && typeof PersonFactory.seedOpeningWorld === 'function') {
+      // 敌对/失效 options（revoked proxy 等）已在 certifiedOptions 被丢弃。
+      return PersonFactory.seedOpeningWorld(candidate, certifiedOptions);
+    }
+    if (typeof bootstrapWorld !== 'function') {
+      return candidate;
+    }
+    const count = NpcGenerationContent &&
+      NpcGenerationContent.GENERATION_RULES
+      ? NpcGenerationContent.GENERATION_RULES.bootstrapCount
+      : 120;
+    const result = bootstrapWorld({
+      count: count,
+      rngState: candidate.rngState,
+      content: Object.freeze({
+        regions: RegionContent,
+        sects: SectContent,
+        generation: NpcGenerationContent
+      })
+    });
+    return applyBootstrapResult(candidate, result);
+  }
+
+  // 新人生：整池清空后按开局流程重生人物与结构关系（不继承上一世 NPC）。
+  function reseedWorldPopulation(model, options) {
+    const candidate = jsonRecord(model);
+    if (!isRecord(candidate.systems)) candidate.systems = {};
+    const activeTarget = isRecord(candidate.systems.npcs) &&
+      Number.isFinite(candidate.systems.npcs.activeTarget)
+      ? Math.max(1, Math.floor(candidate.systems.npcs.activeTarget))
+      : 40;
+    candidate.systems.npcs = {
+      nextId: 1,
+      activeTarget: activeTarget,
+      records: {},
+      activeIds: [],
+      backgroundIds: [],
+      backgroundCursor: 0
+    };
+    candidate.systems.relationships = {
+      edges: {},
+      bonds: {},
+      restrictions: {},
+      npcAffinities: {},
+      tags: {},
+      arcs: {}
+    };
+    candidate.systems.events = {
+      nextId: 1,
+      pending: [],
+      resolvedRecent: [],
+      resolvedIdRanges: [],
+      summaries: [],
+      evolution: [],
+      compacted: [],
+      cooldowns: {},
+      day: {
+        index: 0,
+        budget: 0,
+        attempted: 0,
+        created: 0
+      }
+    };
+    if (isRecord(candidate.systems.teamCombat)) {
+      candidate.systems.teamCombat.companionIds = [null, null, null];
+      candidate.systems.teamCombat.reactionLog = [];
+    }
+    if (isRecord(candidate.systems.social)) {
+      candidate.systems.social.benefits = [];
+    }
+    if (isRecord(candidate.systems.sects)) {
+      candidate.systems.sects.records = defaultSectRecords();
+      candidate.systems.sects.pairStates = {};
+      candidate.systems.sects.player = {
+        sectId: null,
+        joinedAt: null,
+        contribution: {},
+        reputation: {},
+        choiceEventOffered: false,
+        choiceAvailableAt: 0,
+        discipleRank: 'disciple',
+        officeSlotId: 'disciple',
+        job: 0,
+        lifetimeContribution: 0,
+        mission: {
+          missionId: null,
+          stepIndex: 0,
+          status: 'idle',
+          combatKillBaseline: 0,
+          combatBaselines: {},
+          completedMissionIds: [],
+          boardPeriod: -1,
+          boardOfferIds: [],
+          boardStatuses: {},
+          boardResolved: {},
+          activeResolved: null
         }
+      };
+    }
+    if (isRecord(candidate.systems.lineage)) {
+      candidate.systems.lineage.descendants = {};
+      candidate.systems.lineage.rituals = [];
+    }
+    if (isRecord(candidate.player)) {
+      candidate.player.kin = {
+        fa: null,
+        mo: null,
+        par: null,
+        frs: [],
+        ens: []
+      };
+      candidate.player.parentIds = [];
+      candidate.player.metPlayer = false;
+    }
+    if (isRecord(candidate.systems.world)) {
+      const world = candidate.systems.world;
+      // 新世界时钟归零：否则上一世累计秒数/月累加器会在转世后继续补算，
+      // 让新刷的 NPC 瞬间集体坐化，并灌进大事记。
+      world.elapsedSeconds = 0;
+      world.activeAccumulator = 0;
+      world.backgroundAccumulator = 0;
+      world.sectAccumulator = 0;
+      world.eventAccumulator = 0;
+      world.monthAccumulator = 0;
+      world.worldEvents = [];
+      world.nextWorldEventId = 1;
+      if (isRecord(world.calendar)) {
+        world.calendar.year = 1;
+        world.calendar.month = 1;
+        world.calendar.monthAccumulator = 0;
+        world.calendar.yearEventsCreated = 0;
+        world.calendar.monthEventsCreated = 0;
+        world.calendar.npcYearAppearances = {};
+        world.calendar.playerLeapLastMonth = {};
       }
     }
-    return normalize(candidate);
+    return normalize(ensureWorldPopulation(candidate, options), options);
   }
 
   function sameJson(left, right) {
@@ -2010,11 +2900,37 @@
     return clean;
   }
 
+  // 保留合法社交主行动键，避免存档规范化时被当成 legacy 清掉并弹出空离线报告。
+  const SOCIAL_KEY_PART = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+  function normalizeActionKey(key) {
+    if (typeof key !== 'string' || key.length === 0) return null;
+    const parts = key.split(':');
+    if (parts.length < 3 || parts.length > 4 || parts[0] !== 'social') {
+      return null;
+    }
+    if (!SOCIAL_KEY_PART.test(parts[1]) || !SOCIAL_KEY_PART.test(parts[2])) {
+      return null;
+    }
+    if (!SocialInteractionContent ||
+        typeof SocialInteractionContent.get !== 'function' ||
+        !SocialInteractionContent.get(parts[2])) {
+      return null;
+    }
+    const gift = parts[2] === 'gift';
+    if ((gift && parts.length !== 4) || (!gift && parts.length !== 3)) {
+      return null;
+    }
+    if (gift && !SOCIAL_KEY_PART.test(parts[3])) return null;
+    return key;
+  }
+
   return Object.freeze({
     VERSION: VERSION,
     defaults: defaults,
-    migrateV4: migrateV4,
+    ensureWorldPopulation: ensureWorldPopulation,
+    reseedWorldPopulation: reseedWorldPopulation,
     normalize: normalize,
+    normalizeActionKey: normalizeActionKey,
     validate: validate,
     compactEventHistory: compactEventHistory,
     snapshotJsonData: snapshotJsonData

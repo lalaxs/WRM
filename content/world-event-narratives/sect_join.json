@@ -1,0 +1,16 @@
+[
+  {
+    "id": "sect_join-0136",
+    "weight": 7,
+    "type": "sect_join",
+    "actors": "pair",
+    "template": "{a}在{loc}拜入门派，由{b}指引去外门报备。",
+    "officeRankB": [
+      "elder",
+      "leader",
+      "steward",
+      "trueDisciple"
+    ],
+    "eitherRogueA": true
+  }
+]

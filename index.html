@@ -2,12 +2,60 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
   <title>我在修仙界万人迷</title>
-  <link rel="stylesheet" href="styles.css?v=20260811-skillbar-fill">
+  <link rel="stylesheet" href="styles-shell.css?v=20260816-css1">
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: linear-gradient(180deg,#FBF9FF,#E3D6F7); width: 100%; height: 100%; }
     #game { display: block; width: 100%; height: 100%; touch-action: none; }
+    /* 探索「可能发现」网格：内联兜底，避免 styles.css 缓存导致仍呈条列 */
+    .skill-action-list.skill-action-discover-grid {
+      display: grid !important;
+      grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+      gap: 8px 6px !important;
+      flex-direction: initial !important;
+    }
+    .skill-action-discover-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+      padding: 4px 2px;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .skill-action-discover-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--mist, #F3EEF8);
+      border: 1px solid var(--line, #E4DDF5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      font-size: 16px;
+    }
+    .skill-action-discover-icon .item-icon-img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+    }
+    .skill-action-discover-lv {
+      font-size: 11px;
+      line-height: 1.2;
+      font-weight: 600;
+      color: var(--primary-deep, #6B5B95);
+      white-space: nowrap;
+    }
+    .skill-action-discover-cell.is-locked { opacity: 0.48; }
+    .skill-action-discover-cell.is-locked .skill-action-discover-lv {
+      color: var(--text-sub, #8A8299);
+      font-weight: 500;
+    }
   </style>
 </head>
 <body>
@@ -24,7 +72,6 @@
   <!-- 广告管理：只走 Platform 桥接（折中态：已建桥，未接入游戏内入口/奖励） -->
   <script src="AdManager.js"></script>
   <!-- Stage 2 内容表与规范化状态（内容先于依赖它们的纯领域模块） -->
-  <script src="content/herblore-parity.js"></script>
   <script src="content/fishing-parity.js"></script>
   <script src="content/item-art.js"></script>
   <script src="content/materials.js"></script>
@@ -43,9 +90,15 @@
   <!-- Stage 4 world/person/social registries; core modules load later -->
   <script src="content/regions.js"></script>
   <script src="content/sects.js"></script>
-  <script src="content/npc-generation.js"></script>
-  <script src="content/social-interactions.js"></script>
-  <script src="content/event-templates.js"></script>
+  <script src="core/dns.js?v=20260816-month1"></script>
+  <script src="content/sect-offices.js?v=20260815-retjob2"></script>
+  <script src="content/original-event-bindings.js?v=20260816-pet4"></script>
+  <script src="content/event-templates.js?v=20260821-you1"></script>
+  <script src="content/sect-missions.js"></script>
+  <script src="content/sect-pavilion.js?v=20260815-unify1"></script>
+  <script src="content/world-event-narratives.js"></script>
+  <script src="content/npc-generation.js?v=20260816-month1"></script>
+  <script src="content/social-interactions.js?v=20260815-player-name1"></script>
   <script src="content/lifecycle.js"></script>
   <!-- 装备实例与状态迁移共享同一条可持久化随机数链 -->
   <script src="core/random.js"></script>
@@ -53,18 +106,31 @@
   <script src="core/stage2-state.js"></script>
   <script src="core/stage3-state.js?v=20260810-battle-fx-spec"></script>
   <!-- 永久人物生成只消费可持久化随机数，先于 v4→v5 迁移加载 -->
-  <script src="core/npc-generator.js"></script>
+  <script src="core/npc-generator.js?v=20260815-lg1"></script>
   <script src="core/npc-roster.js"></script>
-  <script src="core/stage4-state.js"></script>
-  <script src="core/relationships.js"></script>
+  <script src="core/person-factory.js?v=20260816-struct1"></script>
+  <script src="core/relation-seed.js?v=20260815-parity9"></script>
+  <script src="core/sect-offices.js?v=20260816-struct1"></script>
+  <script src="core/npc-spirit-pets.js?v=20260816-pet2"></script>
+  <script src="core/sect-missions.js"></script>
+  <script src="core/sect-pavilion.js?v=20260815-unify1"></script>
+  <script src="core/world-event-picker.js?v=20260815-retjob2"></script>
+  <script src="core/stage4-state.js?v=20260816-struct1"></script>
+  <script src="core/relationships.js?v=20260815-parity9"></script>
+  <script src="core/person-graph.js?v=20260815-tables2"></script>
+  <script src="core/event-core.js?v=20260815-parity3"></script>
+  <script src="core/world-calendar.js?v=20260816-split1"></script>
+  <script src="core/world-narrative-fill.js?v=20260821-you1"></script>
+  <script src="core/world-romance.js?v=20260816-split1"></script>
+  <script src="core/world-event-gen.js?v=20260819-tpl2"></script>
+  <script src="core/world-month.js?v=20260817-clean1"></script>
   <script src="core/npc-combat-config.js"></script>
   <script src="core/combat-party.js"></script>
   <!-- 背包/技能与纯领域模块 -->
   <script src="core/inventory.js"></script>
   <script src="core/skill-progression.js"></script>
-  <script src="core/social.js"></script>
-  <script src="core/event-engine.js"></script>
-  <script src="core/npc-simulation.js"></script>
+  <script src="core/social.js?v=20260815-parity8"></script>
+  <script src="core/npc-simulation.js?v=20260816-month1"></script>
   <script src="core/sect-simulation.js"></script>
   <script src="core/gathering.js"></script>
   <script src="core/fishing-loot.js"></script>
@@ -75,30 +141,36 @@
   <!-- Stage 3 pure combat domains, in dependency order -->
   <script src="core/combat-loadouts.js"></script>
   <script src="core/techniques.js"></script>
-  <script src="core/combat-stats.js"></script>
-  <script src="core/team-combat-snapshot.js"></script>
-  <script src="core/team-combat-engine.js?v=20260810-battle-fx-spec"></script>
-  <script src="core/team-combat-consequences.js"></script>
-  <script src="core/combat-engine.js?v=20260810-battle-fx-spec"></script>
-  <script src="core/combat-rewards.js?v=20260810-continuous-combat"></script>
-  <script src="core/combat-progress.js?v=20260810-enemy-portraits"></script>
-  <script src="core/breakthrough.js"></script>
+  <!-- Stage 3 combat engines deferred: LazyContent.ensureCombatRuntime()
+       (combat-stats → team-combat-* → combat-engine/rewards/progress → stage3-rules) -->
+  <script src="core/breakthrough.js?v=20260815-unify1"></script>
   <!-- 版本化单快照、统一模拟与 Stage 2 规则适配 -->
-  <script src="core/save-system.js?v=20260809-lineage-pass"></script>
+  <script src="core/save-system.js?v=20260815-kin-validate1"></script>
   <script src="core/simulation-report.js"></script>
-  <script src="core/state-model.js?v=20260809-lineage-pass"></script>
-  <script src="core/simulation.js"></script>
+  <script src="core/state-model.js?v=20260815-meet-stories2"></script>
+  <script src="core/simulation.js?v=20260814-offline-cap1"></script>
   <script src="core/game-rules.js"></script>
   <script src="core/stage2-rules.js"></script>
-  <script src="core/stage3-rules.js?v=20260810-battle-fx-spec"></script>
-  <script src="core/stage4-rules.js"></script>
+  <!-- stage3-rules.js deferred with combat engines via LazyContent.ensureCombatRuntime() -->
+  <script src="core/stage4-rules.js?v=20260815-parity6"></script>
   <script src="core/lineage.js"></script>
   <script src="core/inheritance-hall.js"></script>
-  <script src="core/legacy-transition.js?v=20260809-legacy-noheir"></script>
+  <script src="core/legacy-transition.js?v=20260815-reseed-clock1"></script>
   <script src="core/stage5-rules.js"></script>
+  <!-- 权威运行时清单（BOOT/延后/依赖方向）；LazyContent 与发行同步共用 -->
+  <script src="runtime-modules.js"></script>
+  <!-- 大型对标表延迟加载：不进入首屏同步脚本链 -->
+  <script src="core/lazy-content.js?v=20260819-tpl2"></script>
   <!-- 游戏逻辑：只调 Platform.*，禁止 tap.* / 沙箱 API；只画游戏世界，不画 UI -->
-  <script src="game.js?v=20260811-skillbar-basic"></script>
-  <!-- DOM UI 控制器：构建/显隐各界面、绑定按钮事件（角色创建页已迁此） -->
-  <script src="ui.js?v=20260811-skillbar-basic"></script>
+  <script src="game.js?v=20260815-lg1"></script>
+  <script src="game-queries.js?v=20260815-lg1"></script>
+  <script src="game-queries-social.js?v=20260816-month1"></script>
+  <script src="game-queries-combat.js?v=20260815-lg1"></script>
+  <script src="game-commands.js?v=20260815-lg1"></script>
+  <script src="game-api.js?v=20260815-lg1"></script>
+  <!-- DOM UI：首屏仅 core + modals（创建/外壳）；页面模块进游戏后再懒加载 -->
+  <script src="ui/ui-core.js?v=20260816-nowith1"></script>
+  <script src="ui/ui-modals.js?v=20260816-nowith1"></script>
+  <script src="ui.js?v=20260816-nowith1"></script>
 </body>
 </html>

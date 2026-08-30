@@ -564,10 +564,13 @@
       safeDeps.GatheringContent,
       'FISH_SPECIES'
     ));
-    const legacyEntryAliases = cloneJson(dataValue(
+    const rawLegacyAliases = dataValue(
       safeDeps.GatheringContent,
       'LEGACY_ENTRY_ALIASES'
-    )) || {};
+    );
+    const legacyEntryAliases = rawLegacyAliases == null
+      ? {}
+      : (cloneJson(rawLegacyAliases) || {});
     const recipes = cloneJson(dataValue(
       safeDeps.RecipeContent,
       'RECIPES'
@@ -620,6 +623,37 @@
       return null;
     }
 
+    function asSpotList(value) {
+      if (value == null) return [];
+      if (Array.isArray(value)) {
+        return value.filter(function (row) {
+          return isRecord(row);
+        });
+      }
+      return isRecord(value) ? [value] : [];
+    }
+
+    function findHeldSpot(state, skillId, instanceId, entryId) {
+      const system = state && state.systems && state.systems.gathering;
+      const list = asSpotList(
+        system && system.spots && system.spots[skillId]
+      );
+      if (typeof instanceId === 'string' && instanceId) {
+        for (let index = 0; index < list.length; index++) {
+          if (list[index].instanceId === instanceId) return list[index];
+        }
+      }
+      if (typeof entryId === 'string' && entryId) {
+        for (let index = 0; index < list.length; index++) {
+          if (list[index].entryId === entryId &&
+              finiteNumber(list[index].remaining, 0) > 0) {
+            return list[index];
+          }
+        }
+      }
+      return null;
+    }
+
     function parse(key) {
       if (typeof key !== 'string' || key.length === 0) return null;
       let match = /^gather:explore:(herb|mining|woodcutting)$/.exec(key);
@@ -632,21 +666,37 @@
             skillId: match[1],
             masteryId: family.explore.masteryId,
             baseSeconds: family.explore.time,
-            finite: true
+            finite: false
           }
           : null;
       }
       match = /^gather:collect:(herb|mining|woodcutting):([^:]+)$/
         .exec(key);
       if (match) {
-        const entryId = resolveEntryId(match[1], match[2]);
-        const entry = entryId ? entryFor(match[1], entryId) : null;
+        const skillId = match[1];
+        const token = match[2];
+        if (/^spot-\d+$/.test(token)) {
+          return {
+            key: 'gather:collect:' + skillId + ':' + token,
+            kind: 'gather-collect',
+            skillId: skillId,
+            instanceId: token,
+            entryId: null,
+            masteryId: null,
+            baseSeconds: null,
+            unlockLevel: null,
+            finite: false
+          };
+        }
+        const entryId = resolveEntryId(skillId, token);
+        const entry = entryId ? entryFor(skillId, entryId) : null;
         return entry
           ? {
-            key: 'gather:collect:' + match[1] + ':' + entryId,
+            key: 'gather:collect:' + skillId + ':' + entryId,
             kind: 'gather-collect',
-            skillId: match[1],
-            entryId,
+            skillId: skillId,
+            instanceId: null,
+            entryId: entryId,
             masteryId: entry.masteryId,
             baseSeconds: entry.time,
             unlockLevel: entry.unlockLevel,
@@ -749,17 +799,26 @@
             descriptor.unlockLevel) {
         return false;
       }
+      if (descriptor.kind === 'gather-explore') {
+        return true;
+      }
       if (descriptor.kind === 'gather-collect') {
-        const system = state.systems &&
-          state.systems.gathering;
-        const spot = system &&
-          system.spots &&
-          system.spots[descriptor.skillId];
-        return Boolean(
-          spot &&
-          spot.entryId === descriptor.entryId &&
-          finiteNumber(spot.remaining, 0) > 0
+        const spot = findHeldSpot(
+          state,
+          descriptor.skillId,
+          descriptor.instanceId,
+          descriptor.entryId
         );
+        if (!spot || finiteNumber(spot.remaining, 0) <= 0) return false;
+        if (descriptor.instanceId &&
+            spot.instanceId !== descriptor.instanceId) {
+          return false;
+        }
+        if (descriptor.entryId && spot.entryId !== descriptor.entryId) {
+          return false;
+        }
+        const entry = entryFor(descriptor.skillId, spot.entryId);
+        return Boolean(entry);
       }
       if (descriptor.kind === 'beast-tame') {
         const encounter = encounterFor(state, descriptor.encounterId);
@@ -811,12 +870,31 @@
           'gathering',
           descriptor.skillId
         );
+        let masteryId = descriptor.masteryId;
+        let baseSeconds = descriptor.baseSeconds;
+        if (descriptor.kind === 'gather-collect') {
+          const spot = findHeldSpot(
+            state,
+            descriptor.skillId,
+            descriptor.instanceId,
+            descriptor.entryId
+          );
+          const entry = spot
+            ? entryFor(descriptor.skillId, spot.entryId)
+            : (descriptor.entryId
+              ? entryFor(descriptor.skillId, descriptor.entryId)
+              : null);
+          if (entry) {
+            masteryId = entry.masteryId;
+            baseSeconds = entry.time;
+          }
+        }
         return progressDuration(
           effectiveDuration,
           player,
           descriptor.skillId,
-          descriptor.masteryId,
-          descriptor.baseSeconds,
+          masteryId,
+          baseSeconds,
           beast.gatheringDurationReduction
         );
       }
@@ -990,8 +1068,11 @@
       replaceRecord(state, result.state);
       commitReturnedRng(state, result);
       copyEconomy(result, helpers.report);
+      finishCurrent(state, descriptor, helpers);
       return {
-        stopReason: finishCurrent(state, descriptor, helpers)
+        stopReason: result.code === 'spots_full_after_completion'
+          ? STOP.REQUIREMENTS_INVALID
+          : null
       };
     }
 
@@ -1004,6 +1085,7 @@
     function failureStop(result, helpers) {
       const code = result && result.code;
       if (code === 'resource_depleted') return STOP.RESOURCE_DEPLETED;
+      if (code === 'spots_full') return STOP.REQUIREMENTS_INVALID;
       if (code === 'materials_exhausted') return STOP.MATERIALS_EXHAUSTED;
       if (code === 'inventory_full') {
         addWarningOnce(helpers.report, 'inventory_full');
@@ -1037,10 +1119,19 @@
     }
 
     function completeCollect(state, descriptor, helpers) {
+      const spot = findHeldSpot(
+        state,
+        descriptor.skillId,
+        descriptor.instanceId,
+        descriptor.entryId
+      );
+      const targetId = spot
+        ? spot.instanceId
+        : (descriptor.instanceId || descriptor.entryId);
       const result = gathering.collect(
         state,
         descriptor.skillId,
-        descriptor.entryId,
+        targetId,
         state.rngState,
         gatheringBonuses(state, descriptor.skillId, 'gathering')
       );
@@ -1283,14 +1374,13 @@
           return { status: 'stop', reason: STOP.COMPLETED };
         }
         if (descriptor.kind === 'gather-collect') {
-          const system = state.systems &&
-            state.systems.gathering;
-          const spot = system &&
-            system.spots &&
-            system.spots[descriptor.skillId];
-          if (!spot ||
-              spot.entryId !== descriptor.entryId ||
-              finiteNumber(spot.remaining, 0) <= 0) {
+          const spot = findHeldSpot(
+            state,
+            descriptor.skillId,
+            descriptor.instanceId,
+            descriptor.entryId
+          );
+          if (!spot || finiteNumber(spot.remaining, 0) <= 0) {
             return {
               status: 'stop',
               reason: STOP.RESOURCE_DEPLETED

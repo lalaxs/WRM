@@ -1,0 +1,25 @@
+[
+  {
+    "id": "tribulation-0105",
+    "weight": 6,
+    "type": "tribulation",
+    "actors": "solo",
+    "template": "{a}在{loc}上空引动雷云，开始渡劫。",
+    "officeRankAny": [
+      "leader",
+      "honor",
+      "elder",
+      "trueDisciple"
+    ]
+  },
+  {
+    "id": "tribulation-0106",
+    "weight": 5,
+    "type": "tribulation",
+    "actors": "solo",
+    "template": "{a}在{loc}荒原独自布阵，迎接下一次天劫。",
+    "regionTypes": [
+      "wilderness"
+    ]
+  }
+]

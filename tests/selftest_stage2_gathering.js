@@ -83,28 +83,34 @@ function freshModel() {
 function knownSpot(
   skillId = 'mining',
   entryId = 'copper',
-  quality = 'common',
   remaining = 2,
   capacity = 2
 ) {
   const model = freshModel();
-  model.systems.gathering.spots[skillId] = {
+  model.systems.gathering.spots[skillId] = [{
     instanceId: 'spot-1',
     skillId,
     entryId,
-    quality,
     capacity,
     remaining
-  };
+  }];
   model.systems.gathering.nextSpotId = 2;
   return model;
+}
+
+function firstSpot(model, skillId) {
+  const list = model.systems.gathering.spots[skillId];
+  if (Array.isArray(list)) return list[0] || null;
+  return list || null;
 }
 
 function cloneContent() {
   return JSON.parse(JSON.stringify({
     GATHERING: GatheringContent.GATHERING,
     FISH_SPECIES: GatheringContent.FISH_SPECIES,
-    RESOURCE_QUALITIES: GatheringContent.RESOURCE_QUALITIES
+    RESOURCE_SPOT_CAPS: GatheringContent.RESOURCE_SPOT_CAPS,
+    DISCOVER_GAIN_MIN: GatheringContent.DISCOVER_GAIN_MIN,
+    DISCOVER_GAIN_MAX: GatheringContent.DISCOVER_GAIN_MAX
   }));
 }
 
@@ -114,48 +120,46 @@ exact(Object.keys(frozenRules).sort(), [
   'advanceFishStocks', 'collect', 'explore', 'fish'
 ], 'gathering rules expose exploration, collection, and fishing');
 
-const qualityCases = [
-  [0.699999, 'common', 15],
-  [0.70, 'fine', 19],
-  [0.949999, 'fine', 19],
-  [0.95, 'rare', 23]
+const exploreCases = [
+  [0, 10],
+  [0.9999999999999999, 20]
 ];
-qualityCases.forEach(([qualityRoll, quality, capacity]) => {
+exploreCases.forEach(([gainRoll, expectedGain]) => {
   const model = freshModel();
+  model.player.skills.mining = { level: 90, xp: 0 };
   const before = JSON.stringify(model);
-  const made = makeRules([0, qualityRoll, 0]);
+  const made = makeRules([0, gainRoll]);
   const explored = made.rules.explore(model, 'mining', 0);
+  const expectedCap = 90;
   ok(explored.ok && explored.code === 'ok',
-    'exploration succeeds at quality boundary ' + qualityRoll);
+    'exploration succeeds at gain roll ' + gainRoll);
   ok(explored.state !== model,
-    'exploration returns detached state at boundary ' + qualityRoll);
-  exact(explored.state.systems.gathering.spots.mining, {
+    'exploration returns detached state at gain roll ' + gainRoll);
+  exact(explored.state.systems.gathering.spots.mining, [{
     instanceId: 'spot-1',
     skillId: 'mining',
     entryId: 'copper',
-    quality,
-    capacity,
-    remaining: capacity
-  }, 'quality and rounded capacity are exact at ' + qualityRoll);
-  ok(explored.rngState === 3 && made.random.draws() === 3,
-    'exploration consumes exactly three draws at ' + qualityRoll);
+    capacity: expectedCap,
+    remaining: expectedGain
+  }], 'discover gain is exact at ' + gainRoll);
+  ok(explored.rngState === 2 && made.random.draws() === 2,
+    'exploration consumes exactly two draws at ' + gainRoll);
   exact(explored.result, {
     spot: {
       instanceId: 'spot-1',
       skillId: 'mining',
       entryId: 'copper',
-      quality,
-      capacity,
-      remaining: capacity
+      capacity: expectedCap,
+      remaining: expectedGain
     }
-  }, 'exploration returns a report-ready spot at ' + qualityRoll);
+  }, 'exploration returns a report-ready spot at ' + gainRoll);
   exact(explored.gains, {
     items: {},
     skillXp: { mining: 10 },
     masteryXp: { 'explore:mining': 5 },
     cultivation: 1
-  }, 'exploration reports exact gains at ' + qualityRoll);
-  exact(explored.state.player.skills.mining, { level: 1, xp: 10 },
+  }, 'exploration reports exact gains at ' + gainRoll);
+  exact(explored.state.player.skills.mining, { level: 90, xp: 10 },
     'exploration writes skill progress exactly once');
   exact(
     explored.state.player.mastery.mining['explore:mining'],
@@ -167,69 +171,214 @@ qualityCases.forEach(([qualityRoll, quality, capacity]) => {
   ok(explored.state.systems.gathering.nextSpotId === 2,
     'exploration advances nextSpotId once');
   ok(JSON.stringify(model) === before,
-    'exploration preserves all input bytes at ' + qualityRoll);
+    'exploration preserves all input bytes at ' + gainRoll);
 });
 
-const maxCapacity = makeRules([0, 0, 0.9999999999999999])
-  .rules.explore(freshModel(), 'mining', 0);
-ok(maxCapacity.state.systems.gathering.spots.mining.capacity === 30,
-  'capacity roll near one selects the inclusive maximum');
-const zeroRoll = makeRules([0, 0, 0])
-  .rules.explore(freshModel(), 'mining', 0);
-ok(zeroRoll.state.systems.gathering.spots.mining.capacity === 15,
-  'zero capacity roll selects the inclusive minimum');
+const maxCapacityModel = freshModel();
+maxCapacityModel.player.skills.mining = { level: 90, xp: 0 };
+const maxCapacity = makeRules([0, 0.9999999999999999])
+  .rules.explore(maxCapacityModel, 'mining', 0);
+ok(maxCapacity.state.systems.gathering.spots.mining[0].remaining === 20 &&
+  maxCapacity.state.systems.gathering.spots.mining[0].capacity === 90,
+  'discover gain roll near one selects the inclusive maximum');
+const zeroRollModel = freshModel();
+zeroRollModel.player.skills.mining = { level: 90, xp: 0 };
+const zeroRoll = makeRules([0, 0])
+  .rules.explore(zeroRollModel, 'mining', 0);
+ok(zeroRoll.state.systems.gathering.spots.mining[0].remaining === 10 &&
+  zeroRoll.state.systems.gathering.spots.mining[0].capacity === 90,
+  'zero discover gain roll selects the inclusive minimum');
 
 const oneEntryContent = cloneContent();
 oneEntryContent.GATHERING.mining.entries =
   oneEntryContent.GATHERING.mining.entries.slice(0, 1);
-oneEntryContent.GATHERING.mining.entries[0].capMin = 7;
-oneEntryContent.GATHERING.mining.entries[0].capMax = 7;
+oneEntryContent.DISCOVER_GAIN_MIN = 10;
+oneEntryContent.DISCOVER_GAIN_MAX = 20;
 const oneEntry = Gathering.create({
   GatheringContent: oneEntryContent,
   Inventory,
   SkillProgression,
-  GameRandom: sequenceRandom([0.9999999999999999, 0, 0.999])
+  GameRandom: sequenceRandom([0.9999999999999999, 0.999])
 }).explore(freshModel(), 'mining', 0);
 ok(oneEntry.ok
   && oneEntry.result.spot.entryId === 'copper'
-  && oneEntry.result.spot.capacity === 7,
-'single-entry pool and capMin=capMax are deterministic for near-one rolls');
+  && oneEntry.result.spot.remaining === 20
+  && oneEntry.result.spot.capacity === 50,
+'single-entry pool still rolls discover gain into the skill capacity ceiling');
 
 const poolModel = freshModel();
 poolModel.player.skills.mining = { level: 1, xp: 0 };
-const firstPool = makeRules([0, 0, 0])
+const firstPool = makeRules([0, 0])
   .rules.explore(poolModel, 'mining', 0);
-const lastPool = makeRules([0.9999999999999999, 0, 0])
+const lastPool = makeRules([0.9999999999999999, 0])
   .rules.explore(poolModel, 'mining', 0);
 ok(firstPool.result.spot.entryId === 'copper',
   'uniform pool index zero selects the first unlocked entry');
 ok(lastPool.result.spot.entryId === 'iron',
   'uniform pool index near one selects the last unlocked entry');
 
-const replacementModel = knownSpot('mining', 'iron', 'rare', 4, 9);
-replacementModel.systems.gathering.spots.herb = {
+const replacementModel = knownSpot('mining', 'iron', 4, 9);
+replacementModel.systems.gathering.spots.herb = [{
   instanceId: 'spot-2',
   skillId: 'herb',
   entryId: 'lingzhiGrove',
-  quality: 'fine',
   capacity: 5,
   remaining: 3
-};
+}];
 replacementModel.systems.gathering.nextSpotId = 3;
-const previousMine = replacementModel.systems.gathering.spots.mining;
 const previousHerb = JSON.parse(JSON.stringify(
   replacementModel.systems.gathering.spots.herb
 ));
-const replaced = makeRules([0, 0, 0])
+// rolls: copper + common + min capacity → different entry than held iron
+const appendedWhileHeld = makeRules([0, 0])
   .rules.explore(replacementModel, 'mining', 0);
-ok(replaced.ok
-  && replaced.result.spot.instanceId === 'spot-3'
-  && replaced.result.spot.entryId === 'copper',
-'completed exploration replaces the old same-skill point with a new ID');
-ok(replaced.state.systems.gathering.spots.mining !== previousMine,
-  'the old same-skill point is not recoverable from returned state');
-exact(replaced.state.systems.gathering.spots.herb, previousHerb,
+ok(appendedWhileHeld.ok
+  && appendedWhileHeld.result.spot.instanceId === 'spot-3'
+  && appendedWhileHeld.result.spot.entryId === 'copper'
+  && appendedWhileHeld.state.systems.gathering.spots.mining.length === 2
+  && appendedWhileHeld.state.systems.gathering.spots.mining[0].entryId === 'iron',
+  'exploration appends a different entry while keeping the existing spot');
+exact(appendedWhileHeld.state.systems.gathering.spots.herb, previousHerb,
   'exploration preserves every other skill point');
+ok(appendedWhileHeld.result.spot.capacity === 50 &&
+  appendedWhileHeld.result.spot.remaining === 10,
+  'level-1 exploration writes skill capacity ceiling and partial discover gain');
+
+const sameNameModel = knownSpot('mining', 'copper', 4, 9);
+sameNameModel.systems.gathering.nextSpotId = 3;
+const sameName = makeRules([0, 0])
+  .rules.explore(sameNameModel, 'mining', 0);
+ok(sameName.ok
+  && sameName.result.spot.instanceId === 'spot-1'
+  && sameName.result.spot.entryId === 'copper'
+  && sameName.state.systems.gathering.spots.mining.length === 1
+  && sameName.state.systems.gathering.spots.mining[0].remaining === 14
+  && sameName.state.systems.gathering.spots.mining[0].capacity === 50
+  && sameName.state.systems.gathering.nextSpotId === 3,
+  'rediscovering the same entry merges stock into the existing card');
+
+const appendModel = knownSpot('mining', 'iron', 4, 9);
+appendModel.player.skills.mining.level = 1;
+appendModel.systems.gathering.nextSpotId = 3;
+const appended = makeRules([0, 0])
+  .rules.explore(appendModel, 'mining', 0);
+ok(appended.ok
+  && appended.result.spot.instanceId === 'spot-3'
+  && appended.result.spot.entryId === 'copper'
+  && appended.state.systems.gathering.spots.mining.length === 2,
+  'a newly rolled different entry still adds a second mining spot');
+
+const depletedModel = knownSpot('mining', 'copper', 0, 9);
+depletedModel.systems.gathering.nextSpotId = 3;
+const replaced = makeRules([0, 0])
+  .rules.explore(depletedModel, 'mining', 0);
+ok(replaced.ok
+  && replaced.result.spot.instanceId === 'spot-1'
+  && replaced.result.spot.entryId === 'copper'
+  && replaced.state.systems.gathering.spots.mining.length === 1
+  && replaced.state.systems.gathering.spots.mining[0].remaining === 10
+  && replaced.state.systems.gathering.spots.mining[0].capacity === 50
+  && replaced.state.systems.gathering.nextSpotId === 3,
+  'rediscovering a depleted same-entry spot refills that card');
+
+const highLevelCapModel = knownSpot('mining', 'iron', 4, 9);
+highLevelCapModel.player.skills.mining.level = 90;
+highLevelCapModel.systems.gathering.nextSpotId = 3;
+const highCap = makeRules([0, 0.99])
+  .rules.explore(highLevelCapModel, 'mining', 0);
+ok(highCap.ok
+  && highCap.result.spot.capacity === 90
+  && highCap.result.spot.remaining === 20,
+  'high skill discovery uses the level capacity ceiling');
+ok(highCap.result.spot.entryId === 'copper'
+  && highCap.state.systems.gathering.spots.mining.length === 2,
+  'high-level discovery of a new entry keeps the previous different entry');
+
+const saturatedModel = freshModel();
+saturatedModel.player.skills.mining = { level: 1, xp: 0 };
+saturatedModel.systems.gathering.spots.mining = [
+  {
+    instanceId: 'spot-1',
+    skillId: 'mining',
+    entryId: 'copper',
+    capacity: 50,
+    remaining: 50
+  },
+  {
+    instanceId: 'spot-2',
+    skillId: 'mining',
+    entryId: 'tin',
+    capacity: 50,
+    remaining: 50
+  },
+  {
+    instanceId: 'spot-3',
+    skillId: 'mining',
+    entryId: 'iron',
+    capacity: 50,
+    remaining: 50
+  }
+];
+saturatedModel.systems.gathering.nextSpotId = 4;
+const beforeSaturatedSpots = JSON.stringify(
+  saturatedModel.systems.gathering.spots.mining
+);
+const saturated = makeRules([0, 0])
+  .rules.explore(saturatedModel, 'mining', 0);
+ok(!saturated.ok && saturated.code === 'spots_full',
+  'exploration stops when every unlocked entry is held at the capacity cap');
+exact(
+  saturated.state.systems.gathering.spots.mining,
+  JSON.parse(beforeSaturatedSpots),
+  'saturated exploration does not mutate held spots'
+);
+ok(JSON.stringify(saturatedModel.systems.gathering.spots.mining) ===
+  beforeSaturatedSpots,
+  'saturated exploration preserves the caller model spots');
+ok(GatheringContent.exploreSaturated(
+  'mining',
+  1,
+  saturatedModel.systems.gathering.spots.mining
+), 'exploreSaturated detects a fully capped unlock pool');
+ok(!GatheringContent.exploreSaturated(
+  'mining',
+  1,
+  saturatedModel.systems.gathering.spots.mining.slice(0, 2)
+), 'exploreSaturated is false while an unlocked entry is still missing');
+
+const almostFullModel = freshModel();
+almostFullModel.player.skills.mining = { level: 1, xp: 0 };
+almostFullModel.systems.gathering.spots.mining = [
+  {
+    instanceId: 'spot-1',
+    skillId: 'mining',
+    entryId: 'copper',
+    capacity: 50,
+    remaining: 50
+  },
+  {
+    instanceId: 'spot-2',
+    skillId: 'mining',
+    entryId: 'tin',
+    capacity: 50,
+    remaining: 50
+  },
+  {
+    instanceId: 'spot-3',
+    skillId: 'mining',
+    entryId: 'iron',
+    capacity: 50,
+    remaining: 40
+  }
+];
+almostFullModel.systems.gathering.nextSpotId = 4;
+const filledLast = makeRules([0, 0])
+  .rules.explore(almostFullModel, 'mining', 0);
+ok(filledLast.ok
+  && filledLast.code === 'spots_full_after_completion'
+  && filledLast.result.spot.entryId === 'iron'
+  && filledLast.result.spot.remaining === 50,
+  'final discover that fills every unlocked spot reports spots_full_after_completion');
 
 const normalizedFallback = Stage2State.normalize({
   player: freshModel().player,
@@ -240,7 +389,6 @@ const normalizedFallback = Stage2State.normalize({
           instanceId: 'spot-9',
           skillId: 'mining',
           entryId: 'copper',
-          quality: 'common',
           capacity: 2,
           remaining: 2
         }
@@ -250,9 +398,11 @@ const normalizedFallback = Stage2State.normalize({
 });
 ok(normalizedFallback.systems.gathering.nextSpotId === 10,
   'Stage2State repairs a missing nextSpotId above existing spot IDs');
-const fallbackExplore = makeRules([0, 0, 0])
+normalizedFallback.systems.gathering.spots.mining = [];
+const fallbackExplore = makeRules([0, 0])
   .rules.explore(normalizedFallback, 'mining', 0);
-ok(fallbackExplore.result.spot.instanceId === 'spot-10'
+ok(fallbackExplore.ok
+  && fallbackExplore.result.spot.instanceId === 'spot-10'
   && fallbackExplore.state.systems.gathering.nextSpotId === 11,
 'exploration consumes the normalized nextSpotId fallback stably');
 
@@ -316,7 +466,7 @@ ok(collected.ok && collected.code === 'ok',
 ok(collected.state !== successInput
   && JSON.stringify(successInput) === successBefore,
 'collection returns detached state and preserves the complete input');
-ok(collected.state.systems.gathering.spots.mining.remaining === 1,
+ok(firstSpot(collected.state, "mining").remaining === 1,
   'one collection decrements remaining capacity exactly once');
 exact(collected.state.player.inventory.stacks, { copperOre: 1 },
   'weighted drop is transacted into inventory');
@@ -341,7 +491,6 @@ exact(collected.result, {
     instanceId: 'spot-1',
     skillId: 'mining',
     entryId: 'copper',
-    quality: 'common',
     capacity: 2,
     remaining: 1
   }
@@ -367,23 +516,30 @@ weightedCases.forEach(([roll, itemId]) => {
     'weighted cumulative boundary selects ' + itemId + ' at ' + roll);
 });
 
-const extraCases = [
-  [0.149999, 2],
-  [0.15, 1]
+const masteryYieldModel = knownSpot('mining', 'copper', 2, 2);
+masteryYieldModel.player.mastery.mining.copper = {
+  level: 20,
+  xp: 0
+};
+// masteryYieldOrRetentionChance(20) should be > 0; use a high mastery
+// level with fixed extra rolls around the mastery-only threshold.
+const masteryOnlyChance = SkillProgression.masteryYieldOrRetentionChance(20);
+const below = Math.max(0, masteryOnlyChance - 1e-9);
+const atOrAbove = masteryOnlyChance;
+const masteryExtraCases = [
+  [below, 2],
+  [atOrAbove, 1]
 ];
-extraCases.forEach(([extraRoll, quantity]) => {
+masteryExtraCases.forEach(([extraRoll, quantity]) => {
   const result = makeRules([0, extraRoll])
-    .rules.collect(knownSpot('mining', 'copper', 'fine'), 'mining',
-      'copper', 0, {});
+    .rules.collect(masteryYieldModel, 'mining', 'copper', 0, {});
   ok(result.ok && result.result.quantity === quantity,
-    'fine-quality extra-yield boundary is exact at ' + extraRoll);
+    'mastery-only extra-yield boundary is exact at ' + extraRoll);
   ok(result.state.player.inventory.stacks.copperOre === quantity,
-    'fine extra output is included in the single inventory transaction');
+    'mastery extra output is included in the single inventory transaction');
 });
 
-const masteryBonusModel = knownSpot(
-  'mining', 'copper', 'rare', 2, 2
-);
+const masteryBonusModel = knownSpot('mining', 'copper', 2, 2);
 masteryBonusModel.player.mastery.mining.copper = {
   level: 99,
   xp: 0
@@ -425,7 +581,7 @@ for (const [bonuses, label] of [
   noThrow(() => {
     const result = makeRules([0, 0])
       .rules.collect(
-        knownSpot('mining', 'copper', 'common'),
+        knownSpot(),
         'mining',
         'copper',
         0,
@@ -438,16 +594,18 @@ for (const [bonuses, label] of [
 ok(hostileBonusReads === 0,
   'bonus validation never invokes an adversarial getter');
 
-const depletedInput = knownSpot('mining', 'copper', 'common', 1, 1);
+const depletedInput = knownSpot('mining', 'copper', 1, 1);
 const depleted = makeRules([0, 1 - Number.EPSILON])
   .rules.collect(depletedInput, 'mining', 'copper', 0, {});
 ok(depleted.ok
   && depleted.code === 'resource_depleted_after_completion',
 'last capacity completes successfully with the explicit stop code');
-ok(depleted.state.systems.gathering.spots.mining === null,
-  'last capacity clears the finite resource point');
-ok(depleted.result.spot === null,
-  'last-capacity result reports that no point remains');
+ok(firstSpot(depleted.state, "mining") &&
+  firstSpot(depleted.state, "mining").remaining === 0,
+  'last capacity keeps the depleted resource point at remaining 0');
+ok(depleted.result.spot &&
+  depleted.result.spot.remaining === 0,
+  'last-capacity result reports the emptied point');
 ok(depleted.gains.items.copperOre === 1
   && depleted.state.player.skills.mining.xp === 12,
 'last capacity still commits items and progression');
@@ -472,7 +630,7 @@ missingCases.forEach(([model, skillId, entryId, label]) => {
 });
 
 const lockedCollectInput = knownSpot(
-  'mining', 'silver', 'common', 2, 2
+  'mining', 'silver', 2, 2
 );
 const lockedCollectMade = makeRules([0, 0]);
 const lockedCollect = lockedCollectMade.rules.collect(
@@ -528,7 +686,7 @@ exact(full.state, fullNewStack,
 ok(full.state !== fullNewStack
   && JSON.stringify(fullNewStack) === fullBefore,
 'inventory-full failure is detached and preserves input bytes');
-ok(full.state.systems.gathering.spots.mining.remaining === 2
+ok(firstSpot(full.state, "mining").remaining === 2
   && full.state.player.skills.mining.xp === 0
   && full.state.player.mastery.mining.copper.xp === 0
   && !Object.prototype.hasOwnProperty.call(full.state.player, 'xiwei'),
@@ -643,7 +801,7 @@ noThrow(() => {
     'invalid random-provider output is rejected safely');
 }, 'invalid random-provider output is non-throwing');
 
-const deterministicInput = knownSpot('mining', 'copper', 'fine', 2, 2);
+const deterministicInput = knownSpot('mining', 'copper', 2, 2);
 const deterministicBefore = JSON.stringify(deterministicInput);
 const deterministicA = makeRules([firstBoundary, 0.1])
   .rules.collect(
@@ -763,9 +921,8 @@ const thisRandom = {
 };
 const thisRandomRules = Gathering.create(realDeps(thisRandom));
 thisRandom.value[0] = 0.9999999999999999;
-thisRandom.value[1] = 0.95;
-thisRandom.value[2] = 0.9999999999999999;
-thisRandom.value = [0.5, 0.8, 0.5];
+thisRandom.value[1] = 0.9999999999999999;
+thisRandom.value = [0.5, 0.5];
 thisRandom.next = function () {
   throw new Error('late random method replacement must not be used');
 };
@@ -776,8 +933,8 @@ const isolatedRandom = thisRandomRules.explore(
 );
 ok(isolatedRandom.ok
   && isolatedRandom.result.spot.entryId === 'copper'
-  && isolatedRandom.result.spot.quality === 'common'
-  && isolatedRandom.result.spot.capacity === 15,
+  && isolatedRandom.result.spot.capacity === 50
+  && isolatedRandom.result.spot.remaining === 10,
 'random this-data and method are deeply snapshotted at factory creation');
 
 const mutableContent = cloneContent();
@@ -788,7 +945,7 @@ const mutableProgression = {
   masteryYieldOrRetentionChance:
     SkillProgression.masteryYieldOrRetentionChance
 };
-const mutableRandom = sequenceRandom([0, 0, 0]);
+const mutableRandom = sequenceRandom([0, 0]);
 const copiedRules = Gathering.create({
   GatheringContent: mutableContent,
   Inventory: mutableInventory,
@@ -800,7 +957,6 @@ mutableContent.GATHERING.mining.entries[0].drops[0].itemId = 'tinOre';
 mutableContent.GATHERING.mining.entries.push(
   JSON.parse(JSON.stringify(mutableContent.GATHERING.mining.entries[0]))
 );
-mutableContent.RESOURCE_QUALITIES.common.capacityMultiplier = 99;
 mutableInventory.apply = function () {
   throw new Error('late mutation must not be used');
 };
@@ -814,7 +970,8 @@ noThrow(() => {
   const result = copiedRules.explore(freshModel(), 'mining', 0);
   ok(result.ok
     && result.result.spot.entryId === 'copper'
-    && result.result.spot.capacity === 15,
+    && result.result.spot.capacity === 50
+    && result.result.spot.remaining === 10,
   'factory copies content and callable dependency boundaries');
 }, 'late dependency mutation cannot affect created rules');
 
@@ -827,7 +984,7 @@ for (const [deps, label] of [
   [{ ...realDeps(), GameRandom: {} }, 'missing random next'],
   [{
     ...realDeps(),
-    GatheringContent: { GATHERING: {}, RESOURCE_QUALITIES: {} }
+    GatheringContent: { GATHERING: {} }
   }, 'invalid content']
 ]) {
   noThrow(() => {

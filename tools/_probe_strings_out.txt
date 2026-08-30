@@ -1,0 +1,81 @@
+ScriptString count=13628
+
+=== needle hits in ScriptString ===
+掌门: 0
+长老: 0
+真传: 0
+外门: 0
+内门: 0
+弟子: 0
+宗主: 0
+执事: 0
+女修: 0
+修炼: 0
+外门弟子: 0
+内门弟子: 0
+核心: 0
+散修: 0
+峰主: 0
+堂主: 0
+护法: 0
+亲传: 0
+记名: 0
+杂役: 0
+供奉: 0
+长老院: 0
+Decrypt: 0
+Encrypt: 9
+  @46008008: 'Encryption failed'
+  @46008016: 'EncryptionPolicy'
+  @46015624: 'Invalid EncryptedData'
+  @46071160: 'invalid EncryptedData'
+  @46071168: 'invalid EncryptedPrivateKeyInfo'
+  @46075040: 'missing EncryptedContentInfo'
+  @46075048: 'missing EncryptedContentInfo.ContentEncryptionAlgorithmIdentifier'
+  @46075056: 'missing EncryptedContentInfo.ContentType'
+DES: 7
+  @45984936: ' DESC'
+  @45999472: 'CMS3DESwrap'
+  @46005368: 'DES'
+  @46023760: 'OBJECT DESCRIPTOR'
+  @46039864: 'TripleDES'
+  @46045392: 'XDG_DESKTOP_DIR'
+  @46070048: 'id-smime-alg-3DESwrap'
+sKey: 1
+  @46072624: 'k_ReceiptBytesKey'
+key: 144
+  @45985200: " bits hash key, the calling method doesn't support this key size, please use the appropriate API"
+  @45985472: ' implementing interface ITextEdition is missing the implementation for keyboardType. Assigning a value to ITextEdition.k...'
+  @45985480: ' implementing interface ITextEdition is missing the implementation for keyboardType. Calling ITextEdition.keyboardType o...'
+  @45987672: "'simpleType' or 'complexType' cannot follow 'unique', 'key' or 'keyref'."
+  @45990272: '. This product will be ignored to prevent dictionary key conflicts. Please ensure each product has a unique store-specif...'
+  @45990648: '/flags_key'
+  @45990656: '/flags_key.sa'
+  @45990680: '/floats_key'
+helps: 9
+  @45990712: '/helps_key'
+  @45990720: '/helps_key.sa'
+  @45990728: '/helps_value'
+  @45990736: '/helps_value.sa'
+  @46068936: 'helps'
+  @46068944: 'helps0'
+  @46068952: 'helps1'
+  @46068960: 'helps_key'
+npclog: 0
+events: 4
+  @45985432: ' has multiple entries with the same display name, this prevents selection in EnumPopup.'
+  @46009176: 'Event.Use() should not be called for events of type {0}'
+  @46014072: 'Ignoring event {0}: too many events dispatched recurively'
+  @46033776: "The '{0}' attribute is ignored, because the value of 'prohibited' for attribute use only prevents inheritance of an iden..."
+doevent: 1
+  @46056272: 'doevent'
+rejob: 0
+releader: 0
+
+=== ScriptString with CJK (sample up to 80) ===
+total CJK strings: 44
+Traceback (most recent call last):
+  File "D:\ZM\xiuxian-idle-h5\tools\_probe_strings.py", line 49, in <module>
+    print(f"  @{s['Address']}: {v!r}")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'gbk' codec can't encode character '\xa2' in position 35: illegal multibyte sequence

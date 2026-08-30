@@ -185,6 +185,12 @@ ok(savedPlan.ok &&
 '基础传承方案可以持久保存');
 
 const originalSkills = JSON.stringify(savedPlan.state.player.skills);
+const heirName = savedPlan.state.systems.npcs.records[childId].identity.name;
+savedPlan.state.systems.world.elapsedSeconds = 2000000;
+savedPlan.state.systems.world.activeAccumulator = 99999;
+savedPlan.state.systems.world.monthAccumulator = 99999;
+savedPlan.state.systems.world.calendar.monthAccumulator = 99999;
+savedPlan.state.systems.world.calendar.year = 80;
 const began = LegacyTransition.begin(
   savedPlan.state,
   'voluntary',
@@ -196,15 +202,35 @@ const selected = LegacyTransition.chooseRoute(
   childId
 );
 const inherited = LegacyTransition.confirm(selected.state, 1001);
+const refreshedChild = inherited.state.systems.npcs.records[childId];
 ok(inherited.ok &&
-  inherited.state.systems.npcs.records[childId].status === 'playerIdentity',
-'可以选择成年女性后代接续玩家身份');
+  inherited.state.player.name === heirName &&
+  Object.keys(inherited.state.systems.npcs.records).length >= 3 &&
+  inherited.state.player.kin &&
+  !inherited.state.player.kin.mo &&
+  !inherited.state.player.kin.fa &&
+  Array.isArray(inherited.state.player.kin.frs) &&
+  inherited.state.player.kin.frs.length >= 2 &&
+  (!refreshedChild || refreshedChild.identity.name !== heirName) &&
+  Object.keys(inherited.state.systems.npcs.records).every(function (id) {
+    return inherited.state.systems.npcs.records[id].status !==
+      'playerIdentity';
+  }),
+'传代后按关系包重建人物圈，继承人以玩家身份进入新世界');
 ok(JSON.stringify(inherited.state.player.skills) === originalSkills &&
   Object.keys(inherited.state.player.skills).length === 12,
 '传代时十二项生活技能等级与经验完全保留');
 ok(inherited.state.systems.lineage.lives.length === 1 &&
-  inherited.state.systems.lineage.pendingTransition === null,
+  inherited.state.systems.lineage.pendingTransition === null &&
+  Object.keys(inherited.state.systems.lineage.descendants).length === 0,
 '旧人生写入传承记录且转换一次性完成');
+ok(inherited.state.systems.world.calendar.year === 1 &&
+  inherited.state.systems.world.calendar.month === 1 &&
+  inherited.state.systems.world.elapsedSeconds === 0 &&
+  inherited.state.systems.world.activeAccumulator === 0 &&
+  inherited.state.systems.world.monthAccumulator === 0 &&
+  inherited.state.systems.world.calendar.monthAccumulator === 0,
+'新人生从新世界日历与时钟重新开始');
 
 const rebirthStart = LegacyTransition.begin(
   inherited.state,
@@ -227,5 +253,54 @@ ok(reborn.ok &&
   reborn.state.player.name === '陆明月' &&
   JSON.stringify(reborn.state.player.skills) === originalSkills,
 '也可以创建新身份轮回且生活技能不重置');
+
+const chronicleSeed = LegacyTransition.begin(
+  reborn.state,
+  'voluntary',
+  3000
+);
+const chronicleRoute = LegacyTransition.chooseRoute(
+  chronicleSeed.state,
+  'newIdentity'
+);
+const chronicleDraft = LegacyTransition.updateDraft(chronicleRoute.state, {
+  name: '陆清秋',
+  originId: 'wanderingReborn',
+  personalityId: 'steady',
+  talentId: 'plainSpirit'
+});
+chronicleDraft.state.systems.world.worldEvents = [
+  {
+    id: 'we-old',
+    type: 'talk',
+    participants: ['npc-1', 'npc-2'],
+    location: 'qinglan-town',
+    narrative: '上一世旧事',
+    source: 'world',
+    atMonth: 1,
+    visibleFromMonth: 1
+  }
+];
+chronicleDraft.state.systems.world.nextWorldEventId = 9;
+chronicleDraft.state.systems.world.calendar.yearEventsCreated = 5;
+const chronicleCleared = LegacyTransition.confirm(chronicleDraft.state, 3001);
+ok(
+  chronicleCleared.ok &&
+    Array.isArray(chronicleCleared.state.systems.world.worldEvents) &&
+    chronicleCleared.state.systems.world.worldEvents.length >= 1 &&
+    chronicleCleared.state.systems.world.worldEvents.some(function (ev) {
+      return ev && Array.isArray(ev.tags) && ev.tags.indexOf('prologue') >= 0;
+    }) &&
+    chronicleCleared.state.systems.world.nextWorldEventId >= 2 &&
+    chronicleCleared.state.systems.world.calendar.yearEventsCreated >= 1 &&
+    Object.keys(chronicleCleared.state.systems.npcs.records).length >= 3 &&
+    chronicleCleared.state.player.kin &&
+    !chronicleCleared.state.player.kin.mo &&
+    Object.keys(chronicleCleared.state.systems.npcs.records).every(function (id) {
+      const npc = chronicleCleared.state.systems.npcs.records[id];
+      return npc && npc.status !== 'playerIdentity' && npc.status !== 'ascended';
+    }),
+  '开启新人生会清空旧大事记并写入踏入旅途开场见闻'
+);
 
 console.log('Stage 5 基础生命周期与传承自测：' + passed + ' 通过 / 0 失败');

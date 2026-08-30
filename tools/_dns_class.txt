@@ -1,0 +1,96 @@
+EncryptDES at 359035
+public class dishelp : MonoBehaviour // TypeDefIndex: 5007
+{
+	// Methods
+
+	// RVA: 0x13BDD44 Offset: 0x13B9D44 VA: 0x13BDD44
+	private void Start() { }
+
+	// RVA: 0x13BDD48 Offset: 0x13B9D48 VA: 0x13BDD
+---fields sample---
+public class dishelp : MonoBehaviour // TypeDefIndex: 5007
+{
+	// Methods
+
+	// RVA: 0x13BDD44 Offset: 0x13B9D44 VA: 0x13BDD44
+	private void Start() { }
+
+	// RVA: 0x13BDD48 Offset: 0x13B9D48 VA: 0x13BDD48
+	public void dis() { }
+
+	// RVA: 0x13BDD6C Offset: 0x13B9D6C VA: 0x13BDD6C
+	private void Update() { }
+
+	// RVA: 0x13BDD70 Offset: 0x13B9D70 VA: 0x13BDD70
+	public void .ctor() { }
+}
+
+// Namespace: 
+public static class dns // TypeDefIndex: 5008
+{
+	// Fields
+	public static Dictionary<string, string> af; // 0x0
+	public static Dictionary<string, string> lf; // 0x8
+	public static root root0; // 0x10
+	public static string myurl; // 0x18
+	public static string myurl0; // 0x20
+	public static string myurl1; // 0x28
+	public static string[] namel; // 0x30
+	public static string[] namef3; // 0x38
+	public static string[] namef4; // 0x40
+	public static string[] soulname; // 0x48
+	public static int infonum; // 0x50
+	private static Vector2 cv2v; // 0x54
+	public static int onstarnum; // 0x5C
+	public static int petbday; // 0x60
+	public static int[][] bodycolor; // 0x68
+	public static Color32[] bodycolors; // 0x70
+	public static int[][] eyecolor; // 0x78
+	public static Color32[] eyecolors; // 0x80
+	public static int[][] animalhc; // 0x88
+	public static int[][] animalhc1; // 0x90
+	public static Color32 colorw; // 0x98
+	public static Color32 colorg; // 0x9C
+	public static Color32 colorr; // 0xA0
+	public static Color32 coloract; // 0xA4
+	public static Color32[] lvcolors; // 0xA8
+	public static Color32[] feelcolors; // 0xB0
+	public static int[] savetime; // 0xB8
+	public static float[] waittime; // 0xC0
+	public static int autoselecttime; // 0xC8
+	public static int fueffect; // 0xCC
+	public static int tagnum; // 0xD0
+	public static int yangbuff; // 0xD4
+	public static int logpagenum; // 0xD8
+	public static int infologpagenum; // 0xDC
+	public static int[] fitem; // 0xE0
+	public static int[] level_yang; // 0xE8
+	public static int[] fami_yang; // 0xF0
+	public static float[] lgr; // 0xF8
+	public static int[] fami_act1day; // 0x100
+	public static int[] level_feel; // 0x108
+	public static int[] npclog; // 0x110
+	public static int sword_yang; // 0x118
+	public static int pet_yang; // 0x11C
+	public static float[] level_speed; // 0x120
+	public static int s_day; // 0x128
+	public static int sword_atk; // 0x12C
+	public static float[] tag_r; // 0x130
+	public static int swordsoul_atk; // 0x138
+	public static int sword_exp; // 0x13C
+	public static int pet_exp; // 0x140
+	public static int pet_day; // 0x144
+	public static float sword_expspeed; // 0x148
+	public static float pet_expspeed; // 0x14C
+	public static float sword_exp1max; // 0x150
+	public static float pet_exp1max; // 0x154
+	public static float act4day; // 0x158
+	public static int[] level_exp1max; // 0x160
+	public static int[] pet_clothval; // 0x168
+	public static int[] pet_clothsat; // 0x170
+	public static int[] pet_clothhue; // 0x178
+	public static int[] pet_hairval; // 0x180
+	public static int[] pet_hairsat; // 0x188
+	public static
+...
+methods count 30

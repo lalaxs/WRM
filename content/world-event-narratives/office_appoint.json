@@ -1,0 +1,32 @@
+[
+  {
+    "id": "office_appoint-0129",
+    "weight": 7,
+    "type": "office_appoint",
+    "actors": "pair",
+    "template": "{a}在{loc}当众宣布，擢升{b}担当新职，门人称贺。",
+    "officeRankA": [
+      "leader",
+      "elder"
+    ],
+    "officeRankB": [
+      "inner",
+      "outer",
+      "trueDisciple",
+      "steward"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "office_appoint-0130",
+    "weight": 7,
+    "type": "office_appoint",
+    "actors": "solo",
+    "template": "{a}在{loc}受命新职，接过令牌与名册。",
+    "officeRankAny": [
+      "steward",
+      "trueDisciple",
+      "hall"
+    ]
+  }
+]

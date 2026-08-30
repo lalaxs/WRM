@@ -4,20 +4,18 @@
     ? factory(
       require('./stage3-rules.js'),
       require('./social.js'),
-      require('./event-engine.js'),
       require('./npc-simulation.js'),
       require('./sect-simulation.js'),
-      require('../content/event-templates.js'),
+      require('./world-month.js'),
       require('../content/regions.js'),
       require('../content/sects.js')
     )
     : factory(
       root && root.Stage3Rules,
       root && root.Social,
-      root && root.EventEngine,
       root && root.NpcSimulation,
       root && root.SectSimulation,
-      root && root.EventTemplateContent,
+      root && root.WorldMonth,
       root && root.RegionContent,
       root && root.SectContent
     );
@@ -26,10 +24,9 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (
   DefaultStage3Rules,
   Social,
-  EventEngine,
   NpcSimulation,
   SectSimulation,
-  EventTemplateContent,
+  WorldMonth,
   RegionContent,
   SectContent
 ) {
@@ -38,7 +35,10 @@
   const ACTIVE_STEP_SECONDS = 900;
   const BACKGROUND_STEP_SECONDS = 21600;
   const SECT_STEP_SECONDS = 86400;
-  const EVENT_SLOT_SECONDS = 7200;
+  // 离线一次结算内各车道最多完整推演的步数；超出只吃掉时间、跳过细节。
+  const OFFLINE_ACTIVE_STEP_CAP = 96;
+  const OFFLINE_BACKGROUND_STEP_CAP = 24;
+  const OFFLINE_SECT_STEP_CAP = 48;
 
   function clone(value) {
     try {
@@ -105,10 +105,6 @@
         throw new TypeError('Stage 3 rules.' + name + ' is required');
       }
     });
-    const templates = source.eventTemplates ||
-      (EventTemplateContent && EventTemplateContent.TEMPLATES) ||
-      [];
-
     function start(state, key, nowMs) {
       if (state &&
           state.player &&
@@ -129,45 +125,27 @@
       if (!action) {
         return { ok: false, code: 'invalid_action', state: clone(state) };
       }
-      const available = Social.isAvailable(
+      // 主动社交进入并行队列，不占用主行动槽。
+      const queued = Social.enqueue(
         state,
         action.npcId,
         action.interactionId,
         action.itemId,
         source
       );
-      if (!available.ok) {
-        return { ok: false, code: available.code, state: clone(state) };
-      }
-      const next = clone(state);
-      if (!next) return { ok: false, code: 'invalid_state', state: state };
-      if (next.current && next.current.key === key) {
-        return { ok: true, code: 'no_change', state: next };
-      }
-      if (next.current) {
-        next.lastActionStop = {
-          key: next.current.key,
-          reason: 'switched',
-          atMs: Number.isFinite(nowMs) && nowMs >= 0 ? nowMs : 0
+      if (!queued || !queued.ok) {
+        return {
+          ok: false,
+          code: queued && queued.code,
+          state: clone(state)
         };
-        if (next.systems &&
-            next.systems.combat &&
-            typeof next.current.key === 'string' &&
-            next.current.key.indexOf('combat:') === 0) {
-          next.systems.combat.session = null;
-        }
       }
-      next.current = {
-        key: key,
-        mode: 'finite',
-        count: 1,
-        done: 0,
-        elapsed: 0,
-        elapsedAnchorMs: null,
-        elapsedBaseSeconds: null,
-        stalled: false
+      return {
+        ok: true,
+        code: queued.code || 'ok',
+        state: queued.state,
+        value: queued.value || null
       };
-      return { ok: true, code: 'ok', state: next };
     }
 
     function selected(descriptor) {
@@ -177,11 +155,23 @@
     }
 
     function worldHelpers(helpers) {
-      return {
+      const wrap = {
         random: helpers.random,
         report: helpers.report,
+        source: helpers && helpers.source,
         nowSeconds: function () { return helpers.nowMs() / 1000; }
       };
+      Object.defineProperty(wrap, 'offlineMonthBudget', {
+        enumerable: true,
+        configurable: true,
+        get: function () {
+          return helpers ? helpers.offlineMonthBudget : null;
+        },
+        set: function (value) {
+          if (helpers) helpers.offlineMonthBudget = value;
+        }
+      });
+      return wrap;
     }
 
     function offerFirstSectChoice(state, helpers) {
@@ -194,8 +184,7 @@
       state.player.flags.completedFirstAction = true;
       const offered = SectSimulation.onFirstActionCompleted(
         state,
-        worldHelpers(helpers),
-        { templates: templates }
+        worldHelpers(helpers)
       );
       if (offered && offered.ok) replace(state, offered.state);
     }
@@ -211,7 +200,8 @@
       report.social.completed.push({
         npcId: value.npcId,
         interactionId: value.interactionId,
-        label: value.label
+        label: value.label,
+        narrative: value.narrative || value.label
       });
       report.social.relationshipChanges.push({
         npcId: value.npcId,
@@ -321,7 +311,7 @@
 
     const benefitLane = Object.freeze({
       id: 'social-benefits',
-      nextBoundary: function (state) {
+      nextBoundary: function (state, helpers) {
         const benefits = state.systems &&
           state.systems.social &&
           state.systems.social.benefits;
@@ -334,7 +324,7 @@
           );
           if (remaining < next) next = remaining;
         });
-        return next;
+        return offlineBatchBoundary(helpers, next);
       },
       elapse: function (state, seconds) {
         const benefits = state.systems &&
@@ -359,13 +349,6 @@
       }
     });
 
-    function pendingCount(state) {
-      const pending = state.systems &&
-        state.systems.events &&
-        state.systems.events.pending;
-      return Array.isArray(pending) ? pending.length : 0;
-    }
-
     function socialJobs(state) {
       const jobs = state.systems &&
         state.systems.parallel &&
@@ -379,11 +362,11 @@
 
     const parallelSocialLane = Object.freeze({
       id: 'social-parallel',
-      nextBoundary: function (state) {
+      nextBoundary: function (state, helpers) {
         let next = Infinity;
         socialJobs(state).forEach(function (job) {
           if (job.ready === true) {
-            if (pendingCount(state) < 20) next = 0;
+            next = 0;
             return;
           }
           const remaining = Math.max(
@@ -392,7 +375,7 @@
           );
           if (remaining < next) next = remaining;
         });
-        return next;
+        return offlineBatchBoundary(helpers, next);
       },
       elapse: function (state, seconds) {
         socialJobs(state).forEach(function (job) {
@@ -418,39 +401,49 @@
             job.completionReported = true;
           }
         });
-        const ready = jobs.filter(function (job) {
-          return job && job.kind === 'social' && job.ready === true;
-        }).sort(function (left, right) {
-          return left.id.localeCompare(right.id);
-        });
-        for (let index = 0;
-            index < ready.length && pendingCount(state) < 20;
-            index++) {
-          const job = ready[index];
-          const created = EventEngine.instantiate(
+
+        // 玩家主动社交：到时直接结算；带 followup 的遗留任务直接丢弃（无待决策）。
+        for (let index = jobs.length - 1; index >= 0; index--) {
+          const job = jobs[index];
+          if (!job || job.kind !== 'social' || job.ready !== true) continue;
+          if (job.followupTemplateId) {
+            jobs.splice(index, 1);
+            continue;
+          }
+          if (!(job.actionKey || job.interactionId)) continue;
+          const action = job.actionKey
+            ? Social.parseActionKey(job.actionKey)
+            : {
+              key: null,
+              npcId: job.npcId,
+              interactionId: job.interactionId,
+              itemId: job.itemId || job.paidItemId || null
+            };
+          if (!action) {
+            jobs.splice(index, 1);
+            continue;
+          }
+          jobs.splice(index, 1);
+          const completed = Social.complete(
             state,
-            job.followupTemplateId,
-            job.context,
+            action,
             {
               nowSeconds: function () {
                 return helpers.nowMs() / 1000;
-              }
+              },
+              random: helpers.random
             },
-            templates
+            source,
+            { giftPrepaid: !!job.paidItemId }
           );
-          if (!created.ok) continue;
-          replace(state, created.state);
-          const queued = EventEngine.enqueue(state, created.event);
-          if (!queued.ok) continue;
-          replace(state, queued.state);
-          const removeIndex = state.systems.parallel.jobs.findIndex(
-            function (candidate) {
-              return candidate && candidate.id === job.id;
-            }
+          if (!completed.ok) continue;
+          replace(state, completed.state);
+          recordSocial(
+            helpers.report,
+            completed.result || completed.value,
+            action
           );
-          if (removeIndex >= 0) {
-            state.systems.parallel.jobs.splice(removeIndex, 1);
-          }
+          offerFirstSectChoice(state, helpers);
         }
       }
     });
@@ -462,6 +455,14 @@
     function accumulatorBoundary(state, key, step) {
       const current = finite(world(state) && world(state)[key], 0);
       return Math.max(0, step - current);
+    }
+
+    function offlineBatchBoundary(helpers, onlineBoundary) {
+      if (!helpers || helpers.source !== 'offline') return onlineBoundary;
+      if (onlineBoundary === 0) return 0;
+      const rem = helpers.remainingSeconds;
+      if (Number.isFinite(rem) && rem > 0) return rem;
+      return onlineBoundary;
     }
 
     function addAccumulator(state, key, seconds) {
@@ -476,145 +477,142 @@
       target[key] = Math.max(0, finite(target[key], 0) - step);
     }
 
+    function burnWholeSteps(state, key, step) {
+      const target = world(state);
+      if (!target || !(step > 0)) return;
+      const acc = finite(target[key], 0);
+      const skip = Math.floor(acc / step);
+      if (skip > 0) target[key] = acc - skip * step;
+    }
+
+    function drainAccumulatorSteps(state, key, step, maxSteps, onStep) {
+      let count = 0;
+      while (finite(world(state) && world(state)[key], 0) >= step &&
+          count < maxSteps) {
+        subtractAccumulator(state, key, step);
+        onStep();
+        count += 1;
+      }
+      return count;
+    }
+
+    function flushOfflineNpcProgress(state, helpers) {
+      const target = world(state);
+      if (!target) return;
+      let pending = finite(target.npcProgressPendingSeconds, 0);
+      target.npcProgressPendingSeconds = 0;
+      if (!(pending > 0) || !NpcSimulation) return;
+      let steps = 0;
+      while (pending > 0 && steps < OFFLINE_ACTIVE_STEP_CAP) {
+        const chunk = Math.min(ACTIVE_STEP_SECONDS, pending);
+        if (typeof NpcSimulation.advanceAges === 'function') {
+          NpcSimulation.advanceAges(state, chunk);
+        }
+        if (typeof NpcSimulation.advanceCultivation === 'function') {
+          NpcSimulation.advanceCultivation(state, chunk, helpers || {});
+        }
+        pending -= chunk;
+        steps += 1;
+      }
+      if (pending > 0) {
+        if (typeof NpcSimulation.advanceAges === 'function') {
+          NpcSimulation.advanceAges(state, pending);
+        }
+        if (typeof NpcSimulation.advanceCultivation === 'function') {
+          NpcSimulation.advanceCultivation(state, pending, helpers || {});
+        }
+      }
+    }
+
     const activeNpcLane = Object.freeze({
       id: 'stage4-active-npcs',
-      nextBoundary: function (state) {
-        return world(state)
-          ? accumulatorBoundary(
-            state,
-            'activeAccumulator',
-            ACTIVE_STEP_SECONDS
-          )
-          : Infinity;
+      nextBoundary: function (state, helpers) {
+        if (!world(state)) return Infinity;
+        return offlineBatchBoundary(
+          helpers,
+          accumulatorBoundary(state, 'activeAccumulator', ACTIVE_STEP_SECONDS)
+        );
       },
-      elapse: function (state, seconds) {
+      elapse: function (state, seconds, helpers) {
         const target = world(state);
         if (!target) return;
         target.elapsedSeconds = finite(target.elapsedSeconds, 0) + seconds;
         addAccumulator(state, 'activeAccumulator', seconds);
+        // 离线：只累加待推进秒数，避免每个短周期主行动微步都扫全量 NPC。
+        // 在 resolve（offlineBatch 一次吞完）里按 ACTIVE_STEP 大步合并推进。
+        if (helpers && helpers.source === 'offline') {
+          target.npcProgressPendingSeconds =
+            finite(target.npcProgressPendingSeconds, 0) + seconds;
+          return;
+        }
+        // 4C：全体在世 NPC 缓慢堆修为并尝试突破（与玩家同量级需求表）。
+        // 事件仍只刷关系圈；修炼与事件解耦。
         if (NpcSimulation &&
             typeof NpcSimulation.advanceAges === 'function') {
           NpcSimulation.advanceAges(state, seconds);
         }
+        if (NpcSimulation &&
+            typeof NpcSimulation.advanceCultivation === 'function') {
+          NpcSimulation.advanceCultivation(state, seconds, helpers || {});
+        }
       },
       resolve: function (state, helpers) {
-        subtractAccumulator(
+        const offline = helpers && helpers.source === 'offline';
+        const maxSteps = offline ? OFFLINE_ACTIVE_STEP_CAP : 8;
+        // P5：旧版每 tick 调用 NpcSimulation.advanceActiveStep，让全体活跃 NPC
+        // 自主修炼 / 游历 / 结交 / 换宗——即「模拟一个 NPC 世界」，且 NPC 会
+        // 自主产生事件。该自主模拟已在 core/npc-simulation.js 重写中彻底移除：
+        // NPC 不再自主生活、不再自主产出事件，只在玩家关系网里被 world-month.js
+        // 唤醒。此处仅排空累加器以维持节拍记账，不再执行任何旧版自主逻辑。
+        drainAccumulatorSteps(
           state,
           'activeAccumulator',
-          ACTIVE_STEP_SECONDS
+          ACTIVE_STEP_SECONDS,
+          maxSteps,
+          function () {}
         );
-        if (NpcSimulation &&
-            typeof NpcSimulation.advanceActiveStep === 'function') {
-          NpcSimulation.advanceActiveStep(
-            state,
-            worldHelpers(helpers),
-            {
-              EventEngine: EventEngine,
-              regions: RegionContent,
-              sects: SectContent
-            }
-          );
+        if (offline) {
+          burnWholeSteps(state, 'activeAccumulator', ACTIVE_STEP_SECONDS);
+          flushOfflineNpcProgress(state, helpers);
         }
       }
     });
 
     const backgroundNpcLane = Object.freeze({
       id: 'stage4-background-npcs',
-      nextBoundary: function (state) {
-        return world(state)
-          ? accumulatorBoundary(
+      nextBoundary: function (state, helpers) {
+        if (!world(state)) return Infinity;
+        return offlineBatchBoundary(
+          helpers,
+          accumulatorBoundary(
             state,
             'backgroundAccumulator',
             BACKGROUND_STEP_SECONDS
           )
-          : Infinity;
+        );
       },
       elapse: function (state, seconds) {
         addAccumulator(state, 'backgroundAccumulator', seconds);
       },
       resolve: function (state, helpers) {
-        subtractAccumulator(
+        const offline = helpers && helpers.source === 'offline';
+        const maxSteps = offline ? OFFLINE_BACKGROUND_STEP_CAP : 4;
+        // P5：旧版每 tick 调用 NpcSimulation.advanceBackgroundStep，对后台 NPC
+        // 做同样的自主生存模拟。该逻辑已随 P5 重写彻底移除（见 core/npc-simulation.js）。
+        // 后台 NPC 仍随真实时间走被动生命周期（在 activeNpcLane.elapse 的
+        // advanceAges / advanceCultivation 中统一结算），此处仅排空累加器。
+        drainAccumulatorSteps(
           state,
           'backgroundAccumulator',
-          BACKGROUND_STEP_SECONDS
+          BACKGROUND_STEP_SECONDS,
+          maxSteps,
+          function () {}
         );
-        if (NpcSimulation &&
-            typeof NpcSimulation.advanceBackgroundStep === 'function') {
-          NpcSimulation.advanceBackgroundStep(
+        if (offline) {
+          burnWholeSteps(
             state,
-            worldHelpers(helpers),
-            {
-              EventEngine: EventEngine,
-              regions: RegionContent,
-              sects: SectContent
-            }
-          );
-        }
-      }
-    });
-
-    function initializeEventDay(state, helpers, dayIndex) {
-      const events = state.systems.events;
-      events.day = {
-        index: dayIndex,
-        budget: EventEngine.rollDailyBudget(worldHelpers(helpers)),
-        attempted: 0,
-        created: 0
-      };
-    }
-
-    const eventScheduleLane = Object.freeze({
-      id: 'stage4-event-schedule',
-      nextBoundary: function (state) {
-        return world(state)
-          ? accumulatorBoundary(
-            state,
-            'eventAccumulator',
-            EVENT_SLOT_SECONDS
-          )
-          : Infinity;
-      },
-      elapse: function (state, seconds) {
-        addAccumulator(state, 'eventAccumulator', seconds);
-      },
-      resolve: function (state, helpers) {
-        subtractAccumulator(
-          state,
-          'eventAccumulator',
-          EVENT_SLOT_SECONDS
-        );
-        if (!state.systems.events.day ||
-            state.systems.events.day.budget < 5) {
-          initializeEventDay(state, helpers, Math.floor(
-            Math.max(0, finite(world(state).elapsedSeconds, 0) - 1) /
-              SECT_STEP_SECONDS
-          ));
-        }
-        const scheduled = EventEngine.schedulePlayerEvent(
-          state,
-          worldHelpers(helpers),
-          { templates: templates }
-        );
-        if (scheduled && scheduled.state) {
-          replace(state, scheduled.state);
-        }
-        if (scheduled && scheduled.ok) {
-          helpers.report.world.newPending =
-            finite(helpers.report.world.newPending, 0) + 1;
-          helpers.report.world.events.push({
-            category: 'pending',
-            eventId: scheduled.event.id,
-            title: scheduled.event.title
-          });
-        }
-        const elapsed = finite(world(state).elapsedSeconds, 0);
-        if (elapsed > 0 &&
-            Math.abs(elapsed % SECT_STEP_SECONDS) < 1e-9) {
-          replace(state, EventEngine.compactWorldHistory(state));
-          initializeEventDay(
-            state,
-            helpers,
-            Math.floor(elapsed / SECT_STEP_SECONDS)
+            'backgroundAccumulator',
+            BACKGROUND_STEP_SECONDS
           );
         }
       }
@@ -622,28 +620,96 @@
 
     const sectLane = Object.freeze({
       id: 'stage4-sects',
-      nextBoundary: function (state) {
-        return world(state)
-          ? accumulatorBoundary(
-            state,
-            'sectAccumulator',
-            SECT_STEP_SECONDS
-          )
-          : Infinity;
+      nextBoundary: function (state, helpers) {
+        if (!world(state)) return Infinity;
+        return offlineBatchBoundary(
+          helpers,
+          accumulatorBoundary(state, 'sectAccumulator', SECT_STEP_SECONDS)
+        );
       },
       elapse: function (state, seconds) {
         addAccumulator(state, 'sectAccumulator', seconds);
       },
       resolve: function (state, helpers) {
-        subtractAccumulator(state, 'sectAccumulator', SECT_STEP_SECONDS);
-        if (!SectSimulation ||
-            typeof SectSimulation.advanceDay !== 'function') return;
-        const evolved = SectSimulation.advanceDay(
+        const offline = helpers && helpers.source === 'offline';
+        const maxSteps = offline ? OFFLINE_SECT_STEP_CAP : 4;
+        drainAccumulatorSteps(
           state,
-          worldHelpers(helpers),
-          { sects: SectContent }
+          'sectAccumulator',
+          SECT_STEP_SECONDS,
+          maxSteps,
+          function () {
+            if (!SectSimulation ||
+                typeof SectSimulation.advanceDay !== 'function') return;
+            const evolved = SectSimulation.advanceDay(
+              state,
+              worldHelpers(helpers),
+              { sects: SectContent }
+            );
+            if (evolved && evolved.ok) replace(state, evolved.state);
+          }
         );
-        if (evolved && evolved.ok) replace(state, evolved.state);
+        if (offline) burnWholeSteps(state, 'sectAccumulator', SECT_STEP_SECONDS);
+      }
+    });
+
+    const worldMonthLane = Object.freeze({
+      id: 'stage4-world-month',
+      nextBoundary: function (state, helpers) {
+        const target = world(state);
+        if (!target || !WorldMonth ||
+            typeof WorldMonth.ensureCalendar !== 'function') {
+          return Infinity;
+        }
+        const cal = WorldMonth.ensureCalendar(target);
+        const acc = finite(cal.monthAccumulator, 0);
+        // 已攒满整月必须立刻 resolve；不可再人为加大边界，否则会被
+        // 900 秒 NPC 车道永远抢先，离线时世界见闻永不生成。
+        if (acc >= WorldMonth.MONTH_REAL_SECONDS) return 0;
+        const onlineBoundary = WorldMonth.MONTH_REAL_SECONDS - acc;
+        return offlineBatchBoundary(helpers, onlineBoundary);
+      },
+      elapse: function (state, seconds) {
+        const target = world(state);
+        if (!target || !WorldMonth ||
+            typeof WorldMonth.ensureCalendar !== 'function') {
+          return;
+        }
+        const cal = WorldMonth.ensureCalendar(target);
+        cal.monthAccumulator = finite(cal.monthAccumulator, 0) + seconds;
+      },
+      resolve: function (state, helpers) {
+        const target = world(state);
+        if (!target || !WorldMonth) {
+          return;
+        }
+        WorldMonth.ensureCalendar(target);
+        const cal = target.calendar;
+        const months = Math.floor(
+          finite(cal.monthAccumulator, 0) / WorldMonth.MONTH_REAL_SECONDS
+        );
+        if (months <= 0) return;
+        cal.monthAccumulator = finite(cal.monthAccumulator, 0) -
+          months * WorldMonth.MONTH_REAL_SECONDS;
+        // 长离线一次 resolve 可推进多月；超额由 advanceMonths / offlineMonthBudget
+        // 封顶（见 WorldCalendar.OFFLINE_MONTH_CAP），只推日历与年龄。
+        if (typeof WorldMonth.advanceMonths === 'function') {
+          WorldMonth.advanceMonths(
+            state,
+            months,
+            worldHelpers(helpers)
+          );
+          return;
+        }
+        const monthCap = Number.isFinite(WorldMonth.OFFLINE_MONTH_CAP)
+          ? WorldMonth.OFFLINE_MONTH_CAP
+          : 48;
+        const runnable = helpers && helpers.source === 'offline'
+          ? Math.min(months, monthCap)
+          : months;
+        for (let index = 0; index < runnable; index++) {
+          WorldMonth.advanceOneMonth(state, worldHelpers(helpers));
+        }
       }
     });
 
@@ -655,8 +721,8 @@
           parallelSocialLane,
           activeNpcLane,
           backgroundNpcLane,
-          eventScheduleLane,
-          sectLane
+          sectLane,
+          worldMonthLane
         ])
       )
     });
@@ -666,7 +732,6 @@
     ACTIVE_STEP_SECONDS: ACTIVE_STEP_SECONDS,
     BACKGROUND_STEP_SECONDS: BACKGROUND_STEP_SECONDS,
     SECT_STEP_SECONDS: SECT_STEP_SECONDS,
-    EVENT_SLOT_SECONDS: EVENT_SLOT_SECONDS,
     create: create
   });
 });

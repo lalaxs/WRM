@@ -23,8 +23,9 @@ function ok(condition, label) {
 ok(Stage4State.VERSION === 5, 'Stage 4 状态模块发布 schema v5');
 [
   'defaults',
-  'migrateV4',
+  'ensureWorldPopulation',
   'normalize',
+  'normalizeActionKey',
   'validate',
   'compactEventHistory',
   'snapshotJsonData'
@@ -32,6 +33,56 @@ ok(Stage4State.VERSION === 5, 'Stage 4 状态模块发布 schema v5');
   ok(typeof Stage4State[method] === 'function',
     'Stage4State 导出 ' + method);
 });
+ok(typeof Stage4State.migrateV4 !== 'function',
+  'Stage4State.migrateV4 已移除');
+  ok(Stage4State.normalizeActionKey('social:npc-1:talk') === 'social:npc-1:talk',
+  'Stage4 规范化保留接近行动键（talk）');
+  ok(Stage4State.normalizeActionKey('social:npc-1:gift:herbBundle') ===
+  'social:npc-1:gift:herbBundle',
+  'Stage4 规范化保留赠礼行动键');
+  ok(Stage4State.normalizeActionKey('social:npc-1:unknown') === null,
+  'Stage4 规范化拒绝未知互动键');
+{
+  const now = 1_700_000_000_000;
+  const kept = StateModel.normalize({
+    created: true,
+    processedThroughMs: now,
+    savedAt: now,
+    rngState: 1,
+    player: { identity: { name: '测' }, regionId: 'qingyun', flags: {} },
+    current: {
+      key: 'social:npc-1:talk',
+      mode: 'finite',
+      count: 1,
+      done: 0,
+      elapsed: 30,
+      stalled: false
+    },
+    systems: {
+      npcs: { records: {}, activeIds: [], backgroundIds: [] },
+      relationships: { edges: {} },
+      events: {},
+      sects: {},
+      social: {},
+      teamCombat: {},
+      lineage: {},
+      parallel: { jobs: [] }
+    },
+    pendingOfflineReports: []
+  }, now);
+  const jobs = kept.systems &&
+    kept.systems.parallel &&
+    kept.systems.parallel.jobs;
+  const migrated = Array.isArray(jobs) && jobs.some(function (job) {
+    return job &&
+      job.kind === 'social' &&
+      job.actionKey === 'social:npc-1:talk';
+  });
+  ok(kept.current == null &&
+     migrated &&
+     kept.pendingOfflineReports.length === 0,
+    '旧社交主行动迁入并行队列且不生成空离线报告');
+}
 ok(Object.isFrozen(Stage4State), 'Stage4State 公共边界冻结');
 const browserSandbox = {
   console: console,
@@ -69,9 +120,21 @@ function bootstrapResult() {
   };
 }
 
+function v5FromLegacyShape(options) {
+  const base = v4Fixture();
+  base.schemaVersion = 5;
+  return Stage4State.normalize(
+    Stage4State.ensureWorldPopulation(
+      Stage4State.normalize(base),
+      options
+    ),
+    options
+  );
+}
+
 function migrateWithOptions(options) {
   try {
-    return Stage4State.migrateV4(v4Fixture(), options);
+    return v5FromLegacyShape(options);
   } catch (error) {
     return null;
   }
@@ -102,7 +165,7 @@ const statefulBootstrapResult = migrateWithOptions(
 ok(statefulBootstrapResult !== null && statefulBootstrapCalls === 0,
   'stateful bootstrapWorld options 变化时函数零执行');
 
-const preserveFixture = Stage4State.migrateV4(v4Fixture());
+const preserveFixture = v5FromLegacyShape();
 let statefulPreserveDescriptors = 0;
 const statefulPreserveOptions = new Proxy({
   preserveLegacyFields: true
@@ -675,7 +738,9 @@ const deepElapsedMs = Date.now() - deepStartedAt;
 ok(deepResult !== null && deepElapsedMs < 4000,
   '20000 层 JSON 输入不栈溢出并在预算内恢复');
 
-const oversizedFixture = Stage4State.migrateV4(v4Fixture());
+const oversizedFixture = ensureEventsShell(
+  v5FromLegacyShape()
+);
 oversizedFixture.systems.events.pending = [pendingEvent(1)];
 oversizedFixture.systems.events.pending[0].participants = Array.from(
   { length: 25000 },
@@ -713,18 +778,19 @@ try {
 }
 const oversizedElapsedMs = Date.now() - oversizedStartedAt;
 ok(oversizedResult !== null &&
-   oversizedResult.systems.events.pending[0].participants.length <= 2000 &&
-   oversizedResult.systems.events.pending[0].options.length <= 100 &&
+   oversizedResult.systems.events.pending.length === 0 &&
    oversizedResult.systems.events.summaries.length === 300 &&
    oversizedResult.systems.events.evolution.length === 500 &&
    oversizedElapsedMs < 4000,
-'25000 参与者与超大 options/history 按固定预算快速恢复');
+'超大历史按预算恢复，且遗留 pending 一律清空');
 console.log(
   '  hostile performance: depth-20000=' + deepElapsedMs +
   'ms, oversized=' + oversizedElapsedMs + 'ms'
 );
 
-const preservedHistory = Stage4State.migrateV4(v4Fixture());
+const preservedHistory = ensureEventsShell(
+  v5FromLegacyShape()
+);
 preservedHistory.systems.events.summaries = Array.from(
   { length: 5000 },
   function (_, index) {
@@ -787,7 +853,7 @@ ok(JSON.stringify(Stage4State.normalize(preservedHistoryResult)) ===
    JSON.stringify(preservedHistoryResult),
 '超大历史压缩结果再次规范化字节稳定');
 
-const parallelPreservation = Stage4State.migrateV4(v4Fixture());
+const parallelPreservation = v5FromLegacyShape();
 parallelPreservation.systems.parallel.jobs = Array.from(
   { length: 2001 },
   function (_, index) {
@@ -805,7 +871,9 @@ ok(parallelPreservationResult.systems.parallel.jobs.length === 2001 &&
      'parallel-valid-2000',
 '2001 条有效并行任务全部保留且无通用槽位截断');
 
-const isolatedBranchFixture = Stage4State.migrateV4(v4Fixture());
+const isolatedBranchFixture = ensureEventsShell(
+  v5FromLegacyShape()
+);
 isolatedBranchFixture.systems.npcs.records = {
   'npc-1': npc('npc-1')
 };
@@ -887,6 +955,20 @@ function completedReport(id) {
   return report;
 }
 
+function ensureEventsShell(model) {
+  if (!model.systems) model.systems = {};
+  if (!model.systems.events) {
+    model.systems.events = {
+      pending: [],
+      recentResolved: [],
+      summaries: [],
+      evolution: [],
+      compacted: []
+    };
+  }
+  return model;
+}
+
 function stripStage4(snapshot) {
   const legacy = clone(snapshot);
   legacy.schemaVersion = 4;
@@ -895,6 +977,11 @@ function stripStage4(snapshot) {
     delete legacy.player.identity;
     delete legacy.player.regionId;
     delete legacy.player.flags;
+    delete legacy.player.spiritualRootId;
+    delete legacy.player.kin;
+    delete legacy.player.familyId;
+    delete legacy.player.parentIds;
+    delete legacy.player.metPlayer;
   }
   [
     'npcs',
@@ -914,6 +1001,10 @@ function stripStage4(snapshot) {
       'backgroundAccumulator',
       'sectAccumulator',
       'eventAccumulator',
+      'monthAccumulator',
+      'nextWorldEventId',
+      'worldEvents',
+      'calendar',
       'regions'
     ].forEach(function (key) {
       delete legacy.systems.world[key];
@@ -954,7 +1045,10 @@ function v4Fixture() {
     rngState: 0x12345678,
     processedThroughMs: 1000
   }, 1000);
-  return stripStage4(snapshot);
+  const legacy = stripStage4(snapshot);
+  // createSnapshot 会为空人物池补齐世界并推进 RNG；v4 迁移测例需固定种子。
+  legacy.rngState = 0x12345678;
+  return legacy;
 }
 
 function npc(id, status, sectId) {
@@ -996,7 +1090,7 @@ function npc(id, status, sectId) {
 function pendingEvent(index) {
   return {
     id: 'event-' + index,
-    templateId: 'fixture-' + index,
+    templateId: 'sect-first-choice',
     templateRevision: 1,
     createdAt: index,
     participants: ['npc-' + index],
@@ -1032,32 +1126,69 @@ if (typeof Stage4State.defaults === 'function') {
     '默认社交增益编号从 1 开始');
 }
 
-if (typeof Stage4State.migrateV4 === 'function' &&
+if (typeof SaveSystem.createSnapshot === 'function' &&
+    typeof Stage4State.ensureWorldPopulation === 'function') {
+  const fresh = SaveSystem.createSnapshot({
+    created: true,
+    player: {
+      name: '开局测',
+      realmStage: 0,
+      cultivation: 0,
+      shouyuan: 120,
+      shouMax: 120,
+      regionId: 'qinglan-town'
+    },
+    appearance: { parts: { body: 1 } },
+    rngState: 0x11111111
+  }, 42);
+  const freshCount = Object.keys(fresh.systems.npcs.records).length;
+  ok(fresh.schemaVersion === 5 &&
+     freshCount >= 3 && freshCount <= 12 &&
+     fresh.player.kin &&
+     !fresh.player.kin.mo &&
+     Array.isArray(fresh.player.kin.frs) &&
+     fresh.player.kin.frs.length >= 2 &&
+     fresh.systems.npcs.activeIds.length === freshCount,
+  '新开档 createSnapshot 按关系包生成小圈子人物世界');
+  const again = SaveSystem.createSnapshot(fresh, fresh.savedAt);
+  ok(JSON.stringify(again.systems.npcs.records) ===
+     JSON.stringify(fresh.systems.npcs.records) &&
+     again.rngState === fresh.rngState,
+  '已有人物的存档重开不会重掷人物池');
+}
+
+if (typeof Stage4State.ensureWorldPopulation === 'function' &&
     typeof Stage4State.normalize === 'function') {
   const old = v4Fixture();
+  old.schemaVersion = 5;
   let bootstrapCalls = 0;
-  const migrated = Stage4State.migrateV4(old, {
-    bootstrapWorld: function (request) {
-      bootstrapCalls++;
-      ok(request.count === 120 &&
-         request.rngState === 0x12345678,
-      'v4 迁移用保存的 RNG 请求首批 120 人物');
-      return {
-        records: {
-          'npc-1': npc('npc-1'),
-          'npc-2': npc('npc-2')
-        },
-        nextId: 3,
-        rngState: 0x3456789A,
-        familyIds: ['family-1']
-      };
-    }
-  });
+  const migrated = Stage4State.normalize(
+    Stage4State.ensureWorldPopulation(
+      Stage4State.normalize(old),
+      {
+        bootstrapWorld: function (request) {
+          bootstrapCalls++;
+          ok(request.count === 120 &&
+             request.rngState === 0x12345678,
+          'ensureWorldPopulation 用保存的 RNG 请求首批 120 人物');
+          return {
+            records: {
+              'npc-1': npc('npc-1'),
+              'npc-2': npc('npc-2')
+            },
+            nextId: 3,
+            rngState: 0x3456789A,
+            familyIds: ['family-1']
+          };
+        }
+      }
+    )
+  );
   ok(bootstrapCalls === 1 && migrated.schemaVersion === 5,
-    'v4 只迁移一次并提升为 v5');
+    '空人物池 ensureWorldPopulation 只补种一次且保持 v5');
   ok(migrated.rngState === 0x3456789A &&
      Object.keys(migrated.systems.npcs.records).length === 2,
-  '迁移保存首批人物与推进后的 RNG');
+  '补种保存首批人物与推进后的 RNG');
   ok(migrated.player.identity.gender === 'female',
     '旧角色补充女性身份');
   ok(JSON.stringify(migrated.appearance.parts) ===
@@ -1068,14 +1199,18 @@ if (typeof Stage4State.migrateV4 === 'function' &&
     'charm'
   ), '魅力没有熟练度或精通分支');
 
-  const defaultMigrated = Stage4State.migrateV4(v4Fixture());
-  ok(Object.keys(defaultMigrated.systems.npcs.records).length === 120 &&
-     defaultMigrated.systems.npcs.nextId === 121 &&
+  const defaultMigrated = v5FromLegacyShape();
+  const migratedCount = Object.keys(defaultMigrated.systems.npcs.records).length;
+  ok(migratedCount >= 3 && migratedCount <= 12 &&
+     defaultMigrated.player.kin &&
+     !defaultMigrated.player.kin.mo &&
+     Array.isArray(defaultMigrated.player.kin.frs) &&
+     defaultMigrated.player.kin.frs.length >= 2 &&
      defaultMigrated.rngState !== 0x12345678,
-  '生成器加载后 v4 默认迁移首批 120 名永久人物');
-  ok(defaultMigrated.systems.npcs.activeIds.length === 40 &&
-     defaultMigrated.systems.npcs.backgroundIds.length === 80,
-  '默认迁移后首批人物规范分入 40 人活跃层与 80 人背景层');
+  '生成器加载后 ensureWorldPopulation 按关系包种植开局圈子');
+  ok(defaultMigrated.systems.npcs.activeIds.length === migratedCount &&
+     defaultMigrated.systems.npcs.backgroundIds.length === 0,
+  '默认补种后开局圈子全部进入活跃层');
   const defaultReopened = Stage4State.normalize(clone(defaultMigrated));
   ok(JSON.stringify(defaultReopened) === JSON.stringify(defaultMigrated),
     '默认生成后的 v5 重开字节稳定且不重掷人物或 RNG');
@@ -1098,6 +1233,7 @@ if (typeof Stage4State.migrateV4 === 'function' &&
     '扩展玩家 flags 也保持规范键序与字节稳定');
 
   const inactiveAction = v4Fixture();
+  inactiveAction.schemaVersion = 5;
   inactiveAction.current = {
     key: 'gather:explore:herb',
     mode: 'repeat',
@@ -1108,15 +1244,26 @@ if (typeof Stage4State.migrateV4 === 'function' &&
     elapsedBaseSeconds: null,
     stalled: false
   };
-  const inactiveMigrated = Stage4State.migrateV4(inactiveAction);
+  const inactiveMigrated = Stage4State.normalize(
+    Stage4State.ensureWorldPopulation(
+      Stage4State.normalize(inactiveAction)
+    )
+  );
   ok(inactiveMigrated.player.flags.completedFirstAction === false,
     '仅开始行动不会误判完成首次行动');
 
   const completed = v4Fixture();
+  completed.schemaVersion = 5;
   completed.reportArchive = [completedReport('completed-first-action')];
-  const completedMigrated = Stage4State.migrateV4(completed);
+  completed.player.flags = completed.player.flags || {};
+  completed.player.flags.completedFirstAction = true;
+  const completedMigrated = Stage4State.normalize(
+    Stage4State.ensureWorldPopulation(
+      Stage4State.normalize(completed)
+    )
+  );
   ok(completedMigrated.player.flags.completedFirstAction === true,
-    '只有真实完成报告才推断首次行动已完成');
+    'normalize 保留已完成首次行动标记');
 
   const corrupt = Stage4State.normalize(migrated);
   corrupt.systems.npcs.records = {
@@ -1141,7 +1288,7 @@ if (typeof Stage4State.migrateV4 === 'function' &&
       dependence: NaN,
       loyalty: 55,
       jealousy: 3,
-      resentment: 500,
+      closeness: 500,
       lastChangedAt: -2
     }
   };
@@ -1213,8 +1360,11 @@ if (typeof Stage4State.migrateV4 === 'function' &&
   const tierIds = repaired.systems.npcs.activeIds.concat(
     repaired.systems.npcs.backgroundIds
   );
-  ok(Object.keys(repaired.systems.npcs.records).length === 4 &&
-     repaired.systems.npcs.records['npc-1'].id === 'npc-1',
+  ok(Object.keys(repaired.systems.npcs.records).length >= 4 &&
+     repaired.systems.npcs.records['npc-1'].id === 'npc-1' &&
+     repaired.systems.npcs.records['npc-2'] &&
+     repaired.systems.npcs.records['npc-3'] &&
+     repaired.systems.npcs.records['npc-4'],
   '规范化不删除人物记录且以稳定记录键修复 ID');
   ok(new Set(tierIds).size === tierIds.length,
     '活跃与背景人物层级没有重复 ID');
@@ -1233,7 +1383,7 @@ if (typeof Stage4State.migrateV4 === 'function' &&
      edge.romanticAttachment === 100 &&
      edge.desire === 0 &&
      edge.dependence === 0 &&
-     edge.resentment === 100,
+     edge.closeness === 100,
   '八项关系数值取有限整数并夹在 0–100');
   ok(Object.keys(repaired.systems.relationships.bonds).length === 1 &&
      Object.keys(repaired.systems.relationships.bonds)[0] ===
@@ -1243,16 +1393,14 @@ if (typeof Stage4State.migrateV4 === 'function' &&
      repaired.systems.relationships.restrictions['npc-2|player'] ===
        'blood',
   '限制关系使用唯一无序人物对键');
-  ok(repaired.systems.events.pending.length === 20 &&
-     repaired.systems.events.pending[19].id === 'event-20',
-  '待决策事件硬上限 20 且保留有效快照顺序');
+  ok(repaired.systems.events.pending.length === 0,
+  '读档规范化清空全部遗留待决策');
   ok(!Object.prototype.hasOwnProperty.call(
     repaired.systems.sects.records['taixuan-sword'],
     'memberIds'
   ) &&
-     Object.keys(
-       repaired.systems.sects.records['taixuan-sword'].roleByNpcId
-     ).join(',') === 'npc-1',
+     repaired.systems.sects.records['taixuan-sword'].roleByNpcId['npc-1'] ===
+       '弟子',
   '宗门成员只由人物 sectId 持有且角色表不重复成员资格');
   ok(repaired.systems.parallel.jobs.length === 21 &&
      repaired.systems.parallel.jobs.slice(0, 20).every(function (job) {
@@ -1323,12 +1471,23 @@ if (SaveSystem.SCHEMA_VERSION === 5) {
     [SaveSystem.SNAPSHOT_KEY]: v4
   });
   const first = SaveSystem.load(primary, 2000);
-  ok(first.snapshot.schemaVersion === 5 &&
-     first.migrated === true,
-  'SaveSystem 显式执行 v4→v5 一次迁移');
-  ok(SaveSystem.save(primary, first.snapshot, 2000) === true,
-    '迁移后的 v5 可以安全落盘');
-  const second = SaveSystem.load(primary, 2000);
+  ok(first.source === 'empty' &&
+     first.migrated === false &&
+     first.needsRepair === false &&
+     first.snapshot.player === null,
+  'SaveSystem 拒绝旧 schemaVersion 4，不执行跨版本迁移');
+
+  const v5 = SaveSystem.createSnapshot(
+    SaveSystem.createSnapshot({
+      created: true,
+      player: { name: '现行角色' }
+    }, 2000),
+    2000
+  );
+  const v5Primary = adapter({
+    [SaveSystem.SNAPSHOT_KEY]: v5
+  });
+  const second = SaveSystem.load(v5Primary, 2000);
   ok(second.snapshot.schemaVersion === 5 &&
      second.migrated === false &&
      second.needsRepair === false,
@@ -1336,7 +1495,7 @@ if (SaveSystem.SCHEMA_VERSION === 5) {
   ok(JSON.stringify(SaveSystem.createSnapshot(
     second.snapshot,
     second.snapshot.savedAt
-  )) === JSON.stringify(primary.read(SaveSystem.SNAPSHOT_KEY)),
+  )) === JSON.stringify(v5Primary.read(SaveSystem.SNAPSHOT_KEY)),
   'v5 重开与盘中快照字节稳定');
 
   const contextSnapshot = SaveSystem.createSnapshot({
@@ -1359,7 +1518,7 @@ if (SaveSystem.SCHEMA_VERSION === 5) {
   '动作描述器 context 可持久且 JSON 安全');
 
   const future = SaveSystem.createSnapshot({}, 1);
-  future.schemaVersion = 6;
+  future.schemaVersion = SaveSystem.SCHEMA_VERSION + 1;
   const futureAdapter = adapter({
     [SaveSystem.SNAPSHOT_KEY]: future
   });
@@ -1367,7 +1526,7 @@ if (SaveSystem.SCHEMA_VERSION === 5) {
   ok(futureLoad.source === 'empty' &&
      futureLoad.future === true &&
      futureLoad.writeProtected === true &&
-     futureLoad.futureSchemaVersion === 6,
+     futureLoad.futureSchemaVersion === SaveSystem.SCHEMA_VERSION + 1,
   '未知未来 schema 仍走既有只读恢复路径');
   ok(SaveSystem.save(futureAdapter, {}, 3) === false,
     '未来 schema 存在时仍拒绝覆盖');

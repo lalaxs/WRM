@@ -1,7 +1,8 @@
 'use strict';
 
+// 轻量 NPC 生命周期自测（对标原版 person.addday / getexps / dns.exp / lvup）。
 const NpcSimulation = require('../core/npc-simulation.js');
-const EventEngine = require('../core/event-engine.js');
+const Dns = require('../core/dns.js');
 
 let passed = 0;
 let failed = 0;
@@ -23,13 +24,18 @@ function person(id, overrides) {
     ageRemainderSeconds: 0,
     lifespanYears: 80,
     realmStage: 0,
+    level_l: 0,
     cultivation: 0,
+    expsx: 1.0,
+    lg: 3,
+    spiritualRootId: 'single',
     personalityId: 'steady',
     valueProfileId: 'benevolent',
     regionId: 'qinglan-town',
     sectId: null,
     biography: [],
     status: 'living',
+    lifeStage: 'adult',
     lastDetailedAt: 0,
     lastBackgroundAt: 0
   }, overrides || {});
@@ -49,7 +55,8 @@ function fixture() {
         },
         activeIds: ['npc-1', 'npc-2'],
         backgroundIds: ['npc-3', 'npc-4'],
-        backgroundCursor: 0
+        backgroundCursor: 0,
+        activeTarget: 40
       },
       relationships: { edges: {}, bonds: {}, restrictions: {} },
       events: {
@@ -89,120 +96,110 @@ function helpers(values, now) {
   };
 }
 
+ok(Dns.cultivationNeed(0) === 100 && Dns.cultivationNeed(5) === 1400 &&
+  Dns.cultivationNeed(8) === 3000,
+  '突破门槛走 H5 细档（与玩家同量级）');
+ok(Dns.exp[0] === 1000 && Dns.lgExp[3] === 100,
+  '钉死原版 dns.exp / lg_exp 对照表');
+ok(Math.abs(Dns.getexps({
+  expsx: 1.0,
+  lg: 3,
+  level_l: 0,
+  realmStage: 0
+}) - 1.0) < 1e-9,
+  'getexps：expsx1 × lg100/100 × (1+0.2*0) = 1');
+ok(Math.abs(Dns.getexps({
+  expsx: 1.0,
+  lg: 3,
+  level_l: 5,
+  realmStage: 5
+}) - 2.0) < 1e-9,
+  'getexps：含 level_l 系数 (1+0.2*5)=2');
+ok(Math.abs(Dns.breakthroughRate(0) - 1) < 1e-9 &&
+  Math.abs(Dns.breakthroughRate(8) - 0.6) < 1e-9 &&
+  Math.abs(Dns.breakthroughRate(15) - 0.1) < 1e-9,
+  '突破率走 H5 细档（与玩家 TRANSITIONS 对齐）');
+
+// 衰老 + 寿元尽
 const aged = fixture();
 aged.systems.npcs.records['npc-1'].lifespanYears = 21;
 NpcSimulation.advanceAges(aged, 12 * 60 * 60 + 75);
 ok(aged.systems.npcs.records['npc-1'].ageYears === 21 &&
   aged.systems.npcs.records['npc-1'].ageRemainderSeconds === 75,
 '人物年龄使用完整经过时间并保存不足一年的余数');
-ok(aged.systems.npcs.records['npc-1'].status === 'living' &&
+ok(aged.systems.npcs.records['npc-1'].status === 'dead' &&
+  !aged.systems.npcs.activeIds.includes('npc-1') &&
+  aged.systems.npcs.records['npc-1'].biography.some(function (entry) {
+    return entry && entry.kind === 'lifespan-end';
+  }) &&
   aged.systems.events.evolution.some(function (entry) {
-    return entry.category === 'future-lifecycle';
+    return entry.category === 'lifecycle' &&
+      entry.npcId === 'npc-1';
   }),
-'达到寿元只记录后续生命周期提示，不在本阶段删除或判死');
+'达到寿元判定死亡并移出人物池');
 
-const decisions = fixture();
-NpcSimulation.chooseDecision(
-  decisions,
-  'npc-1',
-  'active',
-  helpers([0.01], 900),
-  { EventEngine: EventEngine }
-);
-ok(decisions.systems.npcs.records['npc-1'].cultivation > 0,
-'活跃人物可以自主修炼');
-decisions.systems.npcs.records['npc-1'].cultivation = 100;
-NpcSimulation.chooseDecision(
-  decisions,
-  'npc-1',
-  'active',
-  helpers([0.25, 0.01], 1800),
-  { EventEngine: EventEngine }
-);
-ok(decisions.systems.npcs.records['npc-1'].realmStage === 1,
-'修为满足基础条件的人物可以尝试并完成简单突破');
-const oldRegion = decisions.systems.npcs.records['npc-1'].regionId;
-NpcSimulation.chooseDecision(
-  decisions,
-  'npc-1',
-  'active',
-  helpers([0.45, 0.9], 2700),
-  { regionIds: ['qinglan-town', 'cangwu-market'] }
-);
-ok(decisions.systems.npcs.records['npc-1'].regionId !== oldRegion,
-'活跃人物可以在抽象地区之间旅行');
-decisions.systems.npcs.records['npc-2'].regionId =
-  decisions.systems.npcs.records['npc-1'].regionId;
-NpcSimulation.chooseDecision(
-  decisions,
-  'npc-1',
-  'active',
-  helpers([0.65, 0.01, 0.01], 3600),
-  { EventEngine: EventEngine }
-);
-ok(Boolean(decisions.systems.relationships.edges['npc-1>npc-2']) &&
-  Boolean(decisions.systems.relationships.edges['npc-2>npc-1']),
-'人物互动写入两个方向互不替代的稀疏关系边');
-const autonomousBond = EventEngine.resolveAutonomousBondStage(
-  decisions,
-  'npc-1',
-  'npc-2',
-  'friend',
-  '两位人物在同行中成为好友',
-  { nowSeconds: function () { return 4000; } }
-);
-ok(autonomousBond.ok === true &&
-  autonomousBond.state.systems.relationships.bonds['npc-1|npc-2']
-    .changedByEventId ===
-    autonomousBond.state.systems.events.resolvedRecent.slice(-1)[0].id,
-'自主关系阶段变化由事件引擎写入已处理世界事件证据');
-const autonomousSect = EventEngine.resolveAutonomousNpcSect(
-  autonomousBond.state,
-  'npc-2',
-  'baicao-valley',
-  { nowSeconds: function () { return 4100; } }
-);
-ok(autonomousSect.ok === true &&
-  autonomousSect.state.systems.npcs.records['npc-2'].sectId ===
-    'baicao-valley' &&
-  autonomousSect.state.systems.events.resolvedRecent.slice(-1)[0]
-    .templateId === 'autonomous-sect-membership',
-'人物加入或离开宗门同样保存为已处理的世界事件');
+// 对标 addday：一个月 += getexps（H5 月≈原版天）
+const dayGain = fixture();
+const p0 = dayGain.systems.npcs.records['npc-1'];
+p0.expsx = 1.0;
+p0.lg = 3;
+p0.level_l = 0;
+NpcSimulation.advanceCultivation(dayGain, Dns.MONTH_REAL_SECONDS, helpers([0.01], 0));
+ok(Math.abs(p0.cultivation - 1.0) < 1e-6,
+'一个月修为增量 = getexps（对标 addday / 游戏月）');
 
-const stepped = fixture();
-const activeSummary = NpcSimulation.advanceActiveStep(
-  stepped,
-  helpers([0.01], 900),
-  { EventEngine: EventEngine }
-);
-const backgroundSummary = NpcSimulation.advanceBackgroundStep(
-  stepped,
-  helpers([0.01], 21600),
-  { EventEngine: EventEngine }
-);
-ok(activeSummary.processed === 2 &&
-  stepped.systems.npcs.records['npc-1'].lastDetailedAt === 900,
-'每个活跃边界只处理当前活跃圈人物');
-ok(backgroundSummary.processed === 2 &&
-  backgroundSummary.maxCandidates <= 3 &&
-  stepped.systems.npcs.backgroundCursor === 0,
-'后台边界按游标处理后台池且每人最多考虑三个候选');
-ok(Object.keys(stepped.systems.npcs.records).length === 4,
-'自主模拟不会删除永久人物记录');
+// 修炼持续增长但远未满细档门槛
+const grown = fixture();
+NpcSimulation.advanceCultivation(grown, 50, helpers([0.01], 50));
+const grownCult = grown.systems.npcs.records['npc-1'].cultivation;
+ok(grownCult > 0 && grownCult < 5,
+'50 秒远未填满突破门槛');
 
-const full = fixture();
-full.systems.events.pending = Array.from({ length: 20 }, function (_, index) {
-  return { id: 'event-full-' + index, options: [] };
-});
-const beforeCultivation = full.systems.npcs.records['npc-1'].cultivation;
-NpcSimulation.advanceActiveStep(
-  full,
-  helpers([0.01], 900),
-  { EventEngine: EventEngine }
-);
-ok(full.systems.npcs.records['npc-1'].cultivation > beforeCultivation,
-'待决事件达到二十条时人物自主活动仍继续');
+// 修为满足则突破（炼气档，成功率 100%）
+const broke = fixture();
+broke.systems.npcs.records['npc-1'].realmStage = 0;
+broke.systems.npcs.records['npc-1'].level_l = 0;
+broke.systems.npcs.records['npc-1'].cultivation = 1000;
+NpcSimulation.advanceCultivation(broke, 1, helpers([0.01], 1));
+ok(broke.systems.npcs.records['npc-1'].realmStage === 1,
+'修为达细档门槛可立刻突破');
 
-console.log('\nStage 4 基础人物模拟自测：' + passed + ' 通过，' +
+// 高境按 H5 突破率表
+const major = fixture();
+major.systems.npcs.records['npc-1'].realmStage = 8;
+major.systems.npcs.records['npc-1'].level_l = 8;
+major.systems.npcs.records['npc-1'].cultivation = 2000000;
+NpcSimulation.advanceCultivation(major, 1, helpers([0.01], 1));
+ok(major.systems.npcs.records['npc-1'].realmStage === 9,
+'高境按突破率表可突破成功');
+
+const majorFail = fixture();
+majorFail.systems.npcs.records['npc-1'].realmStage = 8;
+majorFail.systems.npcs.records['npc-1'].level_l = 8;
+majorFail.systems.npcs.records['npc-1'].cultivation = 2000000;
+NpcSimulation.advanceCultivation(majorFail, 1, helpers([0.99], 1));
+ok(majorFail.systems.npcs.records['npc-1'].realmStage === 8 &&
+  majorFail.systems.npcs.records['npc-1'].cultivation === 0,
+'突破失败会清空修为');
+
+const multi = fixture();
+multi.systems.npcs.records['npc-1'].realmStage = 0;
+multi.systems.npcs.records['npc-1'].cultivation = 10000000;
+NpcSimulation.advanceCultivation(multi, 1, helpers([0.01], 1));
+ok(multi.systems.npcs.records['npc-1'].realmStage === 1,
+'单次推进最多突破一档');
+
+const ascended = fixture();
+ascended.systems.npcs.records['npc-1'].realmStage = 15;
+ascended.systems.npcs.records['npc-1'].level_l = 9;
+ascended.systems.npcs.records['npc-1'].cultivation = 2000000;
+NpcSimulation.advanceCultivation(ascended, 1, helpers([0.01], 1));
+ok(ascended.systems.npcs.records['npc-1'].status === 'ascended' &&
+  ascended.systems.npcs.records['npc-1'].realmStage >=
+    NpcSimulation.ASCENSION_REALM_STAGE &&
+  !ascended.systems.npcs.activeIds.includes('npc-1'),
+'突破至飞升境后离世并移出人物池');
+
+console.log('\nStage 4 轻量 NPC 生命周期自测：' + passed + ' 通过，' +
   failed + ' 失败');
 if (failed) process.exitCode = 1;

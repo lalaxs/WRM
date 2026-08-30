@@ -3,8 +3,9 @@
 const assert = require('assert');
 const fs = require('fs');
 
-const game = fs.readFileSync('game.js', 'utf8');
-const ui = fs.readFileSync('ui.js', 'utf8');
+const game = ['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js']
+  .map((file) => fs.readFileSync(file, 'utf8')).join('\n');
+const ui = require('./ui_scripts').readUiSource();
 const css = fs.readFileSync('styles.css', 'utf8');
 const all = fs.readFileSync(require('path').join(__dirname, 'selftest_all.js'), 'utf8');
 const Items = require('../content/items.js');

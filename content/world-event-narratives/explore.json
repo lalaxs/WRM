@@ -1,0 +1,36 @@
+[
+  {
+    "id": "explore-0117",
+    "weight": 8,
+    "type": "explore",
+    "actors": "solo",
+    "template": "{a}深入{loc}险地，身影很快被雾气吞没。",
+    "statusAny": [
+      "exploring"
+    ]
+  },
+  {
+    "id": "explore-0118",
+    "weight": 8,
+    "type": "explore",
+    "actors": "pair",
+    "template": "{a}与{b}结伴探入{loc}，约定以符火为号。",
+    "statusAny": [
+      "exploring"
+    ]
+  },
+  {
+    "id": "solo-extra-9",
+    "weight": 8,
+    "type": "explore",
+    "actors": "solo",
+    "template": "{a}点起夜明符，独自踏入{loc}深处。"
+  },
+  {
+    "id": "explore-solo-2550",
+    "weight": 11,
+    "type": "explore",
+    "actors": "solo",
+    "template": "{a}探入{loc}险地，风声骤紧。仍把佩剑往前送了半寸，喉间却发干。"
+  }
+]

@@ -337,9 +337,7 @@ const sandbox = {
 sandbox.window = sandbox;
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
-vm.runInContext(fs.readFileSync('ui.js', 'utf8'), sandbox, {
-  filename: 'ui.js'
-});
+require('./ui_scripts').loadUiScripts(vm, sandbox);
 sandbox.UI.renderGame();
 
 assert.strictEqual(byClass(root, 'inventory-equipment-dock').length, 1);

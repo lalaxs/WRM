@@ -102,8 +102,68 @@
     }
   }
 
-  function jsonToken(value) {
-    return JSON.stringify(cloneJsonValue(value));
+  function digestNpcs(npcs) {
+    if (!npcs || typeof npcs !== 'object') return npcs;
+    const records = npcs.records && typeof npcs.records === 'object'
+      ? npcs.records
+      : {};
+    const digest = {};
+    Object.keys(records).forEach(function (id) {
+      const person = records[id];
+      if (!person || typeof person !== 'object') {
+        digest[id] = person;
+        return;
+      }
+      digest[id] = [
+        person.status,
+        person.realmStage,
+        person.cultivation,
+        person.regionId,
+        person.sectId,
+        person.ageYears,
+        person.ageRemainderSeconds,
+        person.lastDetailedAt,
+        person.lastBackgroundAt,
+        person.biography && person.biography.length,
+        person.keyEventIds && person.keyEventIds.length
+      ];
+    });
+    return {
+      nextId: npcs.nextId,
+      activeIds: npcs.activeIds,
+      backgroundIds: npcs.backgroundIds,
+      records: digest
+    };
+  }
+
+  function digestSystems(systems) {
+    if (!systems || typeof systems !== 'object') return systems;
+    const out = {};
+    Object.keys(systems).forEach(function (key) {
+      if (key === 'npcs') {
+        out.npcs = digestNpcs(systems.npcs);
+      } else {
+        out[key] = systems[key];
+      }
+    });
+    return out;
+  }
+
+  // 变更守卫摘要：保留全部顶层键，仅压缩 NPC records；
+  // 避免对含大量 NPC 的整树先深拷贝再 stringify。
+  function jsonToken(state) {
+    if (!state || typeof state !== 'object') {
+      return JSON.stringify(state);
+    }
+    const snapshot = {};
+    Object.keys(state).forEach(function (key) {
+      if (key === 'systems') {
+        snapshot.systems = digestSystems(state.systems);
+      } else {
+        snapshot[key] = state[key];
+      }
+    });
+    return JSON.stringify(snapshot);
   }
 
   function requireFunction(owner, key, label) {
@@ -519,6 +579,13 @@
 
     const helpers = {
       report,
+      source: config.source,
+      remainingSeconds: elapsedSeconds,
+      offlineMonthBudget: config.source === 'offline'
+        ? (Number.isFinite(config.offlineMonthCap)
+          ? Math.max(0, Math.floor(config.offlineMonthCap))
+          : 500)
+        : null,
       random() {
         const value = config.rules.random(state);
         if (!Number.isFinite(value) || value < 0 || value >= 1) {
@@ -543,7 +610,13 @@
       });
     }
 
+    // Online keeps the full JSON equality guard. Offline skips the expensive
+    // stringify when time actually advanced (Melvor-style batch settlement);
+    // zero-step loops still trip via transitionLimit / strict guard.
+    const strictMutationGuard = config.source !== 'offline';
+
     while (remaining > 0) {
+      helpers.remainingSeconds = remaining;
       let descriptor = null;
       let inspection = null;
       let precisionGuardPending = false;
@@ -583,7 +656,9 @@
               config.rules.inspect(state, descriptor)
             );
             if (inspection.status === 'stop') {
-              const beforeStop = jsonToken(state);
+              const beforeStop = strictMutationGuard
+                ? jsonToken(state)
+                : null;
               transitions++;
               if (transitions > maxTransitions) {
                 tripGuard([], descriptor.key);
@@ -594,7 +669,8 @@
                 nowMs(),
                 descriptor.key
               );
-              if (beforeStop === jsonToken(state)) {
+              if (strictMutationGuard &&
+                  beforeStop === jsonToken(state)) {
                 tripGuard([], descriptor.key);
               }
               continue;
@@ -684,7 +760,10 @@
         continue;
       }
 
-      const beforeResolution = jsonToken(state);
+      const guardMutations = strictMutationGuard || step === 0;
+      const beforeResolution = guardMutations
+        ? jsonToken(state)
+        : null;
       dueLaneIndexes.forEach(function (index) {
         lanes[index].resolve(state, helpers);
       });
@@ -759,8 +838,8 @@
         tripGuard([], activeActionKey);
       }
 
-      const afterResolution = jsonToken(state);
-      if (beforeResolution === afterResolution) {
+      if (guardMutations &&
+          beforeResolution === jsonToken(state)) {
         tripGuard(dueLaneIndexes, activeActionKey);
       }
     }
@@ -773,7 +852,8 @@
     );
 
     return {
-      state: cloneJsonValue(state),
+      // 在线短步进的结果会立刻 applyToRuntime，再克隆一次整树没有收益。
+      state: config.source === 'online' ? state : cloneJsonValue(state),
       report: cloneJsonValue(report)
     };
   }

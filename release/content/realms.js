@@ -120,10 +120,42 @@
     return TRANSITION_BY_REALM_ID[currentRealmId] || null;
   }
 
+  // Technique loadout slot unlocks by major realm (design 2026-07-30 §2).
+  // qi-1..qi-9 => index 0..8; foundation 9; gold-core 10; nascent-soul 11;
+  // spirit-transformation 12+.
+  const FOUNDATION_INDEX = 9;
+  const GOLD_CORE_INDEX = 10;
+  const NASCENT_SOUL_INDEX = 11;
+  const SPIRIT_TRANSFORMATION_INDEX = 12;
+  const MAX_ACTIVE_TECHNIQUE_SLOTS = 3;
+  const MAX_PASSIVE_TECHNIQUE_SLOTS = 5;
+
+  function unlockedActiveTechniqueSlots(realmIndex) {
+    if (!Number.isSafeInteger(realmIndex) || realmIndex < 0) return 1;
+    if (realmIndex >= GOLD_CORE_INDEX) return MAX_ACTIVE_TECHNIQUE_SLOTS;
+    if (realmIndex >= FOUNDATION_INDEX) return 2;
+    return 1;
+  }
+
+  function unlockedPassiveTechniqueSlots(realmIndex) {
+    if (!Number.isSafeInteger(realmIndex) || realmIndex < 0) return 1;
+    if (realmIndex >= SPIRIT_TRANSFORMATION_INDEX) {
+      return MAX_PASSIVE_TECHNIQUE_SLOTS;
+    }
+    if (realmIndex >= NASCENT_SOUL_INDEX) return 4;
+    if (realmIndex >= GOLD_CORE_INDEX) return 3;
+    if (realmIndex >= FOUNDATION_INDEX) return 2;
+    return 1;
+  }
+
   return Object.freeze({
     REALMS: REALMS,
     TRANSITIONS: TRANSITIONS,
+    MAX_ACTIVE_TECHNIQUE_SLOTS: MAX_ACTIVE_TECHNIQUE_SLOTS,
+    MAX_PASSIVE_TECHNIQUE_SLOTS: MAX_PASSIVE_TECHNIQUE_SLOTS,
     getRealm: getRealm,
-    getTransition: getTransition
+    getTransition: getTransition,
+    unlockedActiveTechniqueSlots: unlockedActiveTechniqueSlots,
+    unlockedPassiveTechniqueSlots: unlockedPassiveTechniqueSlots
   });
 });

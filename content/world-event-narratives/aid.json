@@ -1,0 +1,392 @@
+[
+  {
+    "id": "aid-0082",
+    "weight": 11,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}替{b}出头，化解一场无端纠缠。",
+    "affinityMin": 0
+  },
+  {
+    "id": "aid-0083",
+    "weight": 11,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}见{b}在{loc}受困，上前援手，片刻解开。散去后对方道谢发紧，像不愿欠，又记在了心上。",
+    "affinityMin": 0
+  },
+  {
+    "id": "aid-0084",
+    "weight": 11,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}把伤药塞给{b}，在{loc}守到对方能走为止。散去后对方道谢发紧，像不愿欠，又记在了心上。",
+    "pairGenderNone": [
+      "fm"
+    ],
+    "affinityMin": 0
+  },
+  {
+    "id": "aid-0085",
+    "weight": 11,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}为{b}作证，令旁人不再刁难。散去后对方道谢发紧，像不愿欠，又记在了心上。",
+    "affinityMin": 0
+  },
+  {
+    "id": "aid-renhou-1",
+    "weight": 12,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}路见不平，在{loc}拉了{b}一把，事后也不求回报。散去后对方道谢发紧，像不愿欠，又记在了心上。",
+    "personalityA": [
+      "renhou"
+    ]
+  },
+  {
+    "id": "aid-rechen-1",
+    "weight": 12,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}路见不平，在{loc}拉了{b}一把，事后也不求回报。散去后对方道谢发紧，像不愿欠，又记在了心上。",
+    "personalityA": [
+      "rechen"
+    ]
+  },
+  {
+    "id": "aid-chicheng-1",
+    "weight": 12,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}路见不平，在{loc}拉了{b}一把，事后也不求回报。散去后对方道谢发紧，像不愿欠，又记在了心上。",
+    "personalityA": [
+      "chicheng"
+    ]
+  },
+  {
+    "id": "sect-baicao-valley-2",
+    "weight": 11,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}替{b}诊脉开方，药香弥漫。散去后对方道谢发紧，像不愿欠，又记在了心上。",
+    "sectAny": [
+      "baicao-valley"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "sect-spirit-beast-mountain-2",
+    "weight": 11,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}帮{b}安抚暴走的灵兽，好一番手脚。散去后对方道谢发紧，像不愿欠，又记在了心上。",
+    "sectAny": [
+      "spirit-beast-mountain"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "pair-persona-4",
+    "weight": 10,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}替{b}解了围，后者嘴上不谢，却把礼金留下。",
+    "personalityA": [
+      "renhou"
+    ],
+    "personalityB": [
+      "jiaojin"
+    ]
+  },
+  {
+    "id": "generic-aid-1",
+    "weight": 8,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}替{b}扛回散落的灵材，一路送到{loc}。"
+  },
+  {
+    "id": "generic-aid-2",
+    "weight": 8,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}帮{b}驱散纠缠的低阶妖物。"
+  },
+  {
+    "id": "generic-aid-3",
+    "weight": 8,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}为{b}作证签名，事情在{loc}衙门口了结。"
+  },
+  {
+    "id": "scene-aid-0-0",
+    "weight": 9,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}山门见{b}被人刁难，上前拦了一句。散场后{b}想道谢，{a}却先别开眼，只说下次小心。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-aid-0-1",
+    "weight": 9,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}厢房廊下见{b}被人刁难，上前拦了一句。散场后{b}想道谢，{a}却先别开眼，只说下次小心。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-aid-0-2",
+    "weight": 9,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}摊位旁见{b}被人刁难，上前拦了一句。散场后{b}想道谢，{a}却先别开眼，只说下次小心。",
+    "regionTypes": [
+      "market"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-aid-0-3",
+    "weight": 9,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}林径见{b}被人刁难，上前拦了一句。散场后{b}想道谢，{a}却先别开眼，只说下次小心。",
+    "regionTypes": [
+      "wilderness"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-aid-0-4",
+    "weight": 9,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}渡口见{b}被人刁难，上前拦了一句。散场后{b}想道谢，{a}却先别开眼，只说下次小心。",
+    "regionTypes": [
+      "town"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-aid-0-5",
+    "weight": 9,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}丹房外见{b}被人刁难，上前拦了一句。散场后{b}想道谢，{a}却先别开眼，只说下次小心。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-aid-0-6",
+    "weight": 9,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}剑冢前见{b}被人刁难，上前拦了一句。散场后{b}想道谢，{a}却先别开眼，只说下次小心。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-aid-0-7",
+    "weight": 9,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}灵田边见{b}被人刁难，上前拦了一句。散场后{b}想道谢，{a}却先别开眼，只说下次小心。",
+    "regionTypes": [
+      "town",
+      "sectBase"
+    ],
+    "eventCountMax": 2
+  },
+  {
+    "id": "scene-aid-1-0",
+    "weight": 9,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}因办门务路过{loc}山门，见{b}遇险，伸手拉了一把。{b}站稳后盯着{a}的手，半天没把谢字说利索。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-aid-1-1",
+    "weight": 9,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}因听同门议事路过{loc}厢房廊下，见{b}遇险，伸手拉了一把。{b}站稳后盯着{a}的手，半天没把谢字说利索。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-aid-1-2",
+    "weight": 9,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}因寻货路过{loc}摊位旁，见{b}遇险，伸手拉了一把。{b}站稳后盯着{a}的手，半天没把谢字说利索。",
+    "regionTypes": [
+      "market"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-aid-1-3",
+    "weight": 9,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}因采药路过{loc}林径，见{b}遇险，伸手拉了一把。{b}站稳后盯着{a}的手，半天没把谢字说利索。",
+    "regionTypes": [
+      "wilderness"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-aid-1-4",
+    "weight": 9,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}因候船路过{loc}渡口，见{b}遇险，伸手拉了一把。{b}站稳后盯着{a}的手，半天没把谢字说利索。",
+    "regionTypes": [
+      "town"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-aid-1-5",
+    "weight": 9,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}因借火路过{loc}丹房外，见{b}遇险，伸手拉了一把。{b}站稳后盯着{a}的手，半天没把谢字说利索。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-aid-1-6",
+    "weight": 9,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}因观剑路过{loc}剑冢前，见{b}遇险，伸手拉了一把。{b}站稳后盯着{a}的手，半天没把谢字说利索。",
+    "regionTypes": [
+      "sectBase"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "scene-aid-1-7",
+    "weight": 9,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}因照看灵谷路过{loc}灵田边，见{b}遇险，伸手拉了一把。{b}站稳后盯着{a}的手，半天没把谢字说利索。",
+    "regionTypes": [
+      "town",
+      "sectBase"
+    ],
+    "eventCountMin": 2
+  },
+  {
+    "id": "aid-tension-1920",
+    "weight": 12,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}替{b}挡下一难，面上云淡风轻。事后单独时，他才发现自己后背全是冷汗，而{b}一直看着他的手。",
+    "tagNone": [
+      "enemy"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ]
+  },
+  {
+    "id": "aid-tension-1921",
+    "weight": 11,
+    "type": "aid",
+    "actors": "pair",
+    "template": "纷争散尽，{b}道谢很短。可送{a}离开{loc}时，多跟了两步，又两步，像有话堵在喉间。",
+    "tagNone": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "locale-realm-aid-1",
+    "weight": 11,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}见{b}在{loc}被镜光迷眼，立刻拉住对方腕子拖出阵圈。脱险后两人都喘着，手却没马上松开。",
+    "regionTypes": [
+      "specialRealm"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ]
+  },
+  {
+    "id": "aid-fm-soft-1",
+    "weight": 14,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}见{b}遇险，先稳住阵脚替他挡住一击，随即退开半步。事后只淡淡说「还好赶上」，目光却没离开他的伤处。",
+    "pairGenderAny": [
+      "fm"
+    ]
+  },
+  {
+    "id": "aid-fm-soft-2",
+    "weight": 13,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}把止血散递到{b}手里，自己先别过脸。{b}道谢时，她只应了一声，袖口却捏紧了。",
+    "pairGenderAny": [
+      "fm"
+    ]
+  },
+  {
+    "id": "aid-mf-assert-1",
+    "weight": 14,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}替{b}挡下一难，事后才发现自己后背全是冷汗。她想道谢，他却先别开视线，只说「下次小心」。",
+    "pairGenderAny": [
+      "mf"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ]
+  },
+  {
+    "id": "aid-spark-1",
+    "weight": 17,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}见{b}遇麻烦，犹豫一瞬还是伸了手。事后{b}道谢，{a}摆手离开，却把对方的样子记到了夜里。",
+    "arcAny": [
+      "spark"
+    ]
+  },
+  {
+    "id": "aid-warm-1",
+    "weight": 20,
+    "type": "aid",
+    "actors": "pair",
+    "template": "{a}在{loc}替{b}挡下一难，自己却受了轻伤。{b}着急上前，话到嘴边变成一句发颤的「你疯了」。",
+    "arcAny": [
+      "warm",
+      "bond",
+      "mend"
+    ]
+  }
+]

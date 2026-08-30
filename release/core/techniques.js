@@ -32,14 +32,21 @@
 ) {
   'use strict';
 
-  const MAX_LEVEL = 20;
+  const MAX_LEVEL = 200;
+  // MWI Ability books: Tier1 = 50 XP, Tier2+ = 500 XP.
+  const DUPLICATE_BOOK_XP_TIER1 = 50;
+  const DUPLICATE_BOOK_XP_TIER2_PLUS = 500;
   const XP_SOURCES = Object.freeze([
     'combat', 'npc_guidance', 'sect_training'
   ]);
   // Hit counts and scheduler/status ticks are discrete combat structure.
   // Scaling them would break two-hit resolution and fixed tick contracts.
   const ACTIVE_STRUCTURAL_NUMBERS = Object.freeze([
-    'hits', 'durationTicks', 'attackIntervalTicks'
+    'hits', 'durationTicks', 'attackIntervalTicks', 'chance',
+    'pulseIntervalTicks', 'pulseCount', 'stacks', 'maxStacks',
+    'defenseIgnore', 'pulseDamageRatio', 'attackFactor', 'accuracyFlat',
+    'damageBonus', 'damageTakenFactor', 'threshold', 'bonus',
+    'lowHpThreshold', 'overflowShieldCap'
   ]);
   const NEUTRAL_MODIFIERS = Object.freeze({
     requiredRealmReduction: 0,
@@ -617,8 +624,10 @@
     if (!technique || !positiveInteger(level) || level > MAX_LEVEL) {
       return {};
     }
-    const perLevel = technique.kind === 'active' ? 0.03 : 0.02;
-    const multiplier = 1 + perLevel * (level - 1);
+    // Remap old Lv20 totals (active +38% / passive +28.5%) onto MWI Lv100,
+    // then keep the same rate through Lv200 for endless endgame books.
+    const bonusAt100 = technique.kind === 'active' ? 0.38 : 0.285;
+    const multiplier = 1 + bonusAt100 * (level - 1) / 99;
     return scaleEffectValue(
       technique.effect,
       multiplier,
@@ -752,7 +761,9 @@
       define(parts.known, technique.id, { level: 1, xp: 0 });
       return success(parts.state, 0, 0, false);
     }
-    const gainedXp = 100 * technique.tier;
+    const gainedXp = technique.tier <= 1
+      ? DUPLICATE_BOOK_XP_TIER1
+      : DUPLICATE_BOOK_XP_TIER2_PLUS;
     const progress = progressRecord(known, gainedXp, modifiers);
     return progress.ok
       ? success(

@@ -1,0 +1,440 @@
+=== config/content related ScriptString ===
+  @45987272 0x2bdb5c8: "' is not valid in system.remoting.configuration section"
+  @45990384 0x2bdc1f0: '.config'
+  @45990600 0x2bdc2c8: '/configuration/system.runtime.remoting'
+  @45996536 0x2bdd9f8: 'An error occured while trying to get the project configuration for services.\n'
+  @46004240 0x2bdf810: 'Coroutine container not configured... did you forget to call Init?'
+  @46004896 0x2bdfaa0: "Couldn't fetch config file.\nURL: "
+  @46042888 0x2be8f08: 'UnityServicesProjectConfiguration.json'
+  @46045376 0x2be98c0: 'XDG_CONFIG_HOME'
+  @46053688 0x2beb938: 'config'
+  @46053696 0x2beb940: 'config/content'
+  @46053704 0x2beb948: 'config/content/text0'
+  @46053712 0x2beb950: 'config/content/text1'
+  @46053720 0x2beb958: 'config/content/text13'
+  @46053728 0x2beb960: 'config/content/text14'
+  @46053736 0x2beb968: 'config/content/text3'
+  @46053744 0x2beb970: 'config/content/text5'
+  @46053752 0x2beb978: 'config/content/text6'
+  @46053760 0x2beb980: 'config/content/text7'
+  @46053768 0x2beb988: 'config/content/text8/bt/Text'
+  @46053776 0x2beb990: 'config0'
+  @46053784 0x2beb998: 'config10'
+  @46053792 0x2beb9a0: 'config101'
+  @46053800 0x2beb9a8: 'config102'
+  @46053808 0x2beb9b0: 'config103'
+  @46053816 0x2beb9b8: 'config110'
+  @46053824 0x2beb9c0: 'config11url'
+  @46053832 0x2beb9c8: 'config13'
+  @46053840 0x2beb9d0: 'config14'
+  @46053848 0x2beb9d8: 'config2'
+  @46053856 0x2beb9e0: 'config3'
+  @46053864 0x2beb9e8: 'config4'
+  @46053872 0x2beb9f0: 'config41'
+  @46053880 0x2beb9f8: 'config5'
+  @46053888 0x2beba00: 'config6'
+  @46053896 0x2beba08: 'config7'
+  @46053904 0x2beba10: 'config8'
+  @46053912 0x2beba18: 'config9'
+  @46068888 0x2bef498: 'helpconfig13'
+  @46068896 0x2bef4a0: 'helpconfig6'
+  @46078616 0x2bf1a98: 'preconfig'
+  @46084704 0x2bf3260: 'text'
+  @46084712 0x2bf3268: 'text-overflow'
+  @46084720 0x2bf3270: 'text-shadow'
+  @46084728 0x2bf3278: 'text/html'
+  @46084736 0x2bf3280: 'text/plain; charset="'
+  @46084744 0x2bf3288: 'text0'
+  @46084752 0x2bf3290: 'text0/bt0'
+  @46084760 0x2bf3298: 'text0/bt0/Text'
+  @46084768 0x2bf32a0: 'text0/bt1'
+  @46084776 0x2bf32a8: 'text0/bt1/Text'
+  @46084784 0x2bf32b0: 'text0/starbt'
+  @46084792 0x2bf32b8: 'text0/starbt/Image'
+  @46084800 0x2bf32c0: 'text0/starbt/Text'
+  @46084808 0x2bf32c8: 'text0/text0'
+  @46084816 0x2bf32d0: 'text0/text0/bt'
+  @46084824 0x2bf32d8: 'text0/text0/bt/Text'
+  @46084832 0x2bf32e0: 'text0/text1'
+  @46084840 0x2bf32e8: 'text0/text2'
+  @46084848 0x2bf32f0: 'text0/text2/bt'
+  @46084856 0x2bf32f8: 'text0/text2/bt/Text'
+  @46084864 0x2bf3300: 'text0/text3'
+  @46084872 0x2bf3308: 'text0/text4'
+  @46084880 0x2bf3310: 'text1'
+  @46084888 0x2bf3318: 'text1/text0'
+  @46084896 0x2bf3320: 'text1/text1'
+  @46084904 0x2bf3328: 'text1/text1/Text'
+  @46084912 0x2bf3330: 'text1/text2'
+  @46084920 0x2bf3338: 'text1/text3'
+  @46084928 0x2bf3340: 'text1/text3/Text'
+  @46084936 0x2bf3348: 'text10'
+  @46084944 0x2bf3350: 'text10/bt0'
+  @46084952 0x2bf3358: 'text10/bt0/Text'
+  @46084960 0x2bf3360: 'text10/bt1'
+  @46084968 0x2bf3368: 'text10/bt1/Text'
+  @46084976 0x2bf3370: 'text10/bt2'
+  @46084984 0x2bf3378: 'text10/bt2/Text'
+  @46084992 0x2bf3380: 'text10/text0'
+  @46085000 0x2bf3388: 'text11'
+  @46085008 0x2bf3390: 'text11/bt'
+  @46085016 0x2bf3398: 'text11/bt/Text'
+  @46085024 0x2bf33a0: 'text12'
+  @46085032 0x2bf33a8: 'text13'
+  @46085040 0x2bf33b0: 'text13/bt0'
+  @46085048 0x2bf33b8: 'text13/bt0/Text'
+  @46085056 0x2bf33c0: 'text13/bt1'
+  @46085064 0x2bf33c8: 'text13/bt1/Text'
+  @46085072 0x2bf33d0: 'text13/helpbt'
+  @46085080 0x2bf33d8: 'text14'
+  @46085088 0x2bf33e0: 'text14/bt0'
+  @46085096 0x2bf33e8: 'text14/bt0/Text'
+  @46085104 0x2bf33f0: 'text14/bt1'
+  @46085112 0x2bf33f8: 'text14/bt1/Text'
+  @46085120 0x2bf3400: 'text16'
+  @46085128 0x2bf3408: 'text16/namebt0'
+  @46085136 0x2bf3410: 'text16/namebt0/Text'
+  @46085144 0x2bf3418: 'text16/namebt1'
+  @46085152 0x2bf3420: 'text16/namebt1/Text'
+  @46085160 0x2bf3428: 'text17'
+  @46085168 0x2bf3430: 'text17/namebt'
+  @46085176 0x2bf3438: 'text17/namebt/Text'
+  @46085184 0x2bf3440: 'text18'
+  @46085192 0x2bf3448: 'text18/namebt'
+  @46085200 0x2bf3450: 'text18/namebt/Text'
+  @46085208 0x2bf3458: 'text19'
+  @46085216 0x2bf3460: 'text2'
+  @46085224 0x2bf3468: 'text2/Text'
+  @46085232 0x2bf3470: 'text2/bt'
+  @46085240 0x2bf3478: 'text2/dbt'
+  @46085248 0x2bf3480: 'text2/dbt/Text'
+  @46085256 0x2bf3488: 'text2/mbt'
+  @46085264 0x2bf3490: 'text2/mbt/Text'
+  @46085272 0x2bf3498: 'text2/text0'
+  @46085280 0x2bf34a0: 'text2/text0/Text'
+  @46085288 0x2bf34a8: 'text2/text1'
+  @46085296 0x2bf34b0: 'text2/text1/Text'
+  @46085304 0x2bf34b8: 'text2/text2'
+  @46085312 0x2bf34c0: 'text2/text2/Text'
+  @46085320 0x2bf34c8: 'text3'
+  @46085328 0x2bf34d0: 'text3/Text'
+  @46085336 0x2bf34d8: 'text3/bt'
+  @46085344 0x2bf34e0: 'text3/bt0'
+  @46085352 0x2bf34e8: 'text3/bt0/Text'
+  @46085360 0x2bf34f0: 'text3/bt1'
+  @46085368 0x2bf34f8: 'text3/bt1/Text'
+  @46085376 0x2bf3500: 'text3/text0'
+  @46085384 0x2bf3508: 'text4'
+  @46085392 0x2bf3510: 'text4/text0'
+  @46085400 0x2bf3518: 'text5'
+  @46085408 0x2bf3520: 'text5/bt0'
+  @46085416 0x2bf3528: 'text5/bt0/Text'
+  @46085424 0x2bf3530: 'text5/bt1'
+  @46085432 0x2bf3538: 'text5/bt1/Text'
+  @46085440 0x2bf3540: 'text6'
+  @46085448 0x2bf3548: 'text6/bt0'
+  @46085456 0x2bf3550: 'text6/bt0/Text'
+  @46085464 0x2bf3558: 'text6/bt1'
+  @46085472 0x2bf3560: 'text6/bt1/Text'
+  @46085480 0x2bf3568: 'text6/helpbt'
+  @46085488 0x2bf3570: 'text7'
+  @46085496 0x2bf3578: 'text7/bt'
+  @46085504 0x2bf3580: 'text8'
+  @46085512 0x2bf3588: 'text8/bt'
+  @46085520 0x2bf3590: 'text8/bt/Text'
+  @46085528 0x2bf3598: 'text9'
+  @46085536 0x2bf35a0: 'text9/textbt'
+  @46085544 0x2bf35a8: 'text9/textbt/Text'
+  @46085552 0x2bf35b0: 'textAlignment'
+  @46085560 0x2bf35b8: 'textElement'
+  @46085568 0x2bf35c0: 'textOnly'
+  @46085576 0x2bf35c8: 'textSettings'
+  @46085584 0x2bf35d0: 'textWrappingMode'
+  @46085592 0x2bf35d8: 'textWriter'
+  @46085600 0x2bf35e0: 'textarea'
+  @46085608 0x2bf35e8: 'textfield'
+  @46085616 0x2bf35f0: 'texture={0}, hotspot={1}'
+  @46085624 0x2bf35f8: 'textureToCopy'
+  @46085680 0x2bf3630: 'this product does not have configuration of introductory price period: {0}'
+
+=== pointer xrefs in SO to content string VAs (sample) ===
+'config/content': ptr hits VA-ish ['0x3b58e0']
+'config/content/text0': ptr hits VA-ish ['0x3b4cc8']
+'config/content/text1': ptr hits VA-ish ['0x3b83a0']
+'config/content/text13': ptr hits VA-ish ['0x3b4d88']
+'config/content/text14': ptr hits VA-ish ['0x3b4e00']
+'config/content/text3': ptr hits VA-ish ['0x3b4d70']
+'config/content/text5': ptr hits VA-ish ['0x3b4d28']
+'config/content/text6': ptr hits VA-ish ['0x3b4d40']
+'config/content/text7': ptr hits VA-ish ['0x3b69d8']
+'config/content/text8/bt/Text': ptr hits VA-ish ['0x3b83b8']
+'helpconfig13': ptr hits VA-ish ['0x3b8a60']
+'helpconfig6': ptr hits VA-ish ['0x3b8a48']
+
+=== DecryptDES BL targets (crypto stack) ===
+
+=== DecryptDES all unique BL targets ===
+  22x 0x1295978 ?@0x0
+  21x 0x1295a70 ?@0x0
+  8x 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+
+=== game methods with Load/Resources/config/help in name ===
+0x13bd950 cfile$$Start
+0x13bd970 cfile$$test
+0x13bd9dc cfile.<test>d__1$$.ctor
+0x13bda04 cfile$$Update
+0x13bda08 cfile$$.ctor
+0x13bda10 cfile.<test>d__1$$System.IDisposable.Dispose
+0x13bda14 cfile.<test>d__1$$MoveNext
+0x13bdcfc cfile.<test>d__1$$System.Collections.Generic.IEnumerator<System.Object>.get_Current
+0x13bdd04 cfile.<test>d__1$$System.Collections.IEnumerator.Reset
+0x13bdd3c cfile.<test>d__1$$System.Collections.IEnumerator.get_Current
+0x13bf5b8 dns$$EncryptDES
+0x13bfb7c dns$$DecryptDES
+0x13ccc7c person$$save
+0x13ccd98 person$$load
+0x13e42e0 root$$loadgame
+0x13e46f4 root$$loadbreak
+0x13e5134 root$$loadsceen
+0x13e51a8 root$$saveclear
+0x13e5210 root$$copysavewithname
+0x13e5370 root$$deletesavewithname
+0x13e5480 root$$savebackup1
+0x13e5530 root$$resaveclear
+0x13e5598 root$$saveerr
+0x13e5908 root$$savegame1
+0x13e597c root$$savegame
+0x13e59f0 root$$qsavegame
+0x13f9c64 root$$savenewface
+0x13f9f70 root$$checksafefami
+0x13fa104 root$$savegameloop
+0x1407220 root$$preconfig
+0x1410a9c root$$showconfig
+0x141ca3c root$$showtextwithbt
+0x14244fc root$$savesf
+0x142cad0 root$$refreshsavetime
+0x142e2c0 root$$textbt
+0x1430514 root$$<preconfig>b__294_0
+0x143052c root$$<preconfig>b__294_1
+0x1430544 root$$<preconfig>b__294_2
+0x1430620 root$$<preconfig>b__294_3
+0x1430684 root$$<preconfig>b__294_4
+0x14306e8 root$$<preconfig>b__294_5
+0x143074c root$$<preconfig>b__294_6
+0x14307b0 root$$<preconfig>b__294_7
+0x143087c root$$<preconfig>b__294_8
+0x14308e0 root$$<preconfig>b__294_9
+0x1430944 root$$<preconfig>b__294_10
+0x14309a8 root$$<preconfig>b__294_11
+0x1430a0c root$$<preconfig>b__294_12
+0x1430ab0 root$$<preconfig>b__294_13
+0x1430b54 root$$<preconfig>b__294_14
+0x1430bb8 root$$<preconfig>b__294_15
+0x1430c1c root$$<preconfig>b__294_16
+0x1430c44 root$$<preconfig>b__294_17
+0x1430d10 root$$<preconfig>b__294_18
+0x1430ddc root$$<preconfig>b__294_19
+0x1430ea8 root$$<preconfig>b__294_20
+0x1430f84 root$$<preconfig>b__294_21
+0x1431060 root$$<preconfig>b__294_22
+0x1431088 root$$<preconfig>b__294_25
+0x14310ec root$$<preconfig>b__294_26
+0x1431150 root$$<preconfig>b__294_23
+
+=== ALL BL to DecryptDES in SO code ===
+totals Decrypt=0 Encrypt=0
+
+=== mydicstring$$setre 0x13c9778 BLs ===
+0x13c9784 0x17d64b8 Unity.Collections.NativeSlice.Enumerator<BoneWeight>$$get_Current@0x17d646c
+0x13c9798 0x18f86a0 System.Collections.Generic.GenericEqualityComparer<Vector4>$$LastIndexOf@0x18f865c
+0x13c97b4 0x17d64bc Unity.Collections.NativeSlice.Enumerator<BoneWeight>$$get_Current@0x17d646c
+0x13c97cc 0x1295b00 ?@0x0
+0x13c97f0 0x171a140 System.Collections.Generic.Dictionary<int, Int32Enum>$$System.Collections.IDictionary.Remove@0x171a130
+0x13c9804 0x1295b00 ?@0x0
+0x13c9828 0x1719eac System.Collections.Generic.Dictionary<int, Int32Enum>$$System.Collections.IDictionary.Add@0x1719d88
+0x13c9834 0x13c9994 mydicstring$$setre@0x13c9778
+0x13c9844 0x17d64b8 Unity.Collections.NativeSlice.Enumerator<BoneWeight>$$get_Current@0x17d646c
+
+=== mydicstring$$get_Item 0x13bec1c BLs ===
+0x13bec24 0x1295978 ?@0x0
+0x13bec30 0x1295a70 ?@0x0
+0x13bec40 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13bec68 0x1295978 ?@0x0
+0x13bec74 0x1295a70 ?@0x0
+0x13bec84 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13becac 0x1295978 ?@0x0
+0x13becb8 0x1295a70 ?@0x0
+0x13becc8 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13becf0 0x1295978 ?@0x0
+0x13becfc 0x1295a70 ?@0x0
+0x13bed0c 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13bed34 0x1295978 ?@0x0
+0x13bed40 0x1295a70 ?@0x0
+0x13bed50 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13bed78 0x1295978 ?@0x0
+0x13bed84 0x1295a70 ?@0x0
+0x13bed94 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13bedb4 0x1295978 ?@0x0
+0x13bedc0 0x1295a70 ?@0x0
+0x13bedd0 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13bee0c 0x1295978 ?@0x0
+
+=== mydicint$$setre 0x13c9158 BLs ===
+0x13c9160 0x14de714 System.Linq.Enumerable$$SequenceEqual<__Il2CppFullySharedGenericType>@0x14ddfd0
+0x13c9170 0x1295978 ?@0x0
+0x13c917c 0x14de714 System.Linq.Enumerable$$SequenceEqual<__Il2CppFullySharedGenericType>@0x14ddfd0
+0x13c91cc 0x12959cc ?@0x0
+0x13c91d8 0x12959cc ?@0x0
+0x13c91ec 0x1295c14 ?@0x0
+0x13c91fc 0x18f7c08 System.Collections.Generic.GenericEqualityComparer<ulong>$$LastIndexOf@0x18f7bc8
+0x13c920c 0x1295978 ?@0x0
+0x13c9218 0x1295c14 ?@0x0
+0x13c9228 0x18f7c08 System.Collections.Generic.GenericEqualityComparer<ulong>$$LastIndexOf@0x18f7bc8
+0x13c9238 0x1295978 ?@0x0
+0x13c9244 0x1295c14 ?@0x0
+0x13c9254 0x18f7c08 System.Collections.Generic.GenericEqualityComparer<ulong>$$LastIndexOf@0x18f7bc8
+0x13c9264 0x1295978 ?@0x0
+0x13c9270 0x1295c14 ?@0x0
+0x13c9280 0x18f7c08 System.Collections.Generic.GenericEqualityComparer<ulong>$$LastIndexOf@0x18f7bc8
+0x13c9290 0x1295978 ?@0x0
+0x13c929c 0x1295c14 ?@0x0
+0x13c92ac 0x18f7c08 System.Collections.Generic.GenericEqualityComparer<ulong>$$LastIndexOf@0x18f7bc8
+0x13c92bc 0x1295978 ?@0x0
+0x13c92c8 0x1295c14 ?@0x0
+0x13c92d8 0x18f7c08 System.Collections.Generic.GenericEqualityComparer<ulong>$$LastIndexOf@0x18f7bc8
+0x13c92e8 0x1295978 ?@0x0
+0x13c92f4 0x1295c14 ?@0x0
+0x13c9304 0x18f7c08 System.Collections.Generic.GenericEqualityComparer<ulong>$$LastIndexOf@0x18f7bc8
+0x13c9314 0x1295978 ?@0x0
+0x13c9320 0x1295c14 ?@0x0
+0x13c9330 0x18f7c08 System.Collections.Generic.GenericEqualityComparer<ulong>$$LastIndexOf@0x18f7bc8
+
+=== mydicint$$get_Item 0x13be1f4 BLs ===
+0x13be220 0x1295978 ?@0x0
+0x13be22c 0x1295a70 ?@0x0
+0x13be268 0x1295978 ?@0x0
+0x13be2a0 0x1295a70 ?@0x0
+0x13be2ec 0x1295978 ?@0x0
+0x13be30c 0x1295a70 ?@0x0
+0x13be31c 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13be334 0x1295978 ?@0x0
+0x13be340 0x1295a70 ?@0x0
+0x13be350 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13be368 0x1295978 ?@0x0
+0x13be374 0x1295a70 ?@0x0
+0x13be3b0 0x1295978 ?@0x0
+0x13be3bc 0x1295a70 ?@0x0
+
+=== ScriptMetadata entries mentioning content/config ===
+{'Address': 45792344, 'Name': 'System.Configuration.Assemblies.AssemblyHashAlgorithm_var', 'Signature': 'Il2CppType*'}
+{'Address': 45792368, 'Name': 'System.Configuration.Assemblies.AssemblyVersionCompatibility_var', 'Signature': 'Il2CppType*'}
+{'Address': 45792800, 'Name': 'System.Runtime.CompilerServices.ConfiguredTaskAwaitable_var', 'Signature': 'Il2CppType*'}
+{'Address': 45793720, 'Name': 'UnityEngine.GUIContent_var', 'Signature': 'Il2CppType*'}
+{'Address': 45793880, 'Name': 'UnityEngine.Purchasing.IAppleConfiguration_var', 'Signature': 'Il2CppType*'}
+{'Address': 45794136, 'Name': 'UnityEngine.Purchasing.IGooglePlayConfiguration_var', 'Signature': 'Il2CppType*'}
+{'Address': 45795752, 'Name': 'Unity.Services.Core.Configuration.SerializableProjectConfiguration_var', 'Signature': 'Il2CppType*'}
+{'Address': 45797160, 'Name': 'System.Runtime.CompilerServices.ConfiguredTaskAwaitable.ConfiguredTaskAwaiter_var', 'Signature': 'Il2CppType*'}
+{'Address': 45797264, 'Name': 'UnityEngine.EventSystems.EventSystem.UIToolkitOverrideConfig_var', 'Signature': 'Il2CppType*'}
+{'Address': 45798888, 'Name': 'System.Runtime.CompilerServices.AsyncTaskMethodBuilder<ProjectConfiguration>_TypeInfo', 'Signature': 'System_Runtime_CompilerServices_AsyncTaskMethodBuilder_ProjectConfiguration__c*'}
+{'Address': 45798896, 'Name': 'System.Runtime.CompilerServices.AsyncTaskMethodBuilder<SerializableProjectConfiguration>_TypeInfo', 'Signature': 'System_Runtime_CompilerServices_AsyncTaskMethodBuilder_SerializableProjectConfiguration__c*'}
+{'Address': 45800552, 'Name': 'System.Collections.Generic.Dictionary<string, ConfigurationEntry>_TypeInfo', 'Signature': 'System_Collections_Generic_Dictionary_string__ConfigurationEntry__c*'}
+{'Address': 45800984, 'Name': 'System.Collections.Generic.Dictionary<Type, IStoreConfiguration>_TypeInfo', 'Signature': 'System_Collections_Generic_Dictionary_Type__IStoreConfiguration__c*'}
+{'Address': 45803120, 'Name': 'System.Func<KeyValuePair<string, ConfigurationEntry>, string>_TypeInfo', 'Signature': 'System_Func_KeyValuePair_string__ConfigurationEntry___string__c*'}
+{'Address': 45805152, 'Name': 'System.Collections.Generic.IDictionary<string, ConfigurationEntry>_TypeInfo', 'Signature': 'System_Collections_Generic_IDictionary_string__ConfigurationEntry__c*'}
+{'Address': 45806392, 'Name': 'System.Collections.Generic.IReadOnlyDictionary<string, ConfigurationEntry>_TypeInfo', 'Signature': 'System_Collections_Generic_IReadOnlyDictionary_string__ConfigurationEntry__c*'}
+{'Address': 45808376, 'Name': 'System.Collections.Generic.List<BeforeRenderHelper.OrderBlock>_TypeInfo', 'Signature': 'System_Collections_Generic_List_BeforeRenderHelper_OrderBlock__c*'}
+{'Address': 45809736, 'Name': 'System.Collections.Generic.Stack<DtdParser.ParseElementOnlyContent_LocalFrame>_TypeInfo', 'Signature': 'System_Collections_Generic_Stack_DtdParser_ParseElementOnlyContent_LocalFrame__c*'}
+{'Address': 45810320, 'Name': 'UnityEngine.UIElements.UxmlEnumAttributeDescription<HelpBoxMessageType>_TypeInfo', 'Signature': 'UnityEngine_UIElements_UxmlEnumAttributeDescription_HelpBoxMessageType__c*'}
+{'Address': 45812912, 'Name': 'UnityEngine.UI.InputField.ContentType[]_TypeInfo', 'Signature': 'Il2CppClass*'}
+{'Address': 45812984, 'Name': 'TMPro.TMP_InputField.ContentType[]_TypeInfo', 'Signature': 'Il2CppClass*'}
+{'Address': 45813464, 'Name': 'System.Xml.Schema.AllElementsContentValidator_TypeInfo', 'Signature': 'System_Xml_Schema_AllElementsContentValidator_c*'}
+{'Address': 45813704, 'Name': 'Newtonsoft.Json.Utilities.AotHelper_TypeInfo', 'Signature': 'Newtonsoft_Json_Utilities_AotHelper_c*'}
+{'Address': 45813768, 'Name': 'UnityEngine.Purchasing.AppleConfiguration_TypeInfo', 'Signature': 'UnityEngine_Purchasing_AppleConfiguration_c*'}
+{'Address': 45814072, 'Name': 'System.Configuration.Assemblies.AssemblyHashAlgorithm_TypeInfo', 'Signature': 'System_Configuration_Assemblies_AssemblyHashAlgorithm_c*'}
+{'Address': 45814112, 'Name': 'System.Configuration.Assemblies.AssemblyVersionCompatibility_TypeInfo', 'Signature': 'System_Configuration_Assemblies_AssemblyVersionCompatibility_c*'}
+{'Address': 45814208, 'Name': 'System.Xml.AsyncHelper_TypeInfo', 'Signature': 'System_Xml_AsyncHelper_c*'}
+{'Address': 45814304, 'Name': 'UnityEngine.AttributeHelperEngine_TypeInfo', 'Signature': 'UnityEngine_AttributeHelperEngine_c*'}
+{'Address': 45814696, 'Name': 'UnityEngine.BeforeRenderHelper_TypeInfo', 'Signature': 'UnityEngine_BeforeRenderHelper_c*'}
+{'Address': 45814984, 'Name': 'System.Collections.Generic.BitHelper_TypeInfo', 'Signature': 'System_Collections_Generic_BitHelper_c*'}
+{'Address': 45815136, 'Name': 'UnityEngine.BootConfigData_TypeInfo', 'Signature': 'UnityEngine_BootConfigData_c*'}
+{'Address': 45815848, 'Name': 'Mono.Net.Security.ChainValidationHelper_TypeInfo', 'Signature': 'Mono_Net_Security_ChainValidationHelper_c*'}
+{'Address': 45816112, 'Name': 'Unity.Services.Core.Configuration.CloudProjectId_TypeInfo', 'Signature': 'Unity_Services_Core_Configuration_CloudProjectId_c*'}
+{'Address': 45816496, 'Name': 'System.Runtime.Remoting.ConfigHandler_TypeInfo', 'Signature': 'System_Runtime_Remoting_ConfigHandler_c*'}
+{'Address': 45816504, 'Name': 'UnityEngine.Purchasing.ConfigurationBuilder_TypeInfo', 'Signature': 'UnityEngine_Purchasing_ConfigurationBuilder_c*'}
+{'Address': 45816512, 'Name': 'Unity.Services.Core.Configuration.ConfigurationEntry_TypeInfo', 'Signature': 'Unity_Services_Core_Configuration_ConfigurationEntry_c*'}
+{'Address': 45816520, 'Name': 'UnityEngine.Purchasing.ConfigurationProvider_TypeInfo', 'Signature': 'UnityEngine_Purchasing_ConfigurationProvider_c*'}
+{'Address': 45816528, 'Name': 'Unity.Services.Core.Configuration.ConfigurationUtils_TypeInfo', 'Signature': 'Unity_Services_Core_Configuration_ConfigurationUtils_c*'}
+{'Address': 45816704, 'Name': 'System.Net.ContentDecodeStream_TypeInfo', 'Signature': 'System_Net_ContentDecodeStream_c*'}
+{'Address': 45816712, 'Name': 'System.Xml.Schema.ContentValidator_TypeInfo', 'Signature': 'System_Xml_Schema_ContentValidator_c*'}
+{'Address': 45817008, 'Name': 'System.Security.Cryptography.CryptoConfig_TypeInfo', 'Signature': 'System_Security_Cryptography_CryptoConfig_c*'}
+{'Address': 45818352, 'Name': 'System.Net.Configuration.DefaultProxySectionInternal_TypeInfo', 'Signature': 'System_Net_Configuration_DefaultProxySectionInternal_c*'}
+{'Address': 45818376, 'Name': 'UnityEngine.Purchasing.DefaultStoreHelper_TypeInfo', 'Signature': 'UnityEngine_Purchasing_DefaultStoreHelper_c*'}
+{'Address': 45818608, 'Name': 'System.Xml.Schema.DfaContentValidator_TypeInfo', 'Signature': 'System_Xml_Schema_DfaContentValidator_c*'}
+{'Address': 45819104, 'Name': 'System.Text.EncodingHelper_TypeInfo', 'Signature': 'System_Text_EncodingHelper_c*'}
+{'Address': 45819240, 'Name': 'UnityEngine.UIElements.EnumFieldHelpers_TypeInfo', 'Signature': 'UnityEngine_UIElements_EnumFieldHelpers_c*'}
+{'Address': 45819744, 'Name': 'Unity.Services.Core.Configuration.ExternalUserId_TypeInfo', 'Signature': 'Unity_Services_Core_Configuration_ExternalUserId_c*'}
+{'Address': 45820416, 'Name': 'UnityEngine.GUIContent_TypeInfo', 'Signature': 'UnityEngine_GUIContent_c*'}
+{'Address': 45820736, 'Name': 'UnityEngine.Purchasing.GooglePlayConfiguration_TypeInfo', 'Signature': 'UnityEngine_Purchasing_GooglePlayConfiguration_c*'}
+{'Address': 45820928, 'Name': 'System.Globalization.GregorianCalendarHelper_TypeInfo', 'Signature': 'System_Globalization_GregorianCalendarHelper_c*'}
+{'Address': 45821088, 'Name': 'System.Collections.HashHelpers_TypeInfo', 'Signature': 'System_Collections_HashHelpers_c*'}
+{'Address': 45821096, 'Name': 'System.Numerics.Hashing.HashHelpers_TypeInfo', 'Signature': 'System_Numerics_Hashing_HashHelpers_1_c*'}
+{'Address': 45821104, 'Name': 'System.Numerics.Hashing.HashHelpers_TypeInfo', 'Signature': 'System_Numerics_Hashing_HashHelpers_c*'}
+{'Address': 45821160, 'Name': 'UnityEngine.UIElements.HelpBox_TypeInfo', 'Signature': 'UnityEngine_UIElements_HelpBox_c*'}
+{'Address': 45821256, 'Name': 'System.Net.HttpValidationHelpers_TypeInfo', 'Signature': 'System_Net_HttpValidationHelpers_c*'}
+{'Address': 45821672, 'Name': 'Unity.Services.Core.Configuration.Internal.ICloudProjectId_TypeInfo', 'Signature': 'Unity_Services_Core_Configuration_Internal_ICloudProjectId_c*'}
+{'Address': 45821736, 'Name': 'Unity.Services.Core.Configuration.IConfigurationLoader_TypeInfo', 'Signature': 'Unity_Services_Core_Configuration_IConfigurationLoader_c*'}
+{'Address': 45823264, 'Name': 'Unity.Services.Core.Configuration.Internal.IProjectConfiguration_TypeInfo', 'Signature': 'Unity_Services_Core_Configuration_Internal_IProjectConfiguration_c*'}
+{'Address': 45827952, 'Name': 'System.Xml.Schema.NfaContentValidator_TypeInfo', 'Signature': 'System_Xml_Schema_NfaContentValidator_c*'}
+{'Address': 45828792, 'Name': 'System.Xml.Schema.ParticleContentValidator_TypeInfo', 'Signature': 'System_Xml_Schema_ParticleContentValidator_c*'}
+{'Address': 45828912, 'Name': 'System.Threading.PlatformHelper_TypeInfo', 'Signature': 'System_Threading_PlatformHelper_c*'}
+{'Address': 45829528, 'Name': 'Unity.Services.Core.Configuration.ProjectConfiguration_TypeInfo', 'Signature': 'Unity_Services_Core_Configuration_ProjectConfiguration_c*'}
+{'Address': 45830016, 'Name': 'System.Xml.Schema.RangeContentValidator_TypeInfo', 'Signature': 'System_Xml_Schema_RangeContentValidator_c*'}
+{'Address': 45830296, 'Name': 'System.Xml.Serialization.ReflectionHelper_TypeInfo', 'Signature': 'System_Xml_Serialization_ReflectionHelper_c*'}
+{'Address': 45830544, 'Name': 'System.Runtime.Remoting.RemotingConfiguration_TypeInfo', 'Signature': 'System_Runtime_Remoting_RemotingConfiguration_c*'}
+{'Address': 45831592, 'Name': 'UnityEngine.Purchasing.SelectedAndroidStoreHelper_TypeInfo', 'Signature': 'UnityEngine_Purchasing_SelectedAndroidStoreHelper_c*'}
+{'Address': 45831936, 'Name': 'System.Net.Configuration.SettingsSectionInternal_TypeInfo', 'Signature': 'System_Net_Configuration_SettingsSectionInternal_c*'}
+{'Address': 45832888, 'Name': 'UnityEngine.Purchasing.StoreConfiguration_TypeInfo', 'Signature': 'UnityEngine_Purchasing_StoreConfiguration_c*'}
+{'Address': 45833112, 'Name': 'Unity.Services.Core.Configuration.StreamingAssetsConfigurationLoader_TypeInfo', 'Signature': 'Unity_Services_Core_Configuration_StreamingAssetsConfigurationLoader_c*'}
+{'Address': 45833576, 'Name': 'UnityEngine.Purchasing.SubscriptionInfoHelper_TypeInfo', 'Signature': 'UnityEngine_Purchasing_SubscriptionInfoHelper_c*'}
+{'Address': 45834608, 'Name': 'System.Threading.ThreadHelper_TypeInfo', 'Signature': 'System_Threading_ThreadHelper_c*'}
+{'Address': 45835856, 'Name': 'UniWebViewAuthenticationConfiguration_TypeInfo', 'Signature': 'UniWebViewAuthenticationConfiguration_c*'}
+{'Address': 45835872, 'Name': 'UniWebViewAuthenticationFlowCustomizeConfig_TypeInfo', 'Signature': 'UniWebViewAuthenticationFlowCustomizeConfig_c*'}
+{'Address': 45836368, 'Name': 'System.UriHelper_TypeInfo', 'Signature': 'System_UriHelper_c*'}
+{'Address': 45836576, 'Name': 'System.Net.ValidationHelper_TypeInfo', 'Signature': 'System_Net_ValidationHelper_c*'}
+{'Address': 45836872, 'Name': 'UnityEngine.UI.VertexHelper_TypeInfo', 'Signature': 'UnityEngine_UI_VertexHelper_c*'}
+{'Address': 45838816, 'Name': 'System.Xml.Schema.XmlSchemaComplexContent_TypeInfo', 'Signature': 'System_Xml_Schema_XmlSchemaComplexContent_c*'}
+{'Address': 45838824, 'Name': 'System.Xml.Schema.XmlSchemaComplexContentExtension_TypeInfo', 'Signature': 'System_Xml_Schema_XmlSchemaComplexContentExtension_c*'}
+{'Address': 45838832, 'Name': 'System.Xml.Schema.XmlSchemaComplexContentRestriction_TypeInfo', 'Signature': 'System_Xml_Schema_XmlSchemaComplexContentRestriction_c*'}
+{'Address': 45839144, 'Name': 'System.Xml.Schema.XmlSchemaSimpleContent_TypeInfo', 'Signature': 'System_Xml_Schema_XmlSchemaSimpleContent_c*'}
+{'Address': 45839152, 'Name': 'System.Xml.Schema.XmlSchemaSimpleContentExtension_TypeInfo', 'Signature': 'System_Xml_Schema_XmlSchemaSimpleContentExtension_c*'}
+{'Address': 45839160, 'Name': 'System.Xml.Schema.XmlSchemaSimpleContentRestriction_TypeInfo', 'Signature': 'System_Xml_Schema_XmlSchemaSimpleContentRestriction_c*'}
+{'Address': 45839176, 'Name': 'System.Xml.Schema.XmlSchemaSimpleTypeContent_TypeInfo', 'Signature': 'System_Xml_Schema_XmlSchemaSimpleTypeContent_c*'}
+{'Address': 45839760, 'Name': 'UnityEngine.Yoga.YogaConfig_TypeInfo', 'Signature': 'UnityEngine_Yoga_YogaConfig_c*'}
+{'Address': 45840664, 'Name': 'UnityEngine.Purchasing.AppleConfiguration.<>c__DisplayClass5_0_TypeInfo', 'Signature': 'UnityEngine_Purchasing_AppleConfiguration___c__DisplayClass5_0_c*'}
+{'Address': 45840672, 'Name': 'UnityEngine.Purchasing.AppleConfiguration.<>c__DisplayClass5_1_TypeInfo', 'Signature': 'UnityEngine_Purchasing_AppleConfiguration___c__DisplayClass5_1_c*'}
+{'Address': 45841184, 'Name': 'Unity.Burst.BurstCompiler.BurstCompilerHelper_TypeInfo', 'Signature': 'Unity_Burst_BurstCompiler_BurstCompilerHelper_c*'}
+{'Address': 45841264, 'Name': 'Mono.Net.Security.Private.CallbackHelpers.<>c__DisplayClass0_0_TypeInfo', 'Signature': 'Mono_Net_Security_Private_CallbackHelpers___c__DisplayClass0_0_c*'}
+{'Address': 45841272, 'Name': 'Mono.Net.Security.Private.CallbackHelpers.<>c__DisplayClass6_0_TypeInfo', 'Signature': 'Mono_Net_Security_Private_CallbackHelpers___c__DisplayClass6_0_c*'}
+{'Address': 45841344, 'Name': 'Mono.Net.Security.ChainValidationHelper.<>c__DisplayClass11_0_TypeInfo', 'Signature': 'Mono_Net_Security_ChainValidationHelper___c__DisplayClass11_0_c*'}
+{'Address': 45841960, 'Name': 'System.Linq.Expressions.Interpreter.DelegateHelpers.<>c_TypeInfo', 'Signature': 'System_Linq_Expressions_Interpreter_DelegateHelpers___c_c*'}
+{'Address': 45842184, 'Name': 'System.Xml.DtdParser.ParseElementOnlyContent_LocalFrame_TypeInfo', 'Signature': 'System_Xml_DtdParser_ParseElementOnlyContent_LocalFrame_c*'}
+{'Address': 45843152, 'Name': 'UnityEngine.Purchasing.GooglePlayConfiguration.<>c__DisplayClass0_0_TypeInfo', 'Signature': 'UnityEngine_Purchasing_GooglePlayConfiguration___c__DisplayClass0_0_c*'}
+{'Address': 45843160, 'Name': 'UnityEngine.Purchasing.GooglePlayConfiguration.<>c__DisplayClass1_0_TypeInfo', 'Signature': 'UnityEngine_Purchasing_GooglePlayConfiguration___c__DisplayClass1_0_c*'}
+{'Address': 45843168, 'Name': 'UnityEngine.Purchasing.GooglePlayConfiguration.<>c__DisplayClass2_0_TypeInfo', 'Signature': 'UnityEngine_Purchasing_GooglePlayConfiguration___c__DisplayClass2_0_c*'}
+{'Address': 45843176, 'Name': 'UnityEngine.Purchasing.GooglePlayConfiguration.<>c__DisplayClass3_0_TypeInfo', 'Signature': 'UnityEngine_Purchasing_GooglePlayConfiguration___c__DisplayClass3_0_c*'}
+{'Address': 45843600, 'Name': 'UnityEngine.UIElements.HelpBox.UxmlFactory_TypeInfo', 'Signature': 'UnityEngine_UIElements_HelpBox_UxmlFactory_c*'}
+{'Address': 45845824, 'Name': 'Mono.Security.PKCS7.ContentInfo_TypeInfo', 'Signature': 'Mono_Security_PKCS7_ContentInfo_c*'}
+{'Address': 45846264, 'Name': 'Unity.Services.Core.Configuration.ProjectConfiguration.<>c_TypeInfo', 'Signature': 'Unity_Services_Core_Configuration_ProjectConfiguration___c_c*'}
+{'Address': 45847128, 'Name': 'Mono.Xml.SmallXmlParser.IContentHandler_TypeInfo', 'Signature': 'Mono_Xml_SmallXmlParser_IContentHandler_c*'}
+{'Address': 45847672, 'Name': 'UnityEngine.Purchasing.SubscriptionInfoHelper.<>c_TypeInfo', 'Signature': 'UnityEngine_Purchasing_SubscriptionInfoHelper___c_c*'}
+{'Address': 45848752, 'Name': 'UniWebView.OnWebContentProcessTerminatedDelegate_TypeInfo', 'Signature': 'UniWebView_OnWebContentProcessTerminatedDelegate_c*'}
+{'Address': 45849584, 'Name': 'System.Xml.Linq.XContainer.ContentReader_TypeInfo', 'Signature': 'System_Xml_Linq_XContainer_ContentReader_c*'}
+{'Address': 45849624, 'Name': 'System.Xml.Schema.XdrBuilder.AttributeContent_TypeInfo', 'Signature': 'System_Xml_Schema_XdrBuilder_AttributeContent_c*'}
+{'Address': 45849640, 'Name': 'System.Xml.Schema.XdrBuilder.ElementContent_TypeInfo', 'Signature': 'System_Xml_Schema_XdrBuilder_ElementContent_c*'}
+{'Address': 45849648, 'Name': 'System.Xml.Schema.XdrBuilder.GroupContent_TypeInfo', 'Signature': 'System_Xml_Schema_XdrBuilder_GroupContent_c*'}
+{'Address': 45850560, 'Name': 'Unity.Burst.BurstCompiler.BurstCompilerHelper.IsBurstEnabledDelegate_TypeInfo', 'Signature': 'Unity_Burst_BurstCompiler_BurstCompilerHelper_IsBurstEnabledDelegate_c*'}
+{'Address': 45982224, 'Name': 'Field$System.Runtime.CompilerServices.ConfiguredTaskAwaitable.m_configuredTaskAwaiter', 'Signature': None}
+{'Address': 45982440, 'Name': 'Field$UnityEngine.GUIContent.m_Image', 'Signature': None}
+{'Address': 45982848, 'Name': 'Field$Unity.Services.Core.Configuration.SerializableProjectConfiguration.Keys', 'Signature': None}
+{'Address': 45983256, 'Name': 'Field$System.Runtime.CompilerServices.ConfiguredTaskAwaitable.ConfiguredTaskAwaiter.m_task', 'Signature': None}
+{'Address': 45983336, 'Name': 'Field$UnityEngine.EventSystems.EventSystem.UIToolkitOverrideConfig.activeEventSystem', 'Signature': None}

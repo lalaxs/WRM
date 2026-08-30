@@ -1,9 +1,11 @@
 'use strict';
 // 离线结算最短门槛自测：
-// 验证「离线时长不足 1 分钟不弹离线结算，满 1 分钟（含整 60 秒）才弹」。
-// 复用 stage3_api 的 VM 加载范式（已验证可加载 game.js 并暴露 harness，且不触发已删除的 Canvas UI）。
+// 1) 离线时长不足 1 分钟不结算；满 1 分钟才结算（推进水位线）
+// 2) 空闲（无主行动）长离线推进水位线但不弹「离线收益」
+// 3) isMeaningfulOfflineReport 门闩：有完成次数才算有意义
 const fs = require('fs');
 const vm = require('vm');
+const SimulationReport = require('../core/simulation-report.js');
 
 let pass = 0;
 let fail = 0;
@@ -147,39 +149,99 @@ function createRuntime(options) {
   SCRIPT_ORDER.forEach((file) => {
     vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
   });
-  vm.runInContext(fs.readFileSync('game.js', 'utf8'), sandbox, { filename: 'game.js' });
+  ['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+    vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
+  });
   const harness = sandbox.__GameTestHarness;
   return { sandbox, harness, controls, snapshot() { return clone(harness.__test.snapshotModel()); } };
 }
 
-// 构造一个「正在采药」的干净存档，模拟离线 offlineMs 后重新打开。
-// 每次用独立 runtime + 独立 store，避免水位线串扰。
-function settleFor(offlineMs) {
+function settleWithCurrent(offlineMs, current) {
   const rt = createRuntime({ store: {} });
   const G = rt.harness;
   const model = G.__test.snapshotModel();
   model.created = true;
-  model.current = { key: 'caiyao', mode: 'loop' };
+  model.current = current;
   const base = model.processedThroughMs || 0;
-  return G.__test.settleStartupOffline(model, base + offlineMs);
+  const target = base + offlineMs;
+  const result = G.__test.settleStartupOffline(model, target);
+  return { result, target, G };
 }
 
-console.log('离线结算最短门槛自测（MIN_OFFLINE_SETTLE_MS = 60000，即「至少 1 分钟」）');
-
-const r59 = settleFor(59000);
-ok(r59.newReports.length === 0, '离线 59 秒：不弹「离线结算」（不足门槛）');
-
-const r60 = settleFor(60000);
-ok(r60.newReports.length >= 1, '离线满 60 秒：弹「离线结算」（恰好达门槛）');
-if (r60.newReports.length) {
-  ok(r60.newReports[0].source === 'offline', '门槛触发的报告来源为 offline');
+function sampleReport(overrides) {
+  const report = SimulationReport.create({
+    source: 'offline',
+    fromMs: 0,
+    toMs: 60000,
+    requestedSeconds: 60,
+    actionKey: 'tuna',
+    seedBefore: 1
+  });
+  if (overrides && typeof overrides === 'object') {
+    Object.keys(overrides).forEach(function (key) {
+      report[key] = overrides[key];
+    });
+  }
+  return report;
 }
 
-const r30 = settleFor(30000);
-ok(r30.newReports.length === 0, '离线 30 秒：不弹「离线结算」');
+console.log('离线结算最短门槛 / 有意义弹窗自测');
 
-const r3600 = settleFor(3600000);
-ok(r3600.newReports.length >= 1, '离线 1 小时：弹「离线结算」（正常收益不受影响）');
+const r59 = settleWithCurrent(59000, { key: 'tuna', mode: 'repeat', count: 0, done: 0, elapsed: 0 });
+ok(r59.result.newReports.length === 0, '离线 59 秒：不弹「离线结算」（不足门槛）');
+
+const r60 = settleWithCurrent(60000, {
+  key: 'tuna',
+  mode: 'repeat',
+  count: 0,
+  done: 0,
+  elapsed: 0
+});
+ok(
+  r60.result.ok === true &&
+    r60.result.state.processedThroughMs === r60.target,
+  '离线满 60 秒：结算并推进水位线'
+);
+
+const r30 = settleWithCurrent(30000, { key: 'tuna', mode: 'repeat', count: 0, done: 0, elapsed: 0 });
+ok(r30.result.newReports.length === 0, '离线 30 秒：不弹「离线结算」');
+
+const idle = settleWithCurrent(3600000, null);
+ok(
+  idle.result.ok === true &&
+    idle.result.state.processedThroughMs === idle.target &&
+    idle.result.newReports.length === 0,
+  '空闲离线 1 小时：水位线推进但不弹离线收益'
+);
+ok(
+  idle.G.state.showOffline === false &&
+    (idle.result.state.pendingOfflineReports || []).length === 0,
+  '空闲长离线后 showOffline 为 false'
+);
+
+const empty = sampleReport();
+ok(
+  SimulationReport.isMeaningfulOfflineReport(empty) === false,
+  '空报告（completed=0）不算有意义'
+);
+const gained = sampleReport();
+gained.action.completed = 3;
+ok(
+  SimulationReport.isMeaningfulOfflineReport(gained) === true,
+  '有主行动完成次数的报告算有意义'
+);
+const recovered = sampleReport();
+recovered.warnings = ['invalid_combat_session_recovered'];
+ok(
+  SimulationReport.isMeaningfulOfflineReport(recovered) === false,
+  '纯战斗 session 恢复 warning 不算有意义'
+);
+const rollback = sampleReport();
+rollback.warnings = ['clock_rollback'];
+ok(
+  SimulationReport.isMeaningfulOfflineReport(rollback) === true,
+  '时钟回拨 warning 仍算有意义'
+);
 
 console.log('\n=== 离线门槛自测：' + pass + ' 通过 / ' + fail + ' 失败 ===');
 process.exit(fail === 0 ? 0 : 1);

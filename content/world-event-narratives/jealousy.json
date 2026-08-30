@@ -1,0 +1,147 @@
+[
+  {
+    "id": "jealousy-0097",
+    "weight": 7,
+    "type": "jealousy",
+    "actors": "pair",
+    "template": "{a}在{loc}见{b}与旁人说笑过密，当场沉了脸。",
+    "personalityAny": [
+      "zhizhuo",
+      "jiaojin"
+    ],
+    "tagAny": [
+      "lover",
+      "partner"
+    ]
+  },
+  {
+    "id": "jealousy-love-2001",
+    "weight": 15,
+    "type": "jealousy",
+    "actors": "pair",
+    "template": "{a}在{loc}看见{b}与旁人说笑，面上不显，话却冷了。回头叫{b}时声音发冷，连自己都后悔。",
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "friend"
+    ],
+    "tagNone": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "jealousy-love-2002",
+    "weight": 14,
+    "type": "jealousy",
+    "actors": "pair",
+    "template": "{b}在{loc}多看了别人一眼。{a}什么都没说，只把茶盏放得太重。散席后两人一路无话，肩却越离越远。",
+    "tagAny": [
+      "lover",
+      "partner"
+    ]
+  },
+  {
+    "id": "jealousy-love-2003",
+    "weight": 13,
+    "type": "jealousy",
+    "actors": "pair",
+    "template": "{a}听闻{b}收了别人的礼物，在{loc}笑着问一句谁送的。笑意未到眼底，喉间却发紧。",
+    "tagAny": [
+      "lover",
+      "impressed",
+      "life-debt"
+    ]
+  },
+  {
+    "id": "jealousy-love-2004",
+    "weight": 13,
+    "type": "jealousy",
+    "actors": "pair",
+    "template": "{a}向来清冷，却在{loc}因{b}停步多看旁人而沉默。{b}唤他，他应了，脚步却先离开半寸。",
+    "personalityA": [
+      "qingleng"
+    ],
+    "tagAny": [
+      "lover",
+      "friend"
+    ]
+  },
+  {
+    "id": "jealousy-love-2005",
+    "weight": 12,
+    "type": "jealousy",
+    "actors": "pair",
+    "template": "在{loc}，夜色里，{a}问{b}今天为何那样对别人。{b}解释时{a}听着，手里全是汗，偏偏嘴上更硬。",
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed"
+    ]
+  },
+  {
+    "id": "jealousy-love-2006",
+    "weight": 12,
+    "type": "jealousy",
+    "actors": "pair",
+    "template": "{a}在{loc}本想靠近{b}，却见对方已被人围住。他停在灯影外，笑不出来，只把袖口攥皱了。",
+    "tagAny": [
+      "friend",
+      "impressed",
+      "life-debt"
+    ],
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 30
+  },
+  {
+    "id": "jealousy-love-2007",
+    "weight": 11,
+    "type": "jealousy",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}不欢而散。不是为机缘，是为那句「你管我」。分开后两人都回头看了空处一眼。",
+    "tagAny": [
+      "lover"
+    ]
+  },
+  {
+    "id": "jealousy-love-2008",
+    "weight": 11,
+    "type": "jealousy",
+    "actors": "pair",
+    "template": "{b}替旁人整理衣领，动作很轻。{a}在{loc}看见这一幕，胸口发闷，走过去时语气却过分客气。",
+    "tagAny": [
+      "lover",
+      "partner"
+    ]
+  },
+  {
+    "id": "jealousy-fm-soft-1",
+    "weight": 13,
+    "type": "jealousy",
+    "actors": "pair",
+    "template": "{a}在{loc}看见{b}与旁人说笑，面上仍笑着，只把茶盏转了一圈。散席后她走在他身侧，话少了，脚步却更近。",
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed"
+    ],
+    "pairGenderAny": [
+      "fm"
+    ]
+  },
+  {
+    "id": "jealousy-warm-1",
+    "weight": 18,
+    "type": "jealousy",
+    "actors": "pair",
+    "template": "{a}在{loc}看见{b}与旁人说笑，脸沉了下来。回头质问时声音发冷，说完自己先后悔。",
+    "arcAny": [
+      "warm",
+      "bond",
+      "strain",
+      "mend"
+    ]
+  }
+]

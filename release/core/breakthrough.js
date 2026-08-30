@@ -13,7 +13,9 @@
       require('./inventory.js'),
       require('./random.js'),
       proxyDetector,
-      null
+      null,
+      require('./dns.js'),
+      require('./sect-pavilion.js')
     );
   } else if (root) {
     root.Breakthrough = factory(
@@ -22,7 +24,9 @@
       root.Inventory,
       root.GameRandom,
       null,
-      root.structuredClone
+      root.structuredClone,
+      root.Dns,
+      root.SectPavilion
     );
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (
@@ -31,7 +35,9 @@
   Inventory,
   GameRandom,
   proxyDetector,
-  stateCloneProbe
+  stateCloneProbe,
+  Dns,
+  SectPavilion
 ) {
   'use strict';
 
@@ -540,7 +546,8 @@
       'capacity',
       'capacityGrants',
       'stacks',
-      'bindings'
+      'bindings',
+      'equipment'
     ])) {
       return false;
     }
@@ -548,10 +555,20 @@
     const grants = dataValue(inventory, 'capacityGrants');
     const stacks = dataValue(inventory, 'stacks');
     const bindings = dataValue(inventory, 'bindings');
+    const equipment = dataValue(inventory, 'equipment');
     if (!nonNegativeInteger(capacity) ||
         !exactDataKeys(grants, ['shop', 'achievement', 'task']) ||
         !plainRecord(stacks) ||
         !plainRecord(bindings) ||
+        !plainRecord(equipment) ||
+        !exactDataKeys(equipment, [
+          'version',
+          'nextInstanceId',
+          'instances'
+        ]) ||
+        !positiveInteger(dataValue(equipment, 'version')) ||
+        !positiveInteger(dataValue(equipment, 'nextInstanceId')) ||
+        !plainArray(dataValue(equipment, 'instances')) ||
         !nonNegativeInteger(dataValue(grants, 'shop')) ||
         !nonNegativeInteger(dataValue(grants, 'achievement')) ||
         !nonNegativeInteger(dataValue(grants, 'task'))) {
@@ -952,6 +969,25 @@
       parts.player.shouyuan = transition.nextLifespan;
       parts.player.lifespanAnchorMs = null;
       parts.player.lifespanBaseYears = null;
+    }
+    // 双写 level_l / exp1 / realmStage，与 NPC 别名同源（玩家需求表仍用 realms）。
+    if (Dns && typeof Dns.syncPlayerLevelAliases === 'function') {
+      const realm = RealmContent &&
+        typeof RealmContent.getRealm === 'function'
+        ? RealmContent.getRealm(parts.breakthrough.realmId)
+        : null;
+      const index = realm && Number.isFinite(realm.index) ? realm.index : 0;
+      Dns.syncPlayerLevelAliases(
+        parts.player,
+        index,
+        parts.breakthrough.cultivation
+      );
+    }
+    // 与 NPC 同一套 retjob：突破成功后同步玩家宗门职阶。
+    if (succeeded &&
+        SectPavilion &&
+        typeof SectPavilion.syncAfterBreakthrough === 'function') {
+      SectPavilion.syncAfterBreakthrough(parts.state);
     }
     return attemptDto(
       true,

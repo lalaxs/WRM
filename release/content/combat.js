@@ -18,9 +18,17 @@
   const SEEDS = [
     {
       tier: 1,
-      region: { id: 'qingyunOutskirts', name: '青云山麓' },
+      region: {
+        id: 'qingyunOutskirts',
+        name: '青云山麓',
+        description: '低阶妖兽出没的山脚林地，适合初入修仙界的弟子历练。'
+      },
       normalEnemyIds: ['thornHare', 'grayWolf', 'wanderingBandit'],
-      dungeon: { id: 'breathCave', name: '聚气洞' },
+      dungeon: {
+        id: 'breathCave',
+        name: '聚气洞',
+        description: '山腹聚气洞府，洞中妖气与灵机并存，适合试炼初入门径。'
+      },
       eliteId: 'caveWarden',
       bossId: 'breathSerpent',
       requiredRealmIndex: 0,
@@ -28,9 +36,17 @@
     },
     {
       tier: 2,
-      region: { id: 'blackIronRidge', name: '玄铁岭' },
+      region: {
+        id: 'blackIronRidge',
+        name: '玄铁岭',
+        description: '铁矿嶙峋的险岭，铁爪兽与火尾狐在此盘踞。'
+      },
       normalEnemyIds: ['ironClawBeast', 'stonePuppet', 'rogueCultivator'],
-      dungeon: { id: 'foundationAltar', name: '筑基坛' },
+      dungeon: {
+        id: 'foundationAltar',
+        name: '筑基坛',
+        description: '古修筑基祭坛，守坛精怪凶悍，首通可获筑基机缘。'
+      },
       eliteId: 'altarGuardian',
       bossId: 'earthVeinApe',
       requiredRealmIndex: 8,
@@ -38,9 +54,17 @@
     },
     {
       tier: 3,
-      region: { id: 'redSandValley', name: '赤砂谷' },
+      region: {
+        id: 'redSandValley',
+        name: '赤砂谷',
+        description: '赤砂灼热、火煞横行，谷中火鸦与刀螳出没。'
+      },
       normalEnemyIds: ['sandScorpion', 'fireCrow', 'swordRogue'],
-      dungeon: { id: 'goldCoreRuins', name: '金丹遗府' },
+      dungeon: {
+        id: 'goldCoreRuins',
+        name: '金丹遗府',
+        description: '金丹前辈遗府深埋赤砂之下，机关与妖兽并立。'
+      },
       eliteId: 'ruinElder',
       bossId: 'scarletCoreBeast',
       requiredRealmIndex: 9,
@@ -48,9 +72,17 @@
     },
     {
       tier: 4,
-      region: { id: 'mistSoulMarsh', name: '雾魂泽' },
+      region: {
+        id: 'mistSoulMarsh',
+        name: '雾魂泽',
+        description: '终年雾锁的魂泽，鬼藤与魂蛾潜伏其间，易迷心神。'
+      },
       normalEnemyIds: ['soulMoth', 'ghostVine', 'mireFiend'],
-      dungeon: { id: 'nascentSoulTower', name: '元婴塔' },
+      dungeon: {
+        id: 'nascentSoulTower',
+        name: '元婴塔',
+        description: '雾泽中耸立的元婴古塔，层层试炼直指婴变之威。'
+      },
       eliteId: 'towerKeeper',
       bossId: 'infantSoulShade',
       requiredRealmIndex: 10,
@@ -58,9 +90,17 @@
     },
     {
       tier: 5,
-      region: { id: 'thunderPeak', name: '雷霆峰' },
+      region: {
+        id: 'thunderPeak',
+        name: '雷霆峰',
+        description: '雷云常驻的高峰，雷禽与甲胄凶煞以雷煞淬体。'
+      },
       normalEnemyIds: ['thunderBird', 'lightningSpirit', 'armoredFiend'],
-      dungeon: { id: 'spiritTransformationPeak', name: '化神天阶' },
+      dungeon: {
+        id: 'spiritTransformationPeak',
+        name: '化神天阶',
+        description: '天阶雷路直通化神门槛，稍有不慎便成劫灰。'
+      },
       eliteId: 'thunderJudge',
       bossId: 'heavenlyThunderRoc',
       requiredRealmIndex: 11,
@@ -68,9 +108,17 @@
     },
     {
       tier: 6,
-      region: { id: 'voidRift', name: '虚空裂谷' },
+      region: {
+        id: 'voidRift',
+        name: '虚空裂谷',
+        description: '虚空撕裂之处，裂甲虫与裂背獾伺机而动。'
+      },
       normalEnemyIds: ['riftCrawler', 'voidMoth', 'spaceBandit'],
-      dungeon: { id: 'voidRefiningRift', name: '炼虚裂境' },
+      dungeon: {
+        id: 'voidRefiningRift',
+        name: '炼虚裂境',
+        description: '裂谷深处的炼虚秘境，虚空之力可助突破，亦可噬人。'
+      },
       eliteId: 'riftWarden',
       bossId: 'voidDevourer',
       requiredRealmIndex: 12,
@@ -78,9 +126,17 @@
     },
     {
       tier: 7,
-      region: { id: 'starfallAbyss', name: '星落渊' },
+      region: {
+        id: 'starfallAbyss',
+        name: '星落渊',
+        description: '星屑坠落的深渊，陨铁犬与黑鳞螭在渊底游荡。'
+      },
       normalEnemyIds: ['starHound', 'meteorGolem', 'abyssCultivator'],
-      dungeon: { id: 'bodyIntegrationPalace', name: '合体古殿' },
+      dungeon: {
+        id: 'bodyIntegrationPalace',
+        name: '合体古殿',
+        description: '星渊古殿封印合体遗法，需一路破开渊中强敌。'
+      },
       eliteId: 'palaceMarshal',
       bossId: 'unityTitan',
       requiredRealmIndex: 13,
@@ -88,9 +144,17 @@
     },
     {
       tier: 8,
-      region: { id: 'mahayanaAbyss', name: '大乘天渊' },
+      region: {
+        id: 'mahayanaAbyss',
+        name: '大乘天渊',
+        description: '逼近大乘的天渊裂口，盲眼鱼与纹角兽在此巡游。'
+      },
       normalEnemyIds: ['daoWraith', 'lawBeast', 'skyDemon'],
-      dungeon: { id: 'mahayanaTrial', name: '大乘道场' },
+      dungeon: {
+        id: 'mahayanaTrial',
+        name: '大乘道场',
+        description: '大乘试炼道场，食气兽镇守终关。'
+      },
       eliteId: 'daoGateKeeper',
       bossId: 'myriadLawAvatar',
       requiredRealmIndex: 14,
@@ -98,9 +162,17 @@
     },
     {
       tier: 9,
-      region: { id: 'ascensionTerrace', name: '飞升台' },
+      region: {
+        id: 'ascensionTerrace',
+        name: '飞升台',
+        description: '飞升台前云气蒸腾，山鹫与劫影阻拦登仙之路。'
+      },
       normalEnemyIds: ['cloudGeneral', 'tribulationSpirit', 'immortalShadow'],
-      dungeon: { id: 'ascensionTrial', name: '飞升天关' },
+      dungeon: {
+        id: 'ascensionTrial',
+        name: '飞升天关',
+        description: '飞升最后一关，劫云与断角蛟共同考验道心。'
+      },
       eliteId: 'tribulationHerald',
       bossId: 'ninefoldTribulation',
       requiredRealmIndex: 15,
@@ -108,52 +180,53 @@
     }
   ];
 
+  // 显示名与兽形态立绘对齐（保留 enemyId 不变，避免存档/战斗键失效）
   const ENEMY_NAMES = {
     thornHare: '棘刺兔',
-    grayWolf: '灰狼',
-    wanderingBandit: '流寇',
-    caveWarden: '洞府守卫',
-    breathSerpent: '聚气灵蛇',
+    grayWolf: '山狼',
+    wanderingBandit: '灰尾狸',
+    caveWarden: '石傀',
+    breathSerpent: '青鳞蟒',
     ironClawBeast: '铁爪兽',
-    stonePuppet: '岩石傀儡',
-    rogueCultivator: '邪修',
-    altarGuardian: '祭坛守将',
-    earthVeinApe: '地脉猿王',
-    sandScorpion: '赤砂蝎',
-    fireCrow: '炎鸦',
-    swordRogue: '亡命剑修',
-    ruinElder: '遗府长老',
-    scarletCoreBeast: '赤丹妖兽',
-    soulMoth: '噬魂蛾',
-    ghostVine: '幽魂藤',
-    mireFiend: '泥泽魔',
-    towerKeeper: '元婴塔主',
-    infantSoulShade: '婴魂幻影',
-    thunderBird: '雷鸟',
-    lightningSpirit: '闪电灵',
-    armoredFiend: '披甲魔',
-    thunderJudge: '雷罚使',
-    heavenlyThunderRoc: '天雷鹏',
-    riftCrawler: '裂隙爬兽',
-    voidMoth: '虚空蛾',
-    spaceBandit: '破界盗修',
-    riftWarden: '裂境守望者',
-    voidDevourer: '虚空吞噬者',
-    starHound: '星辉猎犬',
-    meteorGolem: '陨星傀儡',
-    abyssCultivator: '深渊修士',
-    palaceMarshal: '古殿战将',
-    unityTitan: '归一巨灵',
-    daoWraith: '道痕怨灵',
-    lawBeast: '法则异兽',
-    skyDemon: '天魔',
-    daoGateKeeper: '道门守关者',
-    myriadLawAvatar: '万法化身',
-    cloudGeneral: '云中仙将',
-    tribulationSpirit: '劫雷之灵',
-    immortalShadow: '真仙残影',
-    tribulationHerald: '天劫使者',
-    ninefoldTribulation: '九重天劫'
+    stonePuppet: '石偶',
+    rogueCultivator: '火尾狐',
+    altarGuardian: '镇坛石狮',
+    earthVeinApe: '老山猿',
+    sandScorpion: '赤沙蝎',
+    fireCrow: '火鸦',
+    swordRogue: '刀螳',
+    ruinElder: '丹蟾',
+    scarletCoreBeast: '赤鳞巨蜥',
+    soulMoth: '魂蛾',
+    ghostVine: '鬼藤',
+    mireFiend: '泥妖',
+    towerKeeper: '阴蛛',
+    infantSoulShade: '魂茧',
+    thunderBird: '雷隼',
+    lightningSpirit: '电蜥',
+    armoredFiend: '甲犀',
+    thunderJudge: '黑角牛',
+    heavenlyThunderRoc: '雷鹏',
+    riftCrawler: '裂甲虫',
+    voidMoth: '黑翅蛾',
+    spaceBandit: '裂背獾',
+    riftWarden: '白骨螈',
+    voidDevourer: '巨口蜈蚣',
+    starHound: '陨铁犬',
+    meteorGolem: '陨石傀',
+    abyssCultivator: '黑鳞螭',
+    palaceMarshal: '铜兽',
+    unityTitan: '黑甲龟',
+    daoWraith: '盲眼鱼',
+    lawBeast: '纹角兽',
+    skyDemon: '洞蝠',
+    daoGateKeeper: '碑兽',
+    myriadLawAvatar: '食气兽',
+    cloudGeneral: '山鹫',
+    tribulationSpirit: '雷灵',
+    immortalShadow: '灰蛹',
+    tribulationHerald: '断角蛟',
+    ninefoldTribulation: '劫云'
   };
 
   const EQUIPMENT_ROWS = [
@@ -235,7 +308,27 @@
   });
   const EQUIPMENT = deepFreeze(equipment);
 
-  const SUPPLIES = deepFreeze({
+  function loadFishingParityContent() {
+    if (typeof globalThis !== 'undefined' && globalThis.FishingParityContent) {
+      return globalThis.FishingParityContent;
+    }
+    if (typeof require === 'function') {
+      try {
+        return require('./fishing-parity.js');
+      } catch (err) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  const FISHING_PARITY_CONTENT = loadFishingParityContent();
+  const fishingSupplies = FISHING_PARITY_CONTENT &&
+    typeof FISHING_PARITY_CONTENT.supplyRows === 'function'
+    ? FISHING_PARITY_CONTENT.supplyRows()
+    : {};
+
+  const SUPPLIES = deepFreeze(Object.assign({
     grilledCarp: { type: 'food', heal: 20 },
     shrimpSoup: { type: 'food', heal: 25 },
     spiritRiceMeal: { type: 'food', heal: 35 },
@@ -251,15 +344,24 @@
       attackIntervalReduction: 0.1,
       durationTicks: 40
     }
-  });
+  }, fishingSupplies));
 
   const ALL_TECHNIQUE_IDS = [
-    'cloudPiercingSword', 'returningWindSlash', 'stoneBreakingFist',
-    'spiritNeedle', 'clearHeartArt', 'gatheringBreath', 'thunderSeal',
-    'bindingTalisman', 'beastEcho', 'starfallArray',
-    'steadyBreath', 'ironBody', 'swiftShadow', 'swordHeart',
-    'pillGuard', 'spiritCompanion'
+    'stoneBreakingFist', 'returningWindSlash', 'gatheringBreath', 'clearHeartArt', 'bodyBarrier', 'flowingFirePalm', 'spiritNeedle', 'bindingTalisman', 'cloudPiercingSword', 'returningWaveSword', 'stopBleedArt', 'boneCorrosionNeedle', 'spiritArmorArray', 'flameThunderArray', 'beastWard', 'beastCommandRoar', 'calmingMelody', 'crescentSoundBlade', 'heartLink', 'confusingGaze', 'steadyBreath', 'ironBody', 'sharpEye', 'swiftShadow', 'nurtureEssence', 'battleHeart', 'swordHeart', 'medicalMind', 'earthArrayHeart', 'sharedFateBond', 'clearMindScore', 'knowingIntent', 'thunderSeal', 'clearTruthArt', 'eightDirectionsSword', 'blackTortoiseWard', 'hiddenEdge', 'heartGuardArt', 'endlessCycleArt', 'lastStandArt', 'supremeMysticSword', 'flowingLightThirteen', 'flyingSwordChase', 'myriadSwordsSky', 'endlessSwordHeart', 'swordReturnOrigin', 'clearSpringArt', 'bonePoisonMist', 'woodVitalityArt', 'witheredSpring', 'myriadPoisonTrue', 'woodSharedLife', 'fourSymbolsWard', 'starfallArray', 'spiritLockMechanism', 'heavenlyNetLock', 'heavenlyCalculation', 'mechanismMastery', 'lifeFeedback', 'beastEcho', 'beastWarSpirit', 'hundredBeastRush', 'spiritCompanion', 'myriadBeastHeart', 'purifyingMelody', 'tearingSevenStrings', 'springRiverHarmony', 'highMountainsFlowingWater', 'killingToneBone', 'lingeringSound', 'spiritResonance', 'drunkenRedDust', 'longSleeveDance', 'allBeingsFavor', 'confusingHeartTrue', 'redDustMirror', 'pillGuard'
   ];
+
+  // 九阶副本首通各绑唯一功法书（里程碑，禁止重复）
+  const FIRST_CLEAR_TECHNIQUE_IDS = Object.freeze([
+    'stoneBreakingFist',
+    'flowingFirePalm',
+    'thunderSeal',
+    'myriadSwordsSky',
+    'blackTortoiseWard',
+    'spiritCompanion',
+    'highMountainsFlowingWater',
+    'allBeingsFavor',
+    'lastStandArt'
+  ]);
 
   const TIER_LOOT = deepFreeze([
     {
@@ -267,7 +369,8 @@
       baseMaterialId: 'brokenFang',
       extraSupplyId: 'grilledCarp',
       techniqueIds: [
-        'cloudPiercingSword', 'returningWindSlash', 'gatheringBreath', 'steadyBreath'
+        'stoneBreakingFist', 'returningWindSlash', 'gatheringBreath',
+        'clearHeartArt', 'steadyBreath', 'ironBody', 'sharpEye'
       ]
     },
     {
@@ -275,50 +378,77 @@
       baseMaterialId: 'beastBone',
       extraSupplyId: 'shrimpSoup',
       techniqueIds: [
-        'stoneBreakingFist', 'spiritNeedle', 'clearHeartArt', 'ironBody'
+        'bodyBarrier', 'flowingFirePalm', 'spiritNeedle', 'cloudPiercingSword',
+        'returningWaveSword', 'stopBleedArt', 'boneCorrosionNeedle',
+        'spiritArmorArray', 'flameThunderArray', 'beastWard', 'beastCommandRoar',
+        'calmingMelody', 'crescentSoundBlade', 'heartLink', 'confusingGaze',
+        'swiftShadow', 'nurtureEssence', 'swordHeart', 'medicalMind',
+        'earthArrayHeart', 'sharedFateBond', 'clearMindScore', 'knowingIntent'
       ]
     },
     {
       tier: 3,
       baseMaterialId: 'spiritClaw',
       extraSupplyId: 'spiritRiceMeal',
-      techniqueIds: ['thunderSeal', 'bindingTalisman', 'swiftShadow']
+      techniqueIds: [
+        'bindingTalisman', 'battleHeart', 'thunderSeal', 'clearTruthArt',
+        'hiddenEdge', 'heartGuardArt', 'flowingLightThirteen', 'flyingSwordChase',
+        'clearSpringArt', 'bonePoisonMist', 'woodVitalityArt', 'fourSymbolsWard',
+        'spiritLockMechanism', 'lifeFeedback', 'beastEcho', 'beastWarSpirit',
+        'purifyingMelody', 'tearingSevenStrings', 'springRiverHarmony',
+        'spiritResonance', 'drunkenRedDust', 'longSleeveDance',
+        'endlessSwordHeart', 'myriadPoisonTrue', 'heavenlyCalculation',
+        'spiritCompanion', 'killingToneBone', 'confusingHeartTrue'
+      ]
     },
     {
       tier: 4,
       baseMaterialId: 'monsterCore',
       extraSupplyId: 'troutFeast',
-      techniqueIds: ['beastEcho', 'swordHeart']
+      techniqueIds: [
+        'eightDirectionsSword', 'endlessCycleArt', 'supremeMysticSword',
+        'myriadSwordsSky', 'witheredSpring', 'woodSharedLife', 'starfallArray',
+        'heavenlyNetLock', 'mechanismMastery', 'hundredBeastRush',
+        'myriadBeastHeart', 'highMountainsFlowingWater', 'lingeringSound',
+        'allBeingsFavor', 'redDustMirror', 'swordReturnOrigin', 'pillGuard'
+      ]
     },
     {
       tier: 5,
       baseMaterialId: 'spiritScale',
       extraSupplyId: 'healingTalisman',
-      techniqueIds: ['starfallArray', 'pillGuard']
+      techniqueIds: [
+        'blackTortoiseWard', 'lastStandArt', 'eightDirectionsSword',
+        'endlessCycleArt', 'supremeMysticSword', 'myriadSwordsSky',
+        'witheredSpring', 'woodSharedLife', 'starfallArray', 'heavenlyNetLock',
+        'mechanismMastery', 'hundredBeastRush', 'myriadBeastHeart',
+        'highMountainsFlowingWater', 'lingeringSound', 'allBeingsFavor',
+        'redDustMirror', 'swordReturnOrigin', 'pillGuard'
+      ]
     },
     {
       tier: 6,
       baseMaterialId: 'fiendBlood',
       extraSupplyId: 'wardTalisman',
-      techniqueIds: ['spiritCompanion']
+      techniqueIds: ALL_TECHNIQUE_IDS.slice()
     },
     {
       tier: 7,
       baseMaterialId: 'soulShard',
       extraSupplyId: 'lobsterBanquet',
-      techniqueIds: ['starfallArray', 'spiritCompanion']
+      techniqueIds: ALL_TECHNIQUE_IDS.slice()
     },
     {
       tier: 8,
       baseMaterialId: 'voidMarrow',
       extraSupplyId: 'dragonFishBanquet',
-      techniqueIds: ['starfallArray', 'swordHeart', 'pillGuard']
+      techniqueIds: ALL_TECHNIQUE_IDS.slice()
     },
     {
       tier: 9,
       baseMaterialId: 'tribulationAsh',
       extraSupplyId: 'hasteTalisman',
-      techniqueIds: ALL_TECHNIQUE_IDS
+      techniqueIds: ALL_TECHNIQUE_IDS.slice()
     }
   ]);
 
@@ -349,6 +479,13 @@
         min: 1,
         max: 1,
         chance: 0.15
+      },
+      {
+        // MWI：战斗区挂机掉能力书（区绑池，百分点级）
+        itemIds: bookPool(row.techniqueIds),
+        min: 1,
+        max: 1,
+        chance: 0.012
       }
     ];
     lootTables['elite:' + row.tier] = [
@@ -365,10 +502,11 @@
         chance: 0.2
       },
       {
+        // 高于区域，接近「精英图更肥」
         itemIds: bookPool(row.techniqueIds),
         min: 1,
         max: 1,
-        chance: 0.1
+        chance: 0.04
       }
     ];
     lootTables['boss:' + row.tier] = [
@@ -385,10 +523,11 @@
         chance: 0.35
       },
       {
+        // 对标地下城箱：比刷小怪明显更肥，但仍随机
         itemIds: bookPool(row.techniqueIds),
         min: 1,
         max: 1,
-        chance: 0.2
+        chance: 0.08
       }
     ];
   });
@@ -420,6 +559,10 @@
     };
   }
 
+  function enemyPortraitSrc(id) {
+    return 'assets/enemy-portraits/256/' + id + '.png';
+  }
+
   function enemy(id, tier, rank, stats, cultivation, phases) {
     return {
       id: id,
@@ -429,7 +572,8 @@
       stats: stats,
       cultivation: cultivation,
       phases: phases || [],
-      lootTableId: rank + ':' + tier
+      lootTableId: rank + ':' + tier,
+      portraitSrc: enemyPortraitSrc(id)
     };
   }
 
@@ -477,8 +621,10 @@
     regions[seed.region.id] = {
       id: seed.region.id,
       name: seed.region.name,
+      description: seed.region.description || '',
       tier: seed.tier,
       dangerLevel: seed.tier <= 2 ? 'safe' : (seed.tier <= 6 ? 'perilous' : 'deathTrial'),
+      bannerSrc: 'assets/combat-areas/' + seed.region.id + '.svg',
       requiredRealmIndex: seed.requiredRealmIndex,
       enemyIds: seed.normalEnemyIds.slice(),
       formations: seed.normalEnemyIds.map(function (enemyId) {
@@ -486,16 +632,17 @@
       })
     };
 
-    const tierLoot = TIER_LOOT[seed.tier - 1];
-    const bookIndex = Math.min(seed.tier, tierLoot.techniqueIds.length) - 1;
+    const firstClearBookId = FIRST_CLEAR_TECHNIQUE_IDS[seed.tier - 1];
     const firstClearItems = {};
     firstClearItems[EQUIPMENT_ROWS[seed.tier - 1][2][0]] = 1;
-    firstClearItems['techniqueBook:' + tierLoot.techniqueIds[bookIndex]] = 1;
+    firstClearItems['techniqueBook:' + firstClearBookId] = 1;
     dungeons[seed.dungeon.id] = {
       id: seed.dungeon.id,
       name: seed.dungeon.name,
+      description: seed.dungeon.description || '',
       tier: seed.tier,
       dangerLevel: seed.tier <= 1 ? 'safe' : (seed.tier <= 7 ? 'perilous' : 'deathTrial'),
+      bannerSrc: 'assets/combat-areas/' + seed.dungeon.id + '.svg',
       regionId: seed.region.id,
       requiredRealmIndex: seed.requiredRealmIndex,
       requiredDungeonId: seed.requiredDungeonId,
@@ -759,9 +906,14 @@
       return null;
     }
     const items = canonicalRewardItems(itemsValue);
-    if (!items || (source.type === 'combat-batch'
-      ? !validCombatBatch(source.id, items)
-      : !hasKnownRewardSignature(source, items))) return null;
+    // combat-overflow：挂机连战时满包累加的待领取批次，允许任意权威掉落物
+    if (!items || (source.type === 'combat-overflow'
+      ? source.id !== 'stash'
+      : (source.type === 'combat-batch'
+        ? !validCombatBatch(source.id, items)
+        : !hasKnownRewardSignature(source, items)))) {
+      return null;
+    }
     const canonicalItems = {};
     Object.keys(items).sort().forEach(function (itemId) {
       canonicalItems[itemId] = items[itemId];
@@ -804,6 +956,7 @@
     EQUIPMENT: EQUIPMENT,
     SUPPLIES: SUPPLIES,
     TIER_LOOT: TIER_LOOT,
+    FIRST_CLEAR_TECHNIQUE_IDS: FIRST_CLEAR_TECHNIQUE_IDS,
     LOOT_TABLES: LOOT_TABLES,
     getRegion: getRegion,
     getEnemy: getEnemy,

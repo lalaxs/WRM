@@ -730,7 +730,7 @@ same(
   },
   {
     applyCalls: 1,
-    hp: foodSession.player.hp + 23,
+    hp: foodSession.player.hp + 28,
     capped: true,
     remaining: undefined,
     cost: 1,

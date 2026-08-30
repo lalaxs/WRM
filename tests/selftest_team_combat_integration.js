@@ -193,8 +193,8 @@ const model = Stage4State.normalize({
     },
     relationships: {
       edges: {
-        'player>npc-1': { affection: 80, trust: 70, romanticAttachment: 20, desire: 0, dependence: 0, loyalty: 0, jealousy: 0, resentment: 0, lastChangedAt: 0 },
-        'npc-1>player': { affection: 80, trust: 70, romanticAttachment: 20, desire: 0, dependence: 0, loyalty: 0, jealousy: 0, resentment: 0, lastChangedAt: 0 }
+        'player>npc-1': { affection: 80, trust: 70, romanticAttachment: 20, desire: 0, dependence: 0, loyalty: 0, jealousy: 0, closeness: 0, lastChangedAt: 0 },
+        'npc-1>player': { affection: 80, trust: 70, romanticAttachment: 20, desire: 0, dependence: 0, loyalty: 0, jealousy: 0, closeness: 0, lastChangedAt: 0 }
       },
       bonds: { 'npc-1|player': { stage: 'friend', changedAt: 0, changedByEventId: 'seed' } },
       restrictions: {}

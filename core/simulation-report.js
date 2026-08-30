@@ -684,6 +684,45 @@
     return deepFreeze(sanitizeJson(summary));
   }
 
+  function mapHasPositive(map) {
+    if (!map || typeof map !== 'object') return false;
+    return Object.keys(map).some(function (key) {
+      return Number.isFinite(map[key]) && map[key] > 0;
+    });
+  }
+
+  function arrayHasItems(value) {
+    return Array.isArray(value) && value.length > 0;
+  }
+
+  // 是否值得弹出「离线收益」：弹窗实际展示的主行动 / 战斗 / 社交，或时钟回拨。
+  // 空报告、纯见闻、纯被动回鱼、纯战斗 session 恢复 warning 不打扰玩家。
+  function isMeaningfulOfflineReport(report) {
+    const clean = normalize(report);
+    if (!clean || clean.source !== 'offline') return false;
+    if (finiteInteger(clean.action && clean.action.completed, 0, 0) > 0) {
+      return true;
+    }
+    const combat = clean.combat || {};
+    if (finiteInteger(combat.ticks, 0, 0) > 0) return true;
+    if (mapHasPositive(combat.enemiesDefeated)) return true;
+    if (mapHasPositive(combat.dungeonClears)) return true;
+    if (mapHasPositive(combat.loot)) return true;
+    if (combat.pendingLootId != null) return true;
+    if (arrayHasItems(clean.social && clean.social.completed)) return true;
+    if (arrayHasItems(clean.social && clean.social.relationshipChanges)) {
+      return true;
+    }
+    const warnings = Array.isArray(clean.warnings) ? clean.warnings : [];
+    if (warnings.indexOf('clock_rollback') >= 0) return true;
+    return false;
+  }
+
+  function isMeaningfulOfflineReports(reports) {
+    const list = Array.isArray(reports) ? reports : [];
+    return list.some(isMeaningfulOfflineReport);
+  }
+
   return Object.freeze({
     STOP_REASONS,
     create,
@@ -692,6 +731,8 @@
     stop,
     addPending,
     archive,
-    summarize
+    summarize,
+    isMeaningfulOfflineReport,
+    isMeaningfulOfflineReports
   });
 });

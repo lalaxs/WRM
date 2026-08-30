@@ -32,7 +32,7 @@
 ) {
   'use strict';
 
-  const MAX_TECHNIQUE_LEVEL = 20;
+  const MAX_TECHNIQUE_LEVEL = 200;
   const MAX_LOADOUTS = 5;
   const DEFAULT_LOADOUT_ID = 'loadout-1';
   const EQUIPMENT_SLOTS = Object.freeze([
@@ -350,7 +350,7 @@
         defaultActiveSlot(),
         defaultActiveSlot()
       ],
-      passiveTechniques: [null, null, null],
+      passiveTechniques: [null, null, null, null, null],
       supplies: defaultSupplies()
     };
   }
@@ -382,7 +382,10 @@
         combat: {
           session: null,
           pendingLoot: null,
-          nextLootId: 1
+          nextLootId: 1,
+          lootLog: [],
+          fxActions: [],
+          nextFxActionId: 1
         }
       }
     };
@@ -393,6 +396,7 @@
     switch (source.type) {
       case 'selfHpBelow':
       case 'enemyHpBelow':
+      case 'selfQiBelow':
         return {
           type: source.type,
           threshold: finiteNumber(source.threshold, 0.01, 0.01, 1)
@@ -402,7 +406,8 @@
           type: source.type,
           threshold: finiteNumber(source.threshold, 0, 0, 1)
         };
-      case 'enemyHasStatus': {
+      case 'enemyHasStatus':
+      case 'enemyMissingStatus': {
         const statusId = cleanId(source.statusId, null);
         return statusId
           ? { type: source.type, statusId: statusId }
@@ -414,7 +419,8 @@
           ? { type: source.type, buffId: buffId }
           : { type: 'always' };
       }
-      case 'always':
+      case 'selfMissingShield':
+        return { type: 'selfMissingShield' };
       default:
         return { type: 'always' };
     }
@@ -692,7 +698,7 @@
     );
     const passive = normalizePassiveSlots(
       value.passiveTechniques,
-      3,
+      5,
       false,
       known,
       seen
@@ -1204,7 +1210,7 @@
     );
     const passive = normalizePassiveSlots(
       rawSnapshot.passiveTechniques,
-      null,
+      5,
       true,
       techniqueLevels.value,
       seenTechniques
@@ -1212,6 +1218,19 @@
     const supplies = normalizeSupplies(rawSnapshot.supplies, true);
     const derivedStats = normalizeDerivedStats(rawSnapshot.derivedStats);
     const hasActiveBeast = rawSnapshot.hasActiveBeast;
+    const realmIndex = Number.isSafeInteger(rawSnapshot.realmIndex)
+      ? rawSnapshot.realmIndex
+      : 0;
+    const unlockedActiveSlots = Number.isSafeInteger(
+      rawSnapshot.unlockedActiveSlots
+    )
+      ? Math.min(3, Math.max(1, rawSnapshot.unlockedActiveSlots))
+      : 3;
+    const unlockedPassiveSlots = Number.isSafeInteger(
+      rawSnapshot.unlockedPassiveSlots
+    )
+      ? Math.min(5, Math.max(1, rawSnapshot.unlockedPassiveSlots))
+      : 5;
     const player = normalizeCombatPlayer(session.player);
     const enemy = normalizeCombatEnemy(session.enemy, allowedEnemyIds);
     const lastPlayerAction = normalizeLastPlayerAction(
@@ -1268,7 +1287,10 @@
         supplies: supplies.value,
         techniqueLevels: techniqueLevels.value,
         derivedStats: derivedStats,
-        hasActiveBeast: hasActiveBeast
+        hasActiveBeast: hasActiveBeast,
+        realmIndex: realmIndex,
+        unlockedActiveSlots: unlockedActiveSlots,
+        unlockedPassiveSlots: unlockedPassiveSlots
       },
       player: player.value,
       enemy: enemy.value
@@ -1643,6 +1665,42 @@
     return out;
   }
 
+  function normalizeFxActions(value) {
+    if (!Array.isArray(value)) return [];
+    const out = [];
+    for (let index = 0; index < value.length; index++) {
+      const entry = value[index];
+      if (!isRecord(entry)) continue;
+      const id = finiteInteger(entry.id, 0, 0);
+      const side = entry.side === 'player' || entry.side === 'enemy'
+        ? entry.side
+        : null;
+      const targetSide = entry.targetSide === 'player' ||
+        entry.targetSide === 'enemy'
+        ? entry.targetSide
+        : null;
+      if (!id || !side || !targetSide) continue;
+      out.push({
+        id: id,
+        side: side,
+        targetSide: targetSide,
+        sourceId: typeof entry.sourceId === 'string' ? entry.sourceId : '',
+        targetId: typeof entry.targetId === 'string' ? entry.targetId : '',
+        techniqueId: typeof entry.techniqueId === 'string'
+          ? entry.techniqueId
+          : null,
+        skillType: typeof entry.skillType === 'string'
+          ? entry.skillType
+          : 'other',
+        hit: entry.hit === true,
+        damage: Math.max(0, finiteInteger(entry.damage, 0, 0)),
+        heal: Math.max(0, finiteInteger(entry.heal, 0, 0)),
+        critical: entry.critical === true
+      });
+    }
+    return out.slice(-48);
+  }
+
   function warningReport(model, actionKey) {
     const atMs = finiteNumber(
       model && model.processedThroughMs,
@@ -1762,11 +1820,26 @@
     const rawLootLog =
       dataPropertyValue(rawCombatSystem, 'lootLog').value;
     const lootLog = normalizeLootLog(rawLootLog);
+    const rawFxActions =
+      dataPropertyValue(rawCombatSystem, 'fxActions').value;
+    const fxActions = normalizeFxActions(rawFxActions);
+    const rawNextFxActionId =
+      dataPropertyValue(rawCombatSystem, 'nextFxActionId').value;
+    const nextFxActionId = safeIntegerAtLeast(rawNextFxActionId, 1)
+      ? rawNextFxActionId
+      : 1;
     clean.systems.combat = {
       session: null,
       pendingLoot: pendingLoot,
       nextLootId: pendingLoot ? lootNumber(pendingLoot) + 1 : nextLootId,
-      lootLog: lootLog
+      lootLog: lootLog,
+      fxActions: fxActions,
+      nextFxActionId: Math.max(
+        nextFxActionId,
+        fxActions.length
+          ? fxActions[fxActions.length - 1].id + 1
+          : 1
+      )
     };
 
     const hasPlayer = source.player !== null;
@@ -1832,14 +1905,9 @@
     return clean;
   }
 
-  function migrateV3(model) {
-    return normalize(cloneJson(model, {}));
-  }
-
   return Object.freeze({
     defaults: defaults,
     normalize: normalize,
-    migrateV3: migrateV3,
     normalizeSession: normalizeSession,
     normalizeActionKey: normalizeActionKey
   });

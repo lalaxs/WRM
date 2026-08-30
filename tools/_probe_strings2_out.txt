@@ -1,0 +1,306 @@
+ScriptString total=13628 empty=1 nonempty=13627
+CJK count=44
+  @45986560: '$%+,0:<?A[^_`{|}~\x7f¢«¬\xad®·¸»¼¿ÀȡȢȴɐʮʰ˯̀͐͠ͰʹͶͺͻ΄·Έ\u038bΌ\u038dΎ\u03a2ΣϏϐϷЀ҇҈ӏӐӶӸӺԀԐԱ\u0557ՙ՚աֈֺֻ֑֢֣־ֿ׀ׁ׃ׅׄא\u05ebװ׳ءػـٖ٠٪ٮ۔ە\u06dd۞ۮ۰ۿܐܭܰ\u074bހ\u07b2ँऄअऺ़ॎॐॕक़।०॰ঁ\u0984অ\u098dএ\u0991ও\u09a9প\u09b1ল\u09b3শ\u09ba়ঽা\u09c5ে\u09c9োৎৗ\u09d8ড়\u09deয়\u09e4০৻...'
+  @45989840: '-.09AZ__az··ÀÖØöøıĴľŁňŊžƀǃǍǰǴǵǺȗɐʨʻˁːˑ̀͠͡ͅΆΊΌΌΎΡΣώϐϖϚϚϜϜϞϞϠϠϢϳЁЌЎяёќўҁ҃҆ҐӄӇӈӋӌӐӫӮӵӸӹԱՖՙՙաֆֹֻֽֿֿׁׂ֑֣֡ׄׄאתװײءغـْ٠٩ٰڷںھۀێېۓە۪ۭۨ۰۹ँःअह़्॑॔क़ॣ०९ঁঃঅঌএঐওনপরলল...'
+  @45989856: '-/0;A[_`a{·¸À×Ø÷øĲĴĿŁŉŊſƀǄǍǱǴǶǺȘɐʩʻ˂ː˒̀͆͢͠Ά\u038bΌ\u038dΎ\u03a2ΣϏϐϗϚϛϜϝϞϟϠϡϢϴЁЍЎѐёѝў҂҃҇ҐӅӇӉӋӍӐӬӮӶӸӺԱ\u0557ՙ՚աևֺֻ֑֢֣־ֿ׀ׁ׃ׅׄא\u05ebװ׳ءػـٓ٠٪ٰڸںڿۀۏې۔ە۩۪ۮ۰ۺँऄअऺ़ॎ॑ॕक़।०॰ঁ\u0984অ\u098dএ\u0991ও\u09a9প\u09b1ল\u09b3...'
+  @45990504: '.错误代码2_'
+  @45990512: '.错误代码4'
+  @45992920: ':;A[_`a{À×Ø÷øĲĴĿŁŉŊſƀǄǍǱǴǶǺȘɐʩʻ˂Ά·Έ\u038bΌ\u038dΎ\u03a2ΣϏϐϗϚϛϜϝϞϟϠϡϢϴЁЍЎѐёѝў҂ҐӅӇӉӋӍӐӬӮӶӸӺԱ\u0557ՙ՚աևא\u05ebװ׳ءػفًٱڸںڿۀۏې۔ەۖۥۧअऺऽाक़ॢঅ\u098dএ\u0991ও\u09a9প\u09b1ল\u09b3শ\u09baড়\u09deয়ৢৰ৲ਅ\u0a0bਏ\u0a11ਓ\u0a29ਪ\u0a31ਲ\u0a34ਵ\u0a37ਸ\u0a3aਖ਼\u0a5dਫ਼\u0a5fੲੵઅઌઍ\u0a8eએ\u0a92...'
+  @45995704: 'AZ__azÀÖØöøıĴľŁňŊžƀǃǍǰǴǵǺȗɐʨʻˁΆΆΈΊΌΌΎΡΣώϐϖϚϚϜϜϞϞϠϠϢϳЁЌЎяёќўҁҐӄӇӈӋӌӐӫӮӵӸӹԱՖՙՙաֆאתװײءغفيٱڷںھۀێېۓەەۥۦअहऽऽक़ॡঅঌএঐওনপরললশহড়ঢ়য়ৡৰৱਅਊਏਐਓਨਪਰਲਲ਼ਵਸ਼ਸਹਖ਼ੜਫ਼ਫ਼ੲੴઅઋઍઍએઑઓન...'
+  @45995712: 'AZazÀÖØöøıĴľŁňŊžƀǃǍǰǴǵǺȗɐʨʻˁΆΆΈΊΌΌΎΡΣώϐϖϚϚϜϜϞϞϠϠϢϳЁЌЎяёќўҁҐӄӇӈӋӌӐӫӮӵӸӹԱՖՙՙաֆאתװײءغفيٱڷںھۀێېۓەەۥۦअहऽऽक़ॡঅঌএঐওনপরললশহড়ঢ়য়ৡৰৱਅਊਏਐਓਨਪਰਲਲ਼ਵਸ਼ਸਹਖ਼ੜਫ਼ਫ਼ੲੴઅઋઍઍએઑઓનપર...'
+  @46046464: '[root] 无法更新默认字体，缺少m_defaultFontAsset 字段'
+  @46046472: '[root] 未找到字体资源'
+  @46091832: '␀\x00ﾻ꿿\uffff蟿\ufffe߿'
+  @46092080: '䷀一'
+  @46092088: '一ꀀ'
+  @46092096: '中華民國'
+  @46092104: '中華民國曆'
+  @46092112: '人物实例化失败'
+  @46092120: '令'
+  @46092128: '令和'
+  @46092136: '元'
+  @46092144: '关闭'
+  @46092152: '分'
+  @46092160: '刷新crect'
+  @46092168: '大'
+  @46092176: '大正'
+  @46092184: '实例化人物按钮 '
+  @46092192: '宠物蛋标记 '
+  @46092200: '平'
+  @46092208: '平成'
+  @46092216: '年'
+  @46092224: '开始添加星宿人物按钮'
+  @46092232: '成功_'
+  @46092240: '日'
+  @46092248: '时'
+  @46092256: '明'
+  @46092264: '明治'
+  @46092272: '昭'
+  @46092280: '昭和'
+  @46092288: '時'
+  @46092296: '月'
+  @46092304: '未能连接网络'
+  @46092312: '添加人物按钮 '
+  @46092320: '秒'
+  @46092328: '网络未打开'
+  @46092336: '连接服务器出错，请联系设置页面的客服邮箱'
+
+=== path-like ScriptString ===
+  @45985432: ' has multiple entries with the same display name, this prevents selection in EnumPopup.'
+  @45990480: '.sa'
+  @45990616: '/ens.sa'
+  @45990648: '/flags_key'
+  @45990656: '/flags_key.sa'
+  @45990664: '/flags_value'
+  @45990672: '/flags_value.sa'
+  @45990680: '/floats_key'
+  @45990688: '/floats_key.sa'
+  @45990696: '/floats_value'
+  @45990704: '/floats_value.sa'
+  @45990712: '/helps_key'
+  @45990720: '/helps_key.sa'
+  @45990728: '/helps_value'
+  @45990736: '/helps_value.sa'
+  @45990744: '/ints_key'
+  @45990752: '/ints_key.sa'
+  @45990760: '/ints_value'
+  @45990768: '/ints_value.sa'
+  @45990792: '/log_value.sa'
+  @45990808: '/lovers.sa'
+  @45990832: '/persons_face.sa'
+  @45990848: '/persons_log.sa'
+  @45990864: '/persons_value.sa'
+  @45990888: '/sf_key.sa'
+  @45990904: '/sf_value.sa'
+  @46009176: 'Event.Use() should not be called for events of type {0}'
+  @46013848: "ISerializable type '{0}' does not have a valid constructor. To correctly implement ISerializable a constructor that takes SerializationInfo and StreamingContext parameters should be present."
+  @46014072: 'Ignoring event {0}: too many events dispatched recurively'
+  @46033776: "The '{0}' attribute is ignored, because the value of 'prohibited' for attribute use only prevents inheritance of an identically named attribute from the base type definition."
+  @46034448: 'The NeutralResourcesLanguageAttribute on the assembly "{0}" specifies an invalid culture name: "{1}".'
+  @46034456: 'The NeutralResourcesLanguageAttribute specifies an invalid or unrecognized ultimate resource fallback location: "{0}".'
+  @46040832: 'UIPackageResources/Default Editor Text Settings.asset'
+  @46040840: 'UIPackageResources/FontAssets/DynamicOSFontAssets/GlobalFallback/GlobalFallback'
+  @46040848: 'UIPackageResources/FontAssets/DynamicOSFontAssets/Localization/ChineseSimplified'
+  @46040856: 'UIPackageResources/FontAssets/DynamicOSFontAssets/Localization/ChineseTraditional'
+  @46040864: 'UIPackageResources/FontAssets/DynamicOSFontAssets/Localization/English'
+  @46040872: 'UIPackageResources/FontAssets/DynamicOSFontAssets/Localization/Japanese'
+  @46040880: 'UIPackageResources/FontAssets/DynamicOSFontAssets/Localization/Korean'
+  @46042888: 'UnityServicesProjectConfiguration.json'
+  @46048792: '_backup.sa'
+  @46048800: '_backup1.sa'
+  @46068936: 'helps'
+  @46068944: 'helps0'
+  @46068952: 'helps1'
+  @46068960: 'helps_key'
+  @46068968: 'helps_value'
+
+=== metadata/so CJK job search ===
+掌门: meta8=-1 meta16=-1 so8=-1 so16=-1
+长老: meta8=-1 meta16=-1 so8=-1 so16=-1
+真传: meta8=-1 meta16=-1 so8=-1 so16=-1
+外门: meta8=-1 meta16=-1 so8=-1 so16=-1
+内门: meta8=-1 meta16=-1 so8=-1 so16=-1
+弟子: meta8=-1 meta16=-1 so8=-1 so16=-1
+散修: meta8=-1 meta16=-1 so8=-1 so16=-1
+女修: meta8=-1 meta16=-1 so8=-1 so16=-1
+修炼手札: meta8=-1 meta16=-1 so8=-1 so16=-1
+某某宗: meta8=-1 meta16=-1 so8=-1 so16=-1
+
+=== dns class fields ===
+
+=== root methods mentioning help/load/string/event/decrypt ===
+  0x13E12AC get_age
+  0x13E14D4 get_agemax
+  0x13E1654 get_agedrug
+  0x13E170C get_act
+  0x13E15AC get_level_l
+  0x13E1600 get_level_s
+  0x13E264C get_yang
+  0x13E28DC get_exp
+  0x13E35F0 get_atk
+  0x13E3838 get_atkmax
+  0x13E39F4 get_lvups
+  0x13E3C98 get_onloop
+  0x13E3D14 mylog
+  0x13E46F4 loadbreak
+  0x13E42E0 loadgame
+  0x13E5134 loadsceen
+  0x13E51A8 saveclear
+  0x13E5370 deletesavewithname
+  0x13E5210 copysavewithname
+  0x13E5480 savebackup1
+  0x13E5530 resaveclear
+  0x13E5598 saveerr
+  0x13E5908 savegame1
+  0x13E597C savegame
+  0x13E59F0 qsavegame
+  0x13EF33C get_mydo
+  0x13EFDD4 retjob
+  0x13D6B2C act1event
+  0x13F91DC addeventlove
+  0x13F9C64 savenewface
+  0x13ED240 dayevent
+  0x13FA734 doevent
+  0x13FA104 savegameloop
+  0x1402660 getlvups
+  0x14124C0 remyjob
+  0x13F87BC get_sword_day
+  0x13F8874 get_pet_day
+  0x13F3C00 getsword
+  0x1412FC0 getegg
+  0x1418980 getswordface
+  0x1418BF8 getpetface
+  0x141B630 showalllog
+  0x141BFB8 setlogbts
+  0x141C0A8 show10log
+  0x141C5E4 gethistoty0
+  0x141C880 gethistoty1
+  0x1421B14 showinfolog
+  0x1422498 ondayevent
+  0x14244FC savesf
+  0x1422D48 getpost
+  0x1424760 getpostnowait
+  0x1424854 getpost1
+  0x1426114 getandroidbuy2
+  0x1426258 getv
+  0x14269A0 getv1
+  0x1426A54 getv00
+  0x1424E04 getv0
+  0x13FA1B0 job1dead
+  0x14276B8 job1dead0
+  0x14276C0 job1dead1
+  0x142CAD0 refreshsavetime
+  0x141CA3C showtextwithbt
+  0x14133A8 leaveevent
+  0x14132FC addevent
+  0x142DD74 getpe
+  0x142E2C0 textbt
+
+=== DecryptDES callers in game code range ===
+=== EncryptDES callers ===
+=== UnBase64 callers ===
+=== rejob callers ===
+=== releader callers ===
+
+=== mydicstring.get_Item disasm ===
+0x13bec24 BL 0x1295978 ?@0x0
+0x13bec30 BL 0x1295a70 ?@0x0
+0x13bec40 BL 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13bec68 BL 0x1295978 ?@0x0
+0x13bec74 BL 0x1295a70 ?@0x0
+0x13bec84 BL 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+
+=== dump hits for helps_key / PersistentData / DecryptDES usage context ===
+helps_key: 0 lines first=None
+helps_value: 0 lines first=None
+.sa: 0 lines first=None
+DecryptDES: 1 lines first=359038
+EncryptDES: 1 lines first=359035
+PersistentDataPath: 3 lines first=433436
+Resources.Load: 1 lines first=439769
+AssetBundle: 0 lines first=None
+TextAsset: 35 lines first=390969
+StreamingAssets: 9 lines first=86616
+
+=== dns$$.cctor size and BLs ===
+cctor 0x13c0938 size=0x2000
+BL count=318
+0x13c0974 0x1295978 ?@0x0
+0x13c0980 0x1295a70 ?@0x0
+0x13c0990 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13c09b0 0x1295978 ?@0x0
+0x13c09bc 0x1295a70 ?@0x0
+0x13c09cc 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13c09ec 0x1295978 ?@0x0
+0x13c09f8 0x1295a70 ?@0x0
+0x13c0a08 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13c0a30 0x1295978 ?@0x0
+0x13c0a3c 0x1295a70 ?@0x0
+0x13c0a4c 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13c0a74 0x1295978 ?@0x0
+0x13c0a80 0x1295a70 ?@0x0
+0x13c0a90 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13c0ab0 0x1295978 ?@0x0
+0x13c0abc 0x1295a70 ?@0x0
+0x13c0acc 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13c0ae8 0x1295978 ?@0x0
+0x13c0b0c 0x1295978 ?@0x0
+0x13c0b18 0x1295a70 ?@0x0
+0x13c0b2c 0x1295a70 ?@0x0
+0x13c0b3c 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13c0b5c 0x1295978 ?@0x0
+0x13c0b68 0x1295a70 ?@0x0
+0x13c0b78 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13c0ba0 0x1295978 ?@0x0
+0x13c0bac 0x1295a70 ?@0x0
+0x13c0bbc 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13c0bdc 0x1295978 ?@0x0
+0x13c0be8 0x1295a70 ?@0x0
+0x13c0bf8 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13c0c20 0x1295978 ?@0x0
+0x13c0c2c 0x1295a70 ?@0x0
+0x13c0c3c 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13c0c5c 0x1295978 ?@0x0
+0x13c0c68 0x1295a70 ?@0x0
+0x13c0c78 0x1ebdcac System.Runtime.InteropServices.Marshal$$GetFunctionPointerForDelegate@0x1ebdc9c
+0x13c0ca0 0x1295978 ?@0x0
+0x13c0cac 0x1295a70 ?@0x0
+
+=== metadata header ===
+magic b'\xaf\x1b\xb1\xfa' 31
+
+=== sample nonempty ScriptString (first 30) ===
+  @45983800: '\x00'
+  @45983808: '\x00\x00\x01\t'
+  @45983816: '\x00\x00\x01d'
+  @45983824: '\x00\x00\x01\ufff7'
+  @45983832: '\x00\x00\n\x00\x02\x04\x05\x03\x01\x06\t\x13\x00'
+  @45983840: '\x00\x01\x00\x00'
+  @45983848: '\x00\x02\x000:'
+  @45983856: '\x00\x02\x03\x01\x00'
+  @45983864: '\x00\x02\x04\x05\x03\x01\x00'
+  @45983872: '\x00\x02\x04\x05\x03\x01\x06\t\x13\x00'
+  @45983880: '\x00\x04\x00\t\x0e !'
+  @45983888: '\x00\x07\x08\x06\x00'
+  @45983896: '\x00\t\n\x0b\x00'
+  @45983904: '\x00\t\x0e !'
+  @45983912: '\x00\n\x000:A[_`a{İı'
+  @45983920: '\x00\r\x0e\x0c\x00'
+  @45983928: '\x00\x0f\x10\x1e\x12\x11\x00'
+  @45983936: '\x00\x13\x14\x16\x19\x15\x18\x17\x00'
+  @45983944: '\x00\x1b\x1c\x1a\x1d\x00'
+  @45983952: '\x000:'
+  @45983960: '\x000:A[_`a{İı'
+  @45983968: '\x00\x80'
+  @45983976: '\x00\ufffe￼\ufffb�\uffff\ufffa\ufff7￭\x00'
+  @45983984: '\x01'
+  @45983992: '\x01\x00\x01d'
+  @45984000: '\x01\x00\n\x00\x02\x04\x05\x03\x01\x06\t\x13\x00'
+  @45984008: '\x01\x02\x000:'
+  @45984016: '\x01\x04\x00\t\x0e !'
+  @45984024: '\x01\n\x000:A[_`a{İı'
+  @45984032: '\x02'
+
+base64-ish count=50
+  len=36 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ
+  len=38 99999999999999999999999999999999999999
+  len=37 ===LocalToWorldTransformAccessJob===
+
+  len=37 ===WorldToLocalTransformAccessJob===
+
+  len=64 ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234567
+  len=34 CreateIndexedCollectionPropertyBag
+  len=35 CreateKeyValueCollectionPropertyBag
+  len=36 ExecuteDefaultActionDisabledAtTarget
+  len=32 IsCJKUnifiedIdeographsExtensionA
+  len=37 IsCombiningDiacriticalMarksforSymbols
+  len=34 IsIdeographicDescriptionCharacters
+  len=35 IsSupplementalMathematicalOperators
+  len=36 IsUnifiedCanadianAboriginalSyllabics
+  len=33 LocalCertificateSelectionCallback
+  len=32 OnFetchStorePromotionOrderFailed
+  len=35 OnFetchStorePromotionOrderSucceeded
+  len=37 OnFetchStorePromotionVisibilityFailed
+  len=40 OnFetchStorePromotionVisibilitySucceeded
+  len=35 RemoteCertificateValidationCallback
+  len=79 UIPackageResources/FontAssets/DynamicOSFontAssets/GlobalFall

@@ -68,6 +68,7 @@
     return {
       id: id,
       name: name,
+      masteryId: 'fishing:' + id,
       unlockLevel: unlockLevel,
       time: time,
       xp: xp,
@@ -245,6 +246,7 @@
       return {
         id: record.id,
         name: record.name,
+        masteryId: record.masteryId || ('fishing:' + record.id),
         unlockLevel: record.unlockLevel,
         time: record.time,
         xp: record.xp,
@@ -430,11 +432,61 @@
       : legacyFishSpecies
   );
 
-  const RESOURCE_QUALITIES = deepFreeze({
-    common: { weight: 70, capacityMultiplier: 1, extraYieldChance: 0 },
-    fine: { weight: 25, capacityMultiplier: 1.25, extraYieldChance: 0.15 },
-    rare: { weight: 5, capacityMultiplier: 1.5, extraYieldChance: 0.30 }
-  });
+  const RESOURCE_SPOT_CAPS = deepFreeze([
+    { minLevel: 1, maxCapacity: 50 },
+    { minLevel: 25, maxCapacity: 60 },
+    { minLevel: 50, maxCapacity: 70 },
+    { minLevel: 75, maxCapacity: 80 },
+    { minLevel: 90, maxCapacity: 90 }
+  ]);
+  // 每次探索向目标地点追加的可采次数（不会一次加满）
+  const DISCOVER_GAIN_MIN = 10;
+  const DISCOVER_GAIN_MAX = 20;
+
+  function maxSpotCapacity(skillLevel) {
+    const level = Number(skillLevel);
+    const safeLevel = Number.isFinite(level) && level > 0
+      ? Math.floor(level)
+      : 1;
+    let max = 50;
+    RESOURCE_SPOT_CAPS.forEach(function (row) {
+      if (safeLevel >= row.minLevel) max = row.maxCapacity;
+    });
+    return max;
+  }
+
+  function discoverGainRange() {
+    return { min: DISCOVER_GAIN_MIN, max: DISCOVER_GAIN_MAX };
+  }
+
+  function exploreSaturated(skillId, skillLevel, heldSpots) {
+    const family = GATHERING[skillId];
+    if (!family || !Array.isArray(family.entries)) return true;
+    const level = Number(skillLevel);
+    const safeLevel = Number.isFinite(level) && level > 0
+      ? Math.floor(level)
+      : 1;
+    const pool = family.entries.filter(function (entry) {
+      return entry.unlockLevel <= safeLevel;
+    });
+    if (!pool.length) return true;
+    const cap = maxSpotCapacity(safeLevel);
+    const held = Array.isArray(heldSpots) ? heldSpots : [];
+    const byEntry = Object.create(null);
+    held.forEach(function (spot) {
+      if (!spot || typeof spot.entryId !== 'string') return;
+      byEntry[spot.entryId] = spot;
+    });
+    for (let index = 0; index < pool.length; index++) {
+      const spot = byEntry[pool[index].id];
+      if (!spot) return false;
+      const remaining = Number(spot.remaining);
+      if (!(Number.isFinite(remaining) && remaining >= cap)) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   function eachDrop(visitor) {
     ['mining', 'woodcutting', 'herb'].forEach(function (skillId) {
@@ -474,7 +526,9 @@
   return Object.freeze({
     GATHERING: GATHERING,
     FISH_SPECIES: FISH_SPECIES,
-    RESOURCE_QUALITIES: RESOURCE_QUALITIES,
+    RESOURCE_SPOT_CAPS: RESOURCE_SPOT_CAPS,
+    DISCOVER_GAIN_MIN: DISCOVER_GAIN_MIN,
+    DISCOVER_GAIN_MAX: DISCOVER_GAIN_MAX,
     LEGACY_ENTRY_ALIASES: deepFreeze(LEGACY_ENTRY_ALIASES),
     FISHING_PARITY: FISHING_PARITY,
     JUNK_POOL: FISHING_PARITY ? FISHING_PARITY.JUNK_POOL : null,
@@ -482,6 +536,9 @@
     eachDrop: eachDrop,
     getEntry: getEntry,
     resolveEntryId: resolveEntryId,
-    getFishingSpot: getFishingSpot
+    getFishingSpot: getFishingSpot,
+    maxSpotCapacity: maxSpotCapacity,
+    discoverGainRange: discoverGainRange,
+    exploreSaturated: exploreSaturated
   });
 });

@@ -1,0 +1,6 @@
+{
+  "h5_demo_confess": {
+    "template": "{a}在{loc}对{b}把心意说了出口，话未说尽，却已无法收回",
+    "needs": ["a", "b", "loc"]
+  }
+}

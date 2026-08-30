@@ -408,14 +408,28 @@
         };
       case 'enemyHasStatus':
       case 'enemyMissingStatus': {
-        const statusId = cleanId(source.statusId, null);
-        return statusId
+        let statusId = cleanId(source.statusId, null);
+        if (statusId === 'binding') statusId = 'slow';
+        const allowed = {
+          shock: true,
+          slow: true,
+          burn: true,
+          poison: true,
+          weaken: true
+        };
+        return statusId && allowed[statusId]
           ? { type: source.type, statusId: statusId }
           : { type: 'always' };
       }
       case 'selfMissingBuff': {
         const buffId = cleanId(source.buffId, null);
-        return buffId
+        const allowed = {
+          haste: true,
+          shield: true,
+          inspire: true,
+          guard: true
+        };
+        return buffId && allowed[buffId]
           ? { type: source.type, buffId: buffId }
           : { type: 'always' };
       }
@@ -1905,14 +1919,9 @@
     return clean;
   }
 
-  function migrateV3(model) {
-    return normalize(cloneJson(model, {}));
-  }
-
   return Object.freeze({
     defaults: defaults,
     normalize: normalize,
-    migrateV3: migrateV3,
     normalizeSession: normalizeSession,
     normalizeActionKey: normalizeActionKey
   });

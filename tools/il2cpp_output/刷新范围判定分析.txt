@@ -1,0 +1,63 @@
+# 原版 APK：事件「刷新范围」是怎么确定的
+（对应你的问题：为什么它只刷一小部分人的事件，而不是像我们 H5 那样开局刷全体 NPC）
+
+## 一句话结论
+原版不是"遍历全体 persons"，而是 **关系网驱动 + 每日配额节流**：
+> 刷新范围 = （玩家关系网里的人）∩（今天还没用尽"每日行动配额"的人）
+
+所以每天自然只有一小撮人能被刷到，且每天轮换。
+
+## 两层过滤模型
+
+### 第 1 层：人物池本身就是"有界的"
+人物不是开局一把梭生成的，而是 **按关系类别少量创建**的（看 root 里这一组方法）：
+- creatpersonf(tfami, levelmin, ltype, hpar) —— 建家族成员
+- creatpersonen(p0) —— 由某人生成"敌人"
+- creatpersonfr(p0, ltype) —— 由某人生成"朋友"
+- creatpersonb(p0, ltype) / creatpersonm(p0, ltype) —— 建特定关系人（如母/伴）
+- creatperson(..., faid, moid) —— 通用建人，可指定父/母 id
+- 另有极少量"明星"人物：refreshstarperson(p0n) + dns.onstarnum + person._onstar
+
+要点：**没有任何"随机生成陌生人池"的方法**（random* 系列都是 randomface/randompetface/randomsoulface，只随机长相/宠物/灵宠，不随机刷人）。所以原版世界里"会动的人物"从一开始就是个有限的小圈子。
+
+### 第 2 层：每日刷新时再做"展开 + 闸门"
+每日触发 addday() → dayevent()，对候选池做三件事：
+
+1) 日历：mday[月] 给出该月天数（翻月用），**不是**事件日程。
+2) 关系网展开：getpe(p0n) 把玩家的关系网展开成一串人——关系网就挂在 person 的字段上：
+   - fa(父) / mo(母) / par(道侣) / frs(朋友集) / ens(敌人集)
+   - checkrela(p0n, p1n, type) 校验两人是否确属某关系（关系可终结：relaleave 分手、reladead 死亡）
+3) 随机补充：randomlevel() 偶尔随机补 1~2 个。
+
+然后经过 **资格闸门 cans(p0)**（返回 bool），核心是：
+- person.act1day（此人今天已行动次数）< dns.fami_act1day[此人._fami]（各家每日行动数）
+  （玩家自己则受 dns.act4day 限制）
+- 且此人存活、在场（不是 reladead 的、不是 _d 死亡标记）
+
+只有 cans 返回 true 的人，才真正进入今天的可刷新集合。
+
+## 关键证据（dump.cs 行号）
+- root.mday：361740 `private int[] mday;`
+- root.cans(person p0)：361949 `public bool cans(person p0)`
+- root.canmarry()：361952；relaleave：361955；reladead：361958
+- root.checkrela(int,int,int)：362633；root.getpe(int p0n)：362630（返回 List<int>）
+- root.creatpersonf/en/fr/b/m、creatperson(...faid,moid)：361928~361940
+- root.refreshstarperson / dns.onstarnum(358849) / person._onstar(359582)
+- person 关系字段：fa(359638)/mo(359639)/par(359640)/frs(359698)/ens(359700)/act1day(359579)
+- dns 配额：fami_act1day(358878)/act4day(358886)
+
+## 与你 H5 的对比 & 改造启示
+| | 原版(APK) | 你的 H5(现) |
+|---|---|---|
+| 人物来源 | 关系类别少量建，无随机陌生人池 | 开局生成全体 NPC |
+| 刷新范围 | 关系网 ∩ 每日配额（一小撮，轮换） | 全体 NPC 都刷 |
+| 节流机制 | person.act1day < dns.fami_act1day（cans 闸门） | 无每人每日配额 |
+
+**启示**：若想对齐"只刷一小部分人"，不必推翻你的 NPC 生成，只需加一层：
+1. 给每个人物加 `act1day`（当日已触发事件数）+ 一个每日配额上限；
+2. 每日刷新前用 `cans(p)` 风格闸门过滤：`act1day < 配额` 且 与玩家有关系（在关系网里）；
+3. 关系网用"关系字段集"（家人/道侣/朋友/敌人）维护，而不是"世界全员列表"。
+这样每天只会自然刷到一小撮有关系的、且当天还有配额的人——和原版一致，而你的恋爱/随机NPC 强项保留。
+
+## 重要说明
+IL2CPP 还原的方法体是空的 `{}`，所以 cans 的"精确条件"是据字段名 + dns 配置模式 **推断** 的（尤其是 act1day<fami_act1day 这条），不是 100% 反编译确认的代码。要 100% 确认需 Ghidra/IDA 分析 libil2cpp.so。

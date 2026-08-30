@@ -1,0 +1,14 @@
+[
+  {
+    "id": "office_promote-0131",
+    "weight": 7,
+    "type": "office_promote",
+    "actors": "solo",
+    "template": "{a}因功在{loc}得晋升，门墙之上多了一道新名。",
+    "officeRankAny": [
+      "inner",
+      "trueDisciple",
+      "steward"
+    ]
+  }
+]

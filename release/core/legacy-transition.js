@@ -5,13 +5,15 @@
       require('../content/life-skills.js'),
       require('../content/lifecycle.js'),
       require('./lineage.js'),
-      require('./npc-roster.js')
+      require('./npc-roster.js'),
+      require('./stage4-state.js')
     )
     : factory(
       root && root.LifeSkillContent,
       root && root.LifecycleContent,
       root && root.Lineage,
-      root && root.NpcRoster
+      root && root.NpcRoster,
+      root && root.Stage4State
     );
   if (typeof module === 'object' && module.exports) module.exports = api;
   else if (root) root.LegacyTransition = api;
@@ -19,7 +21,8 @@
   LifeSkillContent,
   LifecycleContent,
   Lineage,
-  NpcRoster
+  NpcRoster,
+  Stage4State
 ) {
   'use strict';
 
@@ -63,13 +66,20 @@
       Number(records.nextTransitionId) || 1
     );
     records.nextTransitionId = number + 1;
+    // 没有可继承成年后代时，默认进入「创建新身份」，避免开局无后代卡在选路线空态
+    const hasHeir = Lineage &&
+      typeof Lineage.adultHeirs === 'function' &&
+      Lineage.adultHeirs(next).length > 0;
+    const defaultName = next.player && typeof next.player.name === 'string'
+      ? String(next.player.name).trim().slice(0, 12)
+      : '';
     records.pendingTransition = {
       id: 'transition-' + number,
       cause: cause,
-      route: null,
+      route: hasHeir ? null : 'newIdentity',
       heirNpcId: null,
       draft: {
-        name: '',
+        name: hasHeir ? '' : defaultName,
         originId: 'wanderingReborn',
         personalityId: 'steady',
         talentId: 'plainSpirit',
@@ -162,6 +172,19 @@
     });
   }
 
+  // 新人生开局：清空上一世大事记/世界见闻，避免旧文案混进新档。
+  function clearPreviousLifeChronicle(model) {
+    const world = model && model.systems && model.systems.world;
+    if (!world) return;
+    world.worldEvents = [];
+    world.nextWorldEventId = 1;
+    if (!world.calendar || typeof world.calendar !== 'object') return;
+    world.calendar.yearEventsCreated = 0;
+    world.calendar.monthEventsCreated = 0;
+    world.calendar.npcYearAppearances = {};
+    world.calendar.playerLeapLastMonth = {};
+  }
+
   function exactSkills(player) {
     const copy = {};
     Object.keys(LifeSkillContent.SKILLS).forEach(function (skillId) {
@@ -201,15 +224,10 @@
         personalityId: heir.personalityId,
         talentIds: [heir.talentId]
       };
-      heir.status = 'playerIdentity';
-      next.systems.npcs.activeIds =
-        next.systems.npcs.activeIds.filter(function (id) {
-          return id !== heir.id;
-        });
-      next.systems.npcs.backgroundIds =
-        next.systems.npcs.backgroundIds.filter(function (id) {
-          return id !== heir.id;
-        });
+      if (heir.identity && heir.identity.appearance) {
+        next.appearance = clone(heir.identity.appearance);
+      }
+      // 新世界整池刷新，不把继承人残留为 playerIdentity 旧 NPC。
     } else {
       if (!pending.draft || !pending.draft.name) {
         return fail(model, 'draft_required');
@@ -280,12 +298,20 @@
         return !job || job.kind !== 'social';
       }
     );
-    clearPlayerRelationships(next);
     records.pendingTransition = null;
-    const balanced = NpcRoster.rebalance(next, {
-      target: next.systems.npcs.activeTarget
-    });
-    return result(true, 'ok', balanced || next, {
+    // 新人生当作新世界：不继承上一世人物，整池重生 NPC 与结构关系。
+    let refreshed = next;
+    if (Stage4State &&
+        typeof Stage4State.reseedWorldPopulation === 'function') {
+      refreshed = Stage4State.reseedWorldPopulation(next);
+    } else {
+      clearPlayerRelationships(next);
+      clearPreviousLifeChronicle(next);
+      refreshed = NpcRoster.rebalance(next, {
+        target: next.systems.npcs.activeTarget
+      }) || next;
+    }
+    return result(true, 'ok', refreshed, {
       lifeId: newLifeId,
       source: source,
       sourceNpcId: sourceNpcId
@@ -324,6 +350,7 @@
     updateDraft: updateDraft,
     confirm: confirm,
     cancel: cancel,
-    view: view
+    view: view,
+    clearPreviousLifeChronicle: clearPreviousLifeChronicle
   });
 });

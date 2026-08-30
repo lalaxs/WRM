@@ -14,11 +14,11 @@
     'affection',
     'trust',
     'romanticAttachment',
-    'desire',
+    'closeness',
     'dependence',
     'loyalty',
     'jealousy',
-    'resentment'
+    'desire'
   ]);
   const STAGES = Object.freeze([
     'stranger',
@@ -313,11 +313,11 @@
       affection: 0,
       trust: 0,
       romanticAttachment: 0,
-      desire: 0,
+      closeness: 0,
       dependence: 0,
       loyalty: 0,
       jealousy: 0,
-      resentment: 0,
+      desire: 0,
       lastChangedAt: 0
     };
   }
@@ -591,6 +591,10 @@
     values,
     atSeconds
   ) {
+    // 8 维关系边仅服务玩家↔NPC；NPC↔NPC 应走 npcAffinities。
+    if (sourceId !== 'player' && targetId !== 'player') {
+      return failure('npc_pair_uses_affinity', model);
+    }
     const delta = deltaValues(values);
     if (!delta) return failure('invalid_delta', model);
     if (!validTime(atSeconds)) return failure('invalid_time', model);

@@ -1,0 +1,27 @@
+[
+  {
+    "id": "rare_gift-0182",
+    "weight": 9,
+    "type": "rare_gift",
+    "actors": "pair",
+    "template": "{a}在{loc}把一件压箱之物赠予{b}，称机缘到了。",
+    "tagAny": [
+      "friend",
+      "close-friend",
+      "lover",
+      "mentor"
+    ],
+    "affinityMin": 55
+  },
+  {
+    "id": "rare-gift-tension-1910",
+    "weight": 12,
+    "type": "rare_gift",
+    "actors": "pair",
+    "template": "{a}在{loc}捧出重礼时几乎不敢呼吸。{b}先怔住，再抬眼，口气松了，却只低声说：你何必。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 35
+  }
+]

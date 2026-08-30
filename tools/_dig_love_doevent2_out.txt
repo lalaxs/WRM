@@ -1,0 +1,926 @@
+
+==== person$$set_love 0x13cc2c8 size=0x6c4 ====
+0x13cc2f8 BL 0x12995cc (?)
+0x13cc304 BL 0x12995cc (?)
+0x13cc310 BL 0x12995cc (?)
+0x13cc31c BL 0x12995cc (?)
+0x13cc328 BL 0x12995cc (?)
+0x13cc32c MOVZ w8,#1
+0x13cc348 STRS x8,[x19,#236] //_love
+0x13cc34c B.cond5 0x13cc498
+0x13cc350 STRW x31,[x19,#236] //_love
+0x13cc364 BL 0x1299700 (?)
+0x13cc380 BL 0x142d548 (root$$checklive1)
+0x13cc398 BL 0x1299700 (?)
+0x13cc3a0 BL 0x13be804 (dns$$sex)
+0x13cc3a4 CMP w0,#3
+0x13cc3a8 B.cond1 0x13cc3dc
+0x13cc3b8 MOVZ w1,#10
+0x13cc3bc BL 0x18fbe0c (System.Collections.Generic.HashSet<int>$$Contains)
+0x13cc3c4 LDRS x0,[x19,#236] //_love
+0x13cc3d4 B.cond13 0x13cc3dc
+0x13cc3d8 STRW x8,[x19,#236] //_love
+0x13cc3ec BL 0x18fbe0c (System.Collections.Generic.HashSet<int>$$Contains)
+0x13cc3f4 LDRS x0,[x19,#236] //_love
+0x13cc400 B.cond13 0x13cc40c
+0x13cc408 STRW x8,[x19,#236] //_love
+0x13cc41c BL 0x1299700 (?)
+0x13cc424 BL 0x13be804 (dns$$sex)
+0x13cc428 CMP w0,#3
+0x13cc42c B.cond1 0x13cc75c
+0x13cc43c MOVZ w1,#13
+0x13cc440 BL 0x18fbe0c (System.Collections.Generic.HashSet<int>$$Contains)
+0x13cc448 LDRS x0,[x19,#236] //_love
+0x13cc458 B.cond11 0x13cc520
+0x13cc468 MOVZ w1,#2
+0x13cc46c BL 0x18fbe0c (System.Collections.Generic.HashSet<int>$$Contains)
+0x13cc478 BL 0x13cc98c (person$$get_lust)
+0x13cc488 B.cond5 0x13cc520
+0x13cc490 STRW x8,[x19,#236] //_love
+0x13cc494 B 0x13cc75c
+0x13cc4a4 B.cond13 0x13cc4b0
+0x13cc4ac STRW x8,[x19,#236] //_love
+0x13cc4c8 B.cond13 0x13cc358
+0x13cc4dc BL 0x1299700 (?)
+0x13cc4e4 BL 0x13be804 (dns$$sex)
+0x13cc4e8 CMP w0,#3
+0x13cc4ec B.cond1 0x13cc358
+0x13cc500 BL 0x18fbe0c (System.Collections.Generic.HashSet<int>$$Contains)
+0x13cc510 B.cond0 0x13cc358
+0x13cc518 STRW x8,[x19,#236] //_love
+0x13cc51c B 0x13cc358
+0x13cc52c MOVZ w1,#13
+0x13cc530 BL 0x18fbe0c (System.Collections.Generic.HashSet<int>$$Contains)
+0x13cc538 LDRS x0,[x19,#236] //_love
+0x13cc548 B.cond11 0x13cc75c
+0x13cc558 MOVZ w1,#2
+0x13cc55c BL 0x18fbe0c (System.Collections.Generic.HashSet<int>$$Contains)
+0x13cc568 CMP w8,#2
+0x13cc56c B.cond11 0x13cc664
+0x13cc574 BL 0x277c264 (UnityEngine.Random$$get_value)
+0x13cc57c LDRS x1,[x8,#1388]
+0x13cc584 B.cond5 0x13cc664
+0x13cc598 MOVZ w1,#13
+0x13cc5a0 BL 0x18fbfe0 (System.Collections.Generic.HashSet<int>$$Remove)
+0x13cc5ac BL 0x13cba58 (person$$set_exp)
+0x13cc5bc BL 0x13cbc00 (person$$set_level_l)
+0x13cc5c8 MOVZ w1,#4
+0x13cc5d0 BL 0x1299670 (?)
+0x13cc5e4 MOVZ w9,#581
+0x13cc5e8 CMP w8,#1
+0x13cc5f0 B.cond0 0x13cc988
+0x13cc5f8 CMP w8,#2
+0x13cc600 B.cond9 0x13cc988
+0x13cc608 CMP w8,#3
+0x13cc610 B.cond0 0x13cc988
+0x13cc61c STRW x8,[x1,#44] //act1day
+0x13cc620 BL 0x13cca20 (person$$addhistory)
+0x13cc630 BL 0x1299700 (?)
+0x13cc640 MOVZ w1,#4
+0x13cc648 BL 0x1299670 (?)
+0x13cc65c MOVZ w9,#581
+0x13cc660 B 0x13cc718
+0x13cc668 BL 0x13cbd08 (person$$blankfrs)
+0x13cc66c MOVZ w1,#2
+0x13cc674 BL 0x13cbfa4 (person$$addflag)
+0x13cc680 MOVZ w1,#4
+0x13cc688 BL 0x1299670 (?)
+0x13cc69c MOVZ w9,#293
+0x13cc6a0 CMP w8,#1
+0x13cc6a8 B.cond0 0x13cc988
+0x13cc6b0 CMP w8,#2
+0x13cc6b8 B.cond9 0x13cc988
+0x13cc6c0 CMP w8,#3
+0x13cc6c8 B.cond0 0x13cc988
+0x13cc6d4 STRW x8,[x1,#44] //act1day
+0x13cc6d8 BL 0x13cca20 (person$$addhistory)
+0x13cc6e8 BL 0x1299700 (?)
+0x13cc6f8 MOVZ w1,#4
+0x13cc700 BL 0x1299670 (?)
+0x13cc714 MOVZ w9,#293
+0x13cc718 CMP w8,#1
+0x13cc720 B.cond0 0x13cc988
+0x13cc728 CMP w8,#2
+0x13cc730 B.cond9 0x13cc988
+0x13cc738 CMP w8,#3
+0x13cc740 B.cond0 0x13cc988
+0x13cc748 STRW x8,[x1,#44] //act1day
+0x13cc758 BL 0x13f26b4 (root$$addhistory)
+0x13cc760 BL 0x13cc234 (person$$get_love)
+0x13cc770 B.cond13 0x13cc784
+0x13cc778 BL 0x13cbb68 (person$$get_ftype)
+0x13cc77c CMP w0,#2
+0x13cc780 B.cond1 0x13cc7bc
+0x13cc788 BL 0x13cc234 (person$$get_love)
+0x13cc798 B.cond8 0x13cc904
+0x13cc7a0 BL 0x13cbb68 (person$$get_ftype)
+0x13cc7a4 CMP w0,#2
+0x13cc7a8 B.cond0 0x13cc904
+0x13cc7ac MOVZ w8,#1
+0x13cc7b8 B 0x13cc904
+0x13cc7c0 MOVZ w8,#1
+0x13cc7d4 MOVZ w1,#10
+0x13cc7d8 BL 0x18fbe0c (System.Collections.Generic.HashSet<int>$$Contains)
+0x13cc7ec CMP w8,#1
+0x13cc7f0 B.cond11 0x13cc904
+0x13cc804 BL 0x1299700 (?)
+0x13cc80c BL 0x13be804 (dns$$sex)
+0x13cc810 CMP w0,#3
+0x13cc814 B.cond1 0x13cc904
+0x13cc81c BL 0x13cbd08 (person$$blankfrs)
+0x13cc828 MOVZ w1,#4
+0x13cc830 BL 0x1299670 (?)
+0x13cc844 MOVZ w9,#292
+0x13cc848 CMP w8,#1
+0x13cc850 B.cond0 0x13cc988
+0x13cc858 CMP w8,#2
+0x13cc860 B.cond9 0x13cc988
+0x13cc868 CMP w8,#3
+0x13cc870 B.cond0 0x13cc988
+0x13cc87c STRW x8,[x1,#44] //act1day
+0x13cc880 BL 0x13cca20 (person$$addhistory)
+0x13cc890 BL 0x1299700 (?)
+0x13cc8a0 MOVZ w1,#4
+0x13cc8a8 BL 0x1299670 (?)
+0x13cc8bc MOVZ w9,#292
+0x13cc8c0 CMP w8,#1
+0x13cc8c8 B.cond0 0x13cc988
+0x13cc8d0 CMP w8,#2
+0x13cc8d8 B.cond9 0x13cc988
+0x13cc8e0 CMP w8,#3
+0x13cc8e8 B.cond0 0x13cc988
+0x13cc8f0 STRW x8,[x1,#44] //act1day
+0x13cc900 BL 0x13f26b4 (root$$addhistory)
+0x13cc910 MOVZ w1,#3
+0x13cc914 BL 0x18fbe0c (System.Collections.Generic.HashSet<int>$$Contains)
+0x13cc920 STRW x8,[x19,#236] //_love
+0x13cc930 BL 0x1299700 (?)
+0x13cc954 BL 0x18fbe0c (System.Collections.Generic.HashSet<int>$$Contains)
+0x13cc960 STRW x8,[x19,#236] //_love
+0x13cc964 MOVZ w8,#1
+0x13cc984 BL 0x1299818 (?)
+0x13cc988 BL 0x1299820 (?)
+
+==== person$$get_love 0x13cc234 size=0x94 ====
+0x13cc254 BL 0x12995cc (?)
+0x13cc258 MOVZ w8,#1
+0x13cc270 MOVZ w1,#2
+0x13cc278 BL 0x18fbe0c (System.Collections.Generic.HashSet<int>$$Contains)
+0x13cc294 BL 0x18fbe0c (System.Collections.Generic.HashSet<int>$$Contains)
+0x13cc298 LDRS x0,[x19,#236] //_love
+0x13cc2a8 B.cond13 0x13cc2b8
+0x13cc2b4 STRW x8,[x19,#236] //_love
+0x13cc2c4 BL 0x1299818 (?)
+
+==== person$$addlove 0x13cc178 size=0xbc ====
+0x13cc1a0 BL 0x12995cc (?)
+0x13cc1a4 MOVZ w8,#1
+0x13cc1b0 BL 0x13cc234 (person$$get_love)
+0x13cc1bc BL 0x13cc2c8 (person$$set_love)
+0x13cc1d8 BL 0x18fbe0c (System.Collections.Generic.HashSet<int>$$Contains)
+0x13cc1e4 BL 0x13cc98c (person$$get_lust)
+0x13cc1fc STRS x1,[x19,#240] //_lust
+0x13cc200 B.cond4 0x13cc214
+0x13cc210 B.cond13 0x13cc218
+0x13cc214 STRS x0,[x19,#240] //_lust
+0x13cc218 MOVZ w8,#1
+0x13cc230 BL 0x1299818 (?)
+
+==== person$$set_lust 0x13cc9f0 size=0x30 ====
+0x13cc9f8 STRS x0,[x0,#240] //_lust
+0x13cc9fc B.cond4 0x13cca10
+0x13cca0c B.cond13 0x13cca14
+0x13cca10 STRS x1,[x0,#240] //_lust
+0x13cca14 MOVZ w8,#1
+
+==== person$$get_lust 0x13cc98c size=0x64 ====
+0x13cc9ac BL 0x12995cc (?)
+0x13cc9b0 MOVZ w8,#1
+0x13cc9c8 MOVZ w1,#2
+0x13cc9d0 BL 0x18fbe0c (System.Collections.Generic.HashSet<int>$$Contains)
+0x13cc9dc LDRS x0,[x19,#240] //_lust
+0x13cc9ec BL 0x1299818 (?)
+
+==== root$$addeventlove 0x13f91dc size=0x48 ====
+0x13f91e8 CMP w8,#20
+0x13f91ec B.cond8 0x13f9200
+0x13f91f0 MOVZ w9,#511
+0x13f921c B 0x13f90ec
+0x13f9220 BL 0x1299818 (?)
+
+==== root$$addevent 0x14132fc size=0xac ====
+0x1413320 BL 0x12995cc (?)
+0x1413324 MOVZ w8,#1
+0x141332c LDR x0,[x20,#128] //history
+0x1413360 B.cond2 0x1413388
+0x1413384 B 0x1299578
+0x14133a0 B 0x19fdbd8
+0x14133a4 BL 0x1299818 (?)
+
+=== act1event MOVZ immediates 1..600 top ===
+4 226
+1 66
+6 46
+2 42
+3 38
+7 25
+5 17
+327 12
+328 8
+12 7
+19 7
+8 5
+304 4
+251 4
+348 4
+11 3
+252 3
+262 3
+316 3
+346 3
+344 3
+329 3
+336 3
+334 3
+335 3
+310 3
+351 3
+14 2
+547 2
+562 2
+16 2
+231 2
+232 2
+233 2
+234 2
+235 2
+249 2
+13 2
+313 2
+294 2
+256 2
+261 2
+518 2
+318 2
+321 2
+322 2
+323 2
+236 2
+320 2
+543 2
+324 2
+319 2
+325 2
+326 2
+141 2
+240 2
+267 2
+314 2
+301 2
+259 2
+264 2
+521 2
+312 2
+306 2
+330 2
+142 2
+295 2
+302 2
+241 2
+250 2
+269 2
+535 2
+526 2
+257 2
+542 2
+519 2
+522 2
+307 2
+253 2
+143 2
+
+==== doevent_full 0x13fa734 size=0x14b8 ====
+0x13fa768 BL 0x12995cc (?)
+0x13fa774 BL 0x12995cc (?)
+0x13fa780 BL 0x12995cc (?)
+0x13fa78c BL 0x12995cc (?)
+0x13fa798 BL 0x12995cc (?)
+0x13fa7a4 BL 0x12995cc (?)
+0x13fa7b0 BL 0x12995cc (?)
+0x13fa7bc BL 0x12995cc (?)
+0x13fa7c0 MOVZ w8,#1
+0x13fa7e4 CMP w9,#115
+0x13fa7e8 B.cond12 0x13fa8a0
+0x13fa7ec CMP w9,#59
+0x13fa7f0 B.cond13 0x13fab04
+0x13fa7f8 CMP w10,#8
+0x13fa7fc B.cond8 0x13fad84
+0x13fa818 CMP w8,#1
+0x13fa81c B.cond9 0x13fbb58
+0x13fa820 LDR x0,[x19,#232] //_feel
+0x13fa838 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fa84c BL 0x13cb610 (person$$set_fami)
+0x13fa860 BL 0x13f26b4 (root$$addhistory)
+0x13fa86c MOVZ w1,#2
+0x13fa874 BL 0x1299670 (?)
+0x13fa888 MOVZ w9,#62
+0x13fa88c CMP w8,#1
+0x13fa894 B.cond0 0x13fbb58
+0x13fa89c B 0x13faa0c
+0x13fa8a0 CMP w9,#209
+0x13fa8a4 B.cond12 0x13faa14
+0x13fa8a8 CMP w9,#145
+0x13fa8ac B.cond12 0x13fab84
+0x13fa8b0 CMP w9,#116
+0x13fa8b4 B.cond0 0x13fb224
+0x13fa8b8 CMP w9,#117
+0x13fa8bc B.cond1 0x13fb8a4
+0x13fa8c0 CMP w8,#2
+0x13fa8c4 B.cond9 0x13fbb58
+0x13fa8c8 LDR x0,[x19,#232] //_feel
+0x13fa8e0 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fa8f0 MOVZ w1,#5
+0x13fa8fc BL 0x1299670 (?)
+0x13fa910 MOVZ w9,#117
+0x13fa91c CMP w9,#1
+0x13fa920 B.cond9 0x13fbb58
+0x13fa924 CMP w8,#1
+0x13fa928 B.cond9 0x13fbb58
+0x13fa938 CMP w8,#2
+0x13fa93c B.cond9 0x13fbb58
+0x13fa944 CMP w8,#3
+0x13fa94c B.cond0 0x13fbb58
+0x13fa954 CMP w8,#4
+0x13fa958 STRW x9,[x1,#44] //act1day
+0x13fa95c B.cond9 0x13fbb58
+0x13fa96c BL 0x13f26b4 (root$$addhistory)
+0x13fa978 BL 0x13cc234 (person$$get_love)
+0x13fa98c BL 0x13cc2c8 (person$$set_love)
+0x13fa994 BL 0x277c264 (UnityEngine.Random$$get_value)
+0x13fa99c LDRS x1,[x8,#1840]
+0x13fa9a4 B.cond5 0x13fa9b4
+0x13fa9ac CMP w8,#5
+0x13fa9b0 B.cond13 0x13fb8c8
+0x13fa9c0 BL 0x13cba58 (person$$set_exp)
+0x13fa9cc BL 0x13d3e58 (person$$sublvs)
+0x13fa9d4 MOVZ w1,#2
+0x13fa9d8 BL 0x1299670 (?)
+0x13fa9ec MOVZ w9,#140
+0x13fa9f8 CMP w9,#1
+0x13fa9fc B.cond9 0x13fbb58
+0x13faa00 CMP w8,#1
+0x13faa04 B.cond9 0x13fbb58
+0x13faa10 B 0x13fb3d4
+0x13faa14 CMP w9,#236
+0x13faa18 B.cond12 0x13fad24
+0x13faa1c CMP w9,#210
+0x13faa20 B.cond0 0x13fb27c
+0x13faa24 CMP w9,#211
+0x13faa28 B.cond1 0x13fb8a4
+0x13faa2c CMP w8,#1
+0x13faa30 B.cond9 0x13fbb58
+0x13faa34 LDR x0,[x19,#232] //_feel
+0x13faa4c BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13faa54 LDRS x0,[x0,#232] //_feel
+0x13faa64 BL 0x13cc158 (person$$set_feel)
+0x13faa70 MOVZ w1,#2
+0x13faa78 BL 0x1299670 (?)
+0x13faa8c MOVZ w9,#211
+0x13faa98 CMP w9,#1
+0x13faa9c B.cond9 0x13fbb58
+0x13faaa0 CMP w8,#1
+0x13faaa4 B.cond9 0x13fbb58
+0x13faab4 BL 0x13f26b4 (root$$addhistory)
+0x13faabc CMP w8,#1
+0x13faac0 B.cond9 0x13fbb58
+0x13faac4 LDR x0,[x19,#232] //_feel
+0x13faad4 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13faae0 MOVZ w1,#2
+0x13faae8 BL 0x1299670 (?)
+0x13faafc MOVZ w9,#211
+0x13fab00 B 0x13fb3b0
+0x13fab04 CMP w9,#32
+0x13fab08 B.cond0 0x13fb0b8
+0x13fab0c CMP w9,#33
+0x13fab10 B.cond1 0x13fb8a4
+0x13fab14 CMP w8,#3
+0x13fab18 B.cond9 0x13fbb58
+0x13fab1c LDR x0,[x19,#232] //_feel
+0x13fab28 LDRW x1,[x20,#44] //act1day
+0x13fab34 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fab3c LDRS x0,[x0,#232] //_feel
+0x13fab4c BL 0x13cc158 (person$$set_feel)
+0x13fab58 BL 0x13f26b4 (root$$addhistory)
+0x13fab60 CMP w8,#3
+0x13fab64 B.cond9 0x13fbb58
+0x13fab68 LDR x0,[x19,#232] //_feel
+0x13fab70 LDRW x1,[x20,#44] //act1day
+0x13fab78 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fab80 B 0x13fbb54
+0x13fab84 CMP w9,#146
+0x13fab88 B.cond0 0x13fb3e4
+0x13fab8c CMP w9,#147
+0x13fab90 B.cond1 0x13fb8a4
+0x13fab94 CMP w8,#3
+0x13fab98 B.cond9 0x13fbb58
+0x13fab9c LDR x0,[x19,#232] //_feel
+0x13faba8 LDRW x1,[x20,#44] //act1day
+0x13fabb4 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fabbc LDRS x0,[x0,#232] //_feel
+0x13fabcc BL 0x13cc158 (person$$set_feel)
+0x13fabd4 CMP w8,#3
+0x13fabd8 B.cond9 0x13fbb58
+0x13fabdc LDR x0,[x19,#232] //_feel
+0x13fabe4 LDRW x1,[x20,#44] //act1day
+0x13fabec BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fabfc BL 0x13cc234 (person$$get_love)
+0x13fac10 BL 0x13cc2c8 (person$$set_love)
+0x13fac18 CMP w8,#3
+0x13fac1c B.cond9 0x13fbb58
+0x13fac20 LDR x0,[x19,#232] //_feel
+0x13fac28 LDRW x1,[x20,#44] //act1day
+0x13fac30 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fac40 BL 0x13cc98c (person$$get_lust)
+0x13fac54 BL 0x277c19c (UnityEngine.Random$$Range)
+0x13fac64 BL 0x13cc9f0 (person$$set_lust)
+0x13fac70 BL 0x13f26b4 (root$$addhistory)
+0x13fac78 CMP w8,#3
+0x13fac7c B.cond9 0x13fbb58
+0x13fac80 LDR x0,[x19,#232] //_feel
+0x13fac88 LDRW x1,[x20,#44] //act1day
+0x13fac90 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13faca0 MOVZ w1,#1
+0x13facac BL 0x1299670 (?)
+0x13facb4 CMP w8,#4
+0x13facb8 B.cond9 0x13fbb58
+0x13face0 BL 0x13cca20 (person$$addhistory)
+0x13face8 CMP w8,#4
+0x13facec B.cond9 0x13fbb58
+0x13facf4 CMP w8,#154
+0x13facf8 B.cond1 0x13fb8a4
+0x13facfc LDR x0,[x19,#232] //_feel
+0x13fad04 LDRW x1,[x20,#44] //act1day
+0x13fad0c BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fad1c BL 0x13cbfa4 (person$$addflag)
+0x13fad20 B 0x13fb8a4
+0x13fad24 CMP w9,#237
+0x13fad28 B.cond0 0x13fb59c
+0x13fad2c CMP w9,#238
+0x13fad30 B.cond1 0x13fb8a4
+0x13fad34 CMP w8,#3
+0x13fad38 B.cond9 0x13fbb58
+0x13fad3c LDR x0,[x19,#232] //_feel
+0x13fad48 LDRW x1,[x20,#44] //act1day
+0x13fad54 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fad5c MOVZ w1,#2
+0x13fad68 BL 0x13cbbe8 (person$$set_ftype)
+0x13fad74 BL 0x13f26b4 (root$$addhistory)
+0x13fad80 B 0x13fb3d8
+0x13fad84 CMP w9,#75
+0x13fad88 B.cond0 0x13faf24
+0x13fad8c CMP w9,#76
+0x13fad90 B.cond1 0x13fb8a4
+0x13fad94 CMP w8,#3
+0x13fad98 B.cond9 0x13fbb58
+0x13fad9c LDR x0,[x19,#232] //_feel
+0x13fada8 LDRW x1,[x20,#44] //act1day
+0x13fadb4 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fadc4 BL 0x13f26b4 (root$$addhistory)
+0x13fadd4 BL 0x13cc234 (person$$get_love)
+0x13fade8 BL 0x13cc2c8 (person$$set_love)
+0x13fadf0 BL 0x277c264 (UnityEngine.Random$$get_value)
+0x13fadf8 LDRS x1,[x8,#1840]
+0x13fae00 B.cond5 0x13fae10
+0x13fae08 CMP w8,#5
+0x13fae0c B.cond13 0x13fb6a0
+0x13fae14 LDRS x1,[x8,#1408]
+0x13fae1c B.cond4 0x13faf9c
+0x13fae24 CMP w8,#6
+0x13fae28 B.cond0 0x13faf9c
+0x13fae2c CMP w8,#20
+0x13fae30 B.cond0 0x13faf9c
+0x13fae38 CMP w8,#6
+0x13fae3c B.cond10 0x13faf9c
+0x13fae4c BL 0x13cc098 (person$$set_yang)
+0x13fae68 BL 0x19bb5d4 (System.Collections.Generic.List<int>$$GetEnumerator)
+0x13fae84 LDRS x8,[x9,#1388]
+0x13fae94 BL 0x17da324 (System.Collections.Generic.List.Enumerator<int>$$MoveNext)
+0x13fae9c LDR x0,[x19,#232] //_feel
+0x13faeac BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13faec0 BL 0x13f2114 (root$$checklive)
+0x13faed0 B.cond1 0x13fae8c
+0x13faedc CMP w8,#20
+0x13faee0 B.cond0 0x13fae8c
+0x13faee8 CMP w8,#18
+0x13faeec B.cond11 0x13fae8c
+0x13faef4 BL 0x277c264 (UnityEngine.Random$$get_value)
+0x13faefc B.cond5 0x13fae8c
+0x13faf14 BL 0x17da320 (System.Collections.Generic.List.Enumerator<int>$$Dispose)
+0x13faf1c B.cond1 0x13fb988
+0x13faf20 B 0x13fb920
+0x13faf24 CMP w8,#3
+0x13faf28 B.cond9 0x13fbb58
+0x13faf2c LDR x0,[x19,#232] //_feel
+0x13faf38 LDRW x1,[x20,#44] //act1day
+0x13faf44 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13faf54 CMP w8,#6
+0x13faf58 B.cond1 0x13faf70
+0x13faf64 BL 0x13cbb68 (person$$get_ftype)
+0x13faf68 CMP w0,#2
+0x13faf6c B.cond1 0x13fb620
+0x13faf70 MOVZ w1,#2
+0x13faf7c BL 0x13cbbe8 (person$$set_ftype)
+0x13faf88 BL 0x13cc234 (person$$get_love)
+0x13faf90 MOVZ w0,#20
+0x13faf94 MOVZ w1,#85
+0x13faf98 B 0x13fb648
+0x13fafa8 BL 0x13cba58 (person$$set_exp)
+0x13fafb4 MOVZ w1,#1
+0x13fafbc BL 0x1299670 (?)
+0x13fafd0 MOVZ w8,#74
+0x13fafd8 B 0x13fb3d4
+0x13fafdc CMP w8,#1
+0x13fafe0 B.cond9 0x13fbb58
+0x13fafe4 LDR x0,[x19,#232] //_feel
+0x13faffc BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb004 LDRS x1,[x8,#1452]
+0x13fb014 BL 0x277c19c (UnityEngine.Random$$Range)
+0x13fb03c BL 0x13cb610 (person$$set_fami)
+0x13fb044 CMP w8,#6
+0x13fb048 B.cond11 0x13fb05c
+0x13fb04c MOVZ w1,#20
+0x13fb058 BL 0x13cb610 (person$$set_fami)
+0x13fb064 BL 0x13f26b4 (root$$addhistory)
+0x13fb070 MOVZ w1,#3
+0x13fb078 BL 0x1299670 (?)
+0x13fb08c MOVZ w9,#63
+0x13fb090 CMP w8,#1
+0x13fb098 B.cond0 0x13fbb58
+0x13fb0a0 CMP w8,#2
+0x13fb0a8 B.cond9 0x13fbb58
+0x13fb0b4 B 0x13fb3d4
+0x13fb0b8 CMP w8,#3
+0x13fb0bc B.cond9 0x13fbb58
+0x13fb0c0 LDR x0,[x19,#232] //_feel
+0x13fb0cc LDRW x1,[x20,#44] //act1day
+0x13fb0d8 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb0ec CMP w8,#3
+0x13fb0f0 B.cond9 0x13fbb58
+0x13fb0f4 LDR x0,[x19,#232] //_feel
+0x13fb0fc LDRW x1,[x20,#44] //act1day
+0x13fb104 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb10c MOVZ w1,#2
+0x13fb114 BL 0x13cbbe8 (person$$set_ftype)
+0x13fb11c CMP w8,#3
+0x13fb120 B.cond9 0x13fbb58
+0x13fb130 LDRW x2,[x20,#44] //act1day
+0x13fb140 BL 0x13c8ea4 (mydicint$$set_Item)
+0x13fb148 CMP w8,#3
+0x13fb14c B.cond9 0x13fbb58
+0x13fb150 LDR x0,[x19,#232] //_feel
+0x13fb158 LDRW x1,[x20,#44] //act1day
+0x13fb160 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb168 LDRS x0,[x0,#232] //_feel
+0x13fb178 BL 0x13cc158 (person$$set_feel)
+0x13fb184 BL 0x13f26b4 (root$$addhistory)
+0x13fb18c CMP w8,#3
+0x13fb190 B.cond9 0x13fbb58
+0x13fb194 LDR x0,[x19,#232] //_feel
+0x13fb19c LDRW x1,[x20,#44] //act1day
+0x13fb1a4 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb1b4 BL 0x13cca20 (person$$addhistory)
+0x13fb1bc CMP w8,#3
+0x13fb1c0 B.cond9 0x13fbb58
+0x13fb1c4 LDRW x1,[x20,#44] //act1day
+0x13fb1cc BL 0x13f8a30 (root$$refreshpbtlove)
+0x13fb1d4 CMP w8,#3
+0x13fb1d8 B.cond9 0x13fbb58
+0x13fb1dc LDR x0,[x19,#232] //_feel
+0x13fb1e4 LDRW x1,[x20,#44] //act1day
+0x13fb1ec BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb1f8 BL 0x13d2ac4 (person$$wedding)
+0x13fb200 BL 0x13fc28c (root$$wedding)
+0x13fb208 CMP w8,#3
+0x13fb20c B.cond9 0x13fbb58
+0x13fb210 LDR x0,[x19,#232] //_feel
+0x13fb218 LDRW x1,[x20,#44] //act1day
+0x13fb220 B 0x13fb590
+0x13fb224 CMP w8,#2
+0x13fb228 B.cond9 0x13fbb58
+0x13fb22c LDR x0,[x19,#232] //_feel
+0x13fb244 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb254 CMP w8,#6
+0x13fb258 B.cond1 0x13fb270
+0x13fb264 BL 0x13cbb68 (person$$get_ftype)
+0x13fb268 CMP w0,#2
+0x13fb26c B.cond1 0x13fb6cc
+0x13fb270 MOVZ w22,#70
+0x13fb274 MOVZ w1,#2
+0x13fb278 B 0x13fb6d4
+0x13fb27c CMP w8,#1
+0x13fb280 B.cond9 0x13fbb58
+0x13fb284 LDR x0,[x19,#232] //_feel
+0x13fb29c BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb2a4 LDRS x0,[x0,#232] //_feel
+0x13fb2b4 BL 0x13cc158 (person$$set_feel)
+0x13fb2bc CMP w8,#1
+0x13fb2c0 B.cond9 0x13fbb58
+0x13fb2c4 LDR x0,[x19,#232] //_feel
+0x13fb2d4 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb2e4 BL 0x13cc178 (person$$addlove)
+0x13fb2ec CMP w8,#1
+0x13fb2f0 B.cond9 0x13fbb58
+0x13fb2f4 LDR x0,[x19,#232] //_feel
+0x13fb304 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb30c MOVZ w1,#2
+0x13fb314 BL 0x13cbbe8 (person$$set_ftype)
+0x13fb320 MOVZ w1,#2
+0x13fb328 BL 0x1299670 (?)
+0x13fb33c MOVZ w9,#210
+0x13fb348 CMP w9,#1
+0x13fb34c B.cond9 0x13fbb58
+0x13fb350 CMP w8,#1
+0x13fb354 B.cond9 0x13fbb58
+0x13fb364 BL 0x13f26b4 (root$$addhistory)
+0x13fb36c CMP w8,#1
+0x13fb370 B.cond9 0x13fbb58
+0x13fb374 LDR x0,[x19,#232] //_feel
+0x13fb384 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb390 MOVZ w1,#2
+0x13fb398 BL 0x1299670 (?)
+0x13fb3ac MOVZ w9,#210
+0x13fb3b8 CMP w9,#1
+0x13fb3bc B.cond9 0x13fbb58
+0x13fb3c0 CMP w8,#1
+0x13fb3c4 B.cond9 0x13fbb58
+0x13fb3dc BL 0x13cca20 (person$$addhistory)
+0x13fb3e0 B 0x13fb8a4
+0x13fb3e4 CMP w8,#3
+0x13fb3e8 B.cond9 0x13fbb58
+0x13fb3ec LDR x0,[x19,#232] //_feel
+0x13fb3f8 LDRW x1,[x20,#44] //act1day
+0x13fb404 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb418 CMP w8,#3
+0x13fb41c B.cond9 0x13fbb58
+0x13fb420 LDR x0,[x19,#232] //_feel
+0x13fb428 LDRW x1,[x20,#44] //act1day
+0x13fb430 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb438 MOVZ w1,#2
+0x13fb440 BL 0x13cbbe8 (person$$set_ftype)
+0x13fb448 CMP w8,#3
+0x13fb44c B.cond9 0x13fbb58
+0x13fb45c LDRW x2,[x20,#44] //act1day
+0x13fb46c BL 0x13c8ea4 (mydicint$$set_Item)
+0x13fb474 CMP w8,#3
+0x13fb478 B.cond9 0x13fbb58
+0x13fb47c LDR x0,[x19,#232] //_feel
+0x13fb484 LDRW x1,[x20,#44] //act1day
+0x13fb48c BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb494 LDRS x0,[x0,#232] //_feel
+0x13fb4a4 BL 0x13cc158 (person$$set_feel)
+0x13fb4b0 BL 0x13f26b4 (root$$addhistory)
+0x13fb4b8 CMP w8,#3
+0x13fb4bc B.cond9 0x13fbb58
+0x13fb4c0 LDR x0,[x19,#232] //_feel
+0x13fb4c8 LDRW x1,[x20,#44] //act1day
+0x13fb4d0 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb4e0 MOVZ w1,#1
+0x13fb4ec BL 0x1299670 (?)
+0x13fb4f4 CMP w8,#4
+0x13fb4f8 B.cond9 0x13fbb58
+0x13fb524 BL 0x13cca20 (person$$addhistory)
+0x13fb52c CMP w8,#3
+0x13fb530 B.cond9 0x13fbb58
+0x13fb534 LDRW x1,[x20,#44] //act1day
+0x13fb53c BL 0x13f8a30 (root$$refreshpbtlove)
+0x13fb544 CMP w8,#3
+0x13fb548 B.cond9 0x13fbb58
+0x13fb54c LDR x0,[x19,#232] //_feel
+0x13fb554 LDRW x1,[x20,#44] //act1day
+0x13fb55c BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb568 BL 0x13d2ac4 (person$$wedding)
+0x13fb570 BL 0x13fc28c (root$$wedding)
+0x13fb578 CMP w8,#3
+0x13fb57c B.cond9 0x13fbb58
+0x13fb580 LDR x0,[x19,#232] //_feel
+0x13fb588 LDRW x1,[x20,#44] //act1day
+0x13fb590 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb598 B 0x13fbb54
+0x13fb59c CMP w8,#3
+0x13fb5a0 B.cond9 0x13fbb58
+0x13fb5a4 LDR x0,[x19,#232] //_feel
+0x13fb5b0 LDRW x1,[x20,#44] //act1day
+0x13fb5bc BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb5c4 MOVZ w1,#2
+0x13fb5d0 BL 0x13cbbe8 (person$$set_ftype)
+0x13fb5dc BL 0x13cc234 (person$$get_love)
+0x13fb5e0 MOVZ w0,#20
+0x13fb5e4 MOVZ w1,#85
+0x13fb5f0 BL 0x277c1dc (UnityEngine.Random$$Range)
+0x13fb604 BL 0x13cc2c8 (person$$set_love)
+0x13fb610 BL 0x13f26b4 (root$$addhistory)
+0x13fb61c B 0x13fb890
+0x13fb62c BL 0x13cbbe8 (person$$set_ftype)
+0x13fb638 BL 0x13cc234 (person$$get_love)
+0x13fb640 MOVZ w1,#40
+0x13fb64c BL 0x277c1dc (UnityEngine.Random$$Range)
+0x13fb660 BL 0x13cc2c8 (person$$set_love)
+0x13fb66c BL 0x13f26b4 (root$$addhistory)
+0x13fb678 MOVZ w1,#1
+0x13fb680 BL 0x1299670 (?)
+0x13fb694 MOVZ w8,#69
+0x13fb69c B 0x13fb88c
+0x13fb6a8 MOVZ w1,#1
+0x13fb6b0 BL 0x1299670 (?)
+0x13fb6c4 MOVZ w8,#70
+0x13fb6c8 B 0x13fb8e8
+0x13fb6d0 MOVZ w22,#40
+0x13fb6dc BL 0x13cbbe8 (person$$set_ftype)
+0x13fb6e8 BL 0x13cc234 (person$$get_love)
+0x13fb6fc BL 0x277c1dc (UnityEngine.Random$$Range)
+0x13fb710 BL 0x13cc2c8 (person$$set_love)
+0x13fb718 BL 0x277c264 (UnityEngine.Random$$get_value)
+0x13fb720 LDRS x1,[x8,#1840]
+0x13fb728 B.cond5 0x13fb750
+0x13fb730 BL 0x13e15ac (root$$get_level_l)
+0x13fb738 MOVZ w2,#1
+0x13fb744 BL 0x13f4768 (root$$setdan)
+0x13fb748 MOVZ w24,#2
+0x13fb74c B 0x13fb79c
+0x13fb754 LDRS x1,[x8,#1356]
+0x13fb760 B.cond5 0x13fb77c
+0x13fb764 MOVZ w2,#1
+0x13fb770 MOVZ w24,#1
+0x13fb774 BL 0x13f3f10 (root$$setr)
+0x13fb778 B 0x13fb79c
+0x13fb77c CMP w22,#7
+0x13fb780 MOVZ w8,#7
+0x13fb788 MOVZ w2,#1
+0x13fb794 BL 0x13fc9d8 (root$$setg)
+0x13fb7a4 MOVZ w1,#7
+0x13fb7ac BL 0x1299670 (?)
+0x13fb7c0 MOVZ w9,#116
+0x13fb7cc CMP w9,#1
+0x13fb7d0 B.cond9 0x13fbb58
+0x13fb7d4 CMP w8,#1
+0x13fb7d8 B.cond9 0x13fbb58
+0x13fb7e0 CMP w8,#2
+0x13fb7e8 B.cond0 0x13fbb58
+0x13fb7f0 CMP w8,#3
+0x13fb7f8 B.cond9 0x13fbb58
+0x13fb800 CMP w8,#4
+0x13fb804 STRW x9,[x1,#44] //act1day
+0x13fb808 B.cond0 0x13fbb58
+0x13fb810 CMP w8,#5
+0x13fb818 B.cond9 0x13fbb58
+0x13fb81c CMP w8,#6
+0x13fb820 STRW x24,[x1,#52] //slove
+0x13fb824 B.cond0 0x13fbb58
+0x13fb82c STRW x22,[x1,#56] //slust
+0x13fb830 BL 0x13f26b4 (root$$addhistory)
+0x13fb838 MOVZ w1,#4
+0x13fb83c BL 0x1299670 (?)
+0x13fb850 MOVZ w9,#138
+0x13fb85c CMP w9,#1
+0x13fb860 B.cond9 0x13fbb58
+0x13fb864 CMP w8,#1
+0x13fb868 B.cond9 0x13fbb58
+0x13fb870 CMP w8,#2
+0x13fb878 B.cond0 0x13fbb58
+0x13fb87c CMP w8,#3
+0x13fb884 B.cond9 0x13fbb58
+0x13fb888 STRW x22,[x1,#44] //act1day
+0x13fb894 BL 0x13cca20 (person$$addhistory)
+0x13fb8a0 BL 0x13d3c34 (person$$lostyang)
+0x13fb8a8 BL 0x13ed240 (root$$dayevent)
+0x13fb8cc MOVZ w1,#1
+0x13fb8d0 BL 0x1299670 (?)
+0x13fb8e4 MOVZ w8,#139
+0x13fb8f4 BL 0x13cca20 (person$$addhistory)
+0x13fb904 BL 0x13cdf54 (person$$dead)
+0x13fb908 B 0x13fb8a4
+0x13fb91c BL 0x17da320 (System.Collections.Generic.List.Enumerator<int>$$Dispose)
+0x13fb924 LDRS x1,[x8,#1472]
+0x13fb930 BL 0x277c19c (UnityEngine.Random$$Range)
+0x13fb94c CMP w2,#9
+0x13fb950 B.cond0 0x13fb95c
+0x13fb954 CMP w2,#6
+0x13fb958 B.cond1 0x13fb960
+0x13fb95c MOVZ w2,#8
+0x13fb964 MOVZ w9,#5
+0x13fb968 MOVZ w1,#4
+0x13fb970 CMP w8,#5
+0x13fb980 BL 0x13f2340 (root$$creatpersonwithm)
+0x13fb988 LDR x0,[x19,#232] //_feel
+0x13fb998 BL 0x171daac (System.Collections.Generic.Dictionary<int, object>$$get_Item)
+0x13fb9bc BL 0x13cc098 (person$$set_yang)
+0x13fb9cc BL 0x13cc098 (person$$set_yang)
+0x13fb9e8 BL 0x18fbfe0 (System.Collections.Generic.HashSet<int>$$Remove)
+0x13fb9fc BL 0x18fbfe0 (System.Collections.Generic.HashSet<int>$$Remove)
+0x13fba04 BL 0x277c264 (UnityEngine.Random$$get_value)
+0x13fba20 BL 0x13d2424 (person$$setfriends)
+0x13fba2c MOVZ w1,#2
+0x13fba34 BL 0x1299670 (?)
+0x13fba48 MOVZ w9,#71
+0x13fba4c CMP w8,#1
+0x13fba54 B.cond0 0x13fbb58
+0x13fba68 BL 0x13cca20 (person$$addhistory)
+0x13fba70 MOVZ w1,#2
+0x13fba74 BL 0x1299670 (?)
+0x13fba88 MOVZ w9,#72
+0x13fba8c CMP w8,#1
+0x13fba94 B.cond0 0x13fbb58
+0x13fbaa8 BL 0x13cca20 (person$$addhistory)
+0x13fbab0 MOVZ w1,#7
+0x13fbab4 BL 0x1299670 (?)
+0x13fbac8 MOVZ w9,#73
+0x13fbacc CMP w8,#1
+0x13fbad4 B.cond0 0x13fbb58
+0x13fbadc CMP w8,#2
+0x13fbae4 B.cond9 0x13fbb58
+0x13fbaec CMP w8,#3
+0x13fbaf4 B.cond0 0x13fbb58
+0x13fbafc CMP w8,#4
+0x13fbb00 STRW x9,[x1,#44] //act1day
+0x13fbb04 B.cond9 0x13fbb58
+0x13fbb0c CMP w8,#5
+0x13fbb14 B.cond0 0x13fbb58
+0x13fbb1c CMP w8,#6
+0x13fbb20 STRW x9,[x1,#52] //slove
+0x13fbb24 B.cond9 0x13fbb58
+0x13fbb30 STRW x8,[x1,#56] //slust
+0x13fbb34 BL 0x13f26b4 (root$$addhistory)
+0x13fbb40 BL 0x13d2ac4 (person$$wedding)
+0x13fbb4c BL 0x13d2ac4 (person$$wedding)
+0x13fbb50 B 0x13fb8a4
+0x13fbb54 BL 0x1299818 (?)
+0x13fbb58 BL 0x1299820 (?)
+0x13fbb5c BL 0x1299818 (?)
+0x13fbb60 BL 0x1299818 (?)
+0x13fbb64 B 0x13fbb78
+0x13fbb68 B 0x13fbb78
+0x13fbb6c B 0x13fbb78
+0x13fbb70 B 0x13fbb78
+0x13fbb74 B 0x13fbb78
+0x13fbb7c CMP w1,#1
+0x13fbb80 B.cond1 0x13fbbb4
+0x13fbb88 BL 0x29ad820 (?)
+0x13fbb90 BL 0x29ad830 (?)
+0x13fbba4 BL 0x17da320 (System.Collections.Generic.List.Enumerator<int>$$Dispose)
+0x13fbbb0 BL 0x1298574 (?)
+0x13fbbb8 B 0x13fbbc0
+0x13fbbd0 BL 0x17da320 (System.Collections.Generic.List.Enumerator<int>$$Dispose)
+0x13fbbdc BL 0x1348058 (?)
+0x13fbbe4 BL 0x1298574 (?)
+0x13fbbe8 BL 0x108b208 (?)
+
+=== search missing event keys in unity_dump / content ===
+HIT eventt220 in D:\ZM\xiuxian-idle-h5\tools\il2cpp_input\apk_extract\unity_dump\TextAsset_af_26.txt
+HIT eventt220 in D:\ZM\xiuxian-idle-h5\tools\il2cpp_input\apk_extract\unity_dump\TextAsset_af_28.txt
+HIT eventt220 in D:\ZM\xiuxian-idle-h5\tools\il2cpp_output\stringliteral.json
+
+=== af keys that could map to missing ids ===
+eventt220 -> whole 220 = 在游历中偶遇强敌，损耗了不少灵气才得以脱身
+
+=== eventt part-count histogram (top long) ===
+{1: 243, 2: 198, 3: 82, 4: 21, 5: 6, 6: 8}
+longest: [('53', 6, 5), ('66', 6, 5), ('102', 6, 5), ('221', 6, 5), ('456', 6, 5), ('496', 6, 5), ('498', 6, 5), ('500', 6, 5), ('32', 5, 4), ('116', 5, 4), ('138', 5, 4), ('233', 5, 4), ('237', 5, 4), ('536', 5, 4), ('156', 4, 3), ('209', 4, 3), ('210', 4, 3), ('228', 4, 3), ('290', 4, 3), ('293', 4, 3), ('333', 4, 3), ('347', 4, 3), ('351', 4, 3), ('358', 4, 3), ('393', 4, 3)]
+53 parts 6 maxVar 5 joined= 遇险，为在游历时在秘境探索时在执行宗门任务时在地下拍卖场所救
+66 parts 6 maxVar 5 joined= 在游历时偶然撞破对下了情毒意图不轨的现场，赶走后依然神志不清，只好勉为其难的为其解了毒
+102 parts 6 maxVar 5 joined= 剑法教导了弟子，但效果不佳，颇有成效，但其好像根本没有在听，颇有成效，令其灵气增加了少许
+221 parts 6 maxVar 5 joined= 前来拜访，却正好撞见正在修炼，开心的表示下次修炼的时候可以找他羞窘的离开了勃然大怒，愤而离去
+456 parts 6 maxVar 5 joined= 从闭关的石室内发现了失踪已久的，没想到竟是因为求而不得将囚禁了起来。觉察到事情败露后逃入魔域，堕为魔修
+496 parts 6 maxVar 5 joined= 打上，诬告对其始乱终弃并拿出了证据，为了维护和的关系，对进行了赔偿
+498 parts 6 maxVar 5 joined= 突然携人打上，声称为其道侣，要求将之交还于。拦住了这些人，魔修们悻悻而退
+500 parts 6 maxVar 5 joined= 心中爱慕，奈何却对关注有加，其心中嫉恨，本想暗设陷阱令受伤，却在下手的前一刹幡然醒悟，羞愧的看着自己因妒忌而丑陋的姿态，
+32 parts 5 maxVar 4 joined= 在游历中被一见钟情，请求结为道侣，是否同意？一见钟情，在他的百般请求下，与之结为了道侣。极为高兴，突破几率增加10%
+116 parts 5 maxVar 4 joined= 向你介绍了身中奇诡情毒的，希望你能用你特别的心法为其解毒，是否帮忙？，你用你独特的心法为其解了毒，赠与你表示感激
+138 parts 5 maxVar 4 joined= 被仇家下了奇诡情毒，必须由合欢宗的独特心法才能解毒，经介绍认识了在为自己解毒后赠予作为谢礼
+233 parts 5 maxVar 4 joined= 偷偷将绊倒，在哭起来之前又立刻抱起来，傻孩子似乎觉得是个温柔的好人
+237 parts 5 maxVar 4 joined= 表示久闻的大名，很想尝试一下和一起修炼的感觉，是否同意？一起修炼的感觉，爽快的满足了他的愿望
+536 parts 5 maxVar 4 joined= 将手指凑到眼前一晃变出了一朵小花送给，挥手就重复了他的法术，他哭笑不得，依然温柔的将手中的花别到了鬓边
+156 parts 4 maxVar 3 joined= 看着对着不是自己的人笑靥如花，无法控制自己的心魔，竟仗着自己的武力高于，将她抓回自己的洞府囚禁了起来
+
+=== help_* related keys in af ===
+act1 : 增进感情
+act2 : 一起修炼
+act3 : 闲适度过
+act4 : 试图逃离
+act5 : 教导
+actbt1 : 温养本命剑
+actbt2 : 照料灵蛋
+actbt3 : 养伤
+askattact0 : 确定要袭击
+askattact1 : 吗？
+feel : 好感
+help_act1 : 想办法和目标人物增进感情，每次增进感情需要的时间视不同的人而定，取得的成果也视不同的人而定。
+help_act2 : 在对方同意的情况下，可以和对方一起修炼。通常来说，好感度越高，对方同意一起修炼的可能性越大，但根据性格不同也会有所差异。一起修炼可以将对方积攒的精气转化为双倍的灵气分别反哺给一起修炼的两人的丹田。精气枯竭的情况下将无法一起修炼。停止一起修炼
+help_act3 : 什么都不做，静静的发呆。
+help_act4 : 当有些人的独占欲太高且武力值高于你时，他可能会囚禁你。在逃离成功或被友人救出前你无法选择其他行动。
+help_act5 : 对弟子进行各种教育，当然也包括带他们出去玩啦
+help_actbt0 : 游历会令你遇到各种事情比如结识新的人物或得到各种道具。 | 由于每次游历都会去往不同的地方，所以进行游历的时间会越来越长。 | 提升身法的等级可以减少游历所需的时间。 | 手动点击探索按钮可以强行从正在进行任何行动的你身上牺牲睡美容觉的时间增加游历进度
+help_actbt1 : 获得本命剑可以将你的武力值提升1倍，花费时间和灵气温养丹田中的本命剑可以让剑逐渐产生灵智最终生成剑灵，生成剑灵的本命剑可以将你的武力值提升3倍。 | 温养本命剑是一件时间以百年计的漫长工程，不会很快就能看到效果 | 在没有多余灵气的情况下，将自动将
+help_actbt2 : 花费时间和灵气照料灵蛋可以将之孵化，孵化出来的灵兽将成为你的契约兽。 | 神兽之蛋的孵化是以百年为时间单位的，一时很难看出效果 | 没有多余灵气的情况下，将自动将行动切换为游历。
+help_actbt3 : 当攻击力小于总攻击力的30%时，将进入强制养伤状态。养伤时每天将恢复总攻击力的1/2400。养伤时将无法进行其他操作，请尽量避免让自己重伤。
+help_lust : 当和目标关系逐渐变好之后，他的心中也会开始升起对你的独占欲，不同的人增加独占欲的速度和方式都各有不同。 | 长时间不和目标接触，独占欲就会缓缓降低。 | 独占欲到达100的话,离开目标的行为可能会导致囚禁事件发生。当然，只要确保渣的对象武力值都低于
+lust : 独占欲

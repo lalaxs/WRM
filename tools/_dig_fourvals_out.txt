@@ -1,0 +1,107 @@
+
+=== slove float touches n=2 ===
+  root$$addday LDRS=1 STRS=0 eg=['0x13ec618:LDRS']
+  root$$creatperson LDRS=0 STRS=1 eg=['0x13f068c:STRS']
+
+=== slust float touches n=3 ===
+  person$$addday LDRS=1 STRS=0 eg=['0x13cdef4:LDRS']
+  root$$addday LDRS=1 STRS=0 eg=['0x13ec654:LDRS']
+  root$$creatperson LDRS=0 STRS=1 eg=['0x13f06ac:STRS']
+
+=== dlove float touches n=2 ===
+  person$$addday LDRS=1 STRS=0 eg=['0x13cde28:LDRS']
+  root$$creatperson LDRS=0 STRS=1 eg=['0x13f0e68:STRS']
+
+=== dlust float touches n=7 ===
+  root$$startgame LDRS=1 STRS=1 eg=['0x13ff58c:LDRS', '0x13ff590:STRS']
+  faceCamera.<creatface>d__8$$MoveNext LDRS=1 STRS=0 eg=['0x13c6120:LDRS']
+  person$$addday LDRS=1 STRS=0 eg=['0x13cddc8:LDRS']
+  root.<loadgame>d__78$$MoveNext LDRS=0 STRS=1 eg=['0x1439174:STRS']
+  root.<savegame>d__88$$MoveNext LDRS=0 STRS=1 eg=['0x143cf6c:STRS']
+  root$$creatperson LDRS=0 STRS=1 eg=['0x13f0e80:STRS']
+
+=== desire float touches n=13 ===
+  root$$senddan LDRS=5 STRS=0 eg=['0x14280c8:LDRS', '0x142825c:LDRS', '0x1428560:LDRS']
+  root$$sendg LDRS=3 STRS=0 eg=['0x1428f58:LDRS', '0x1429190:LDRS', '0x14296a4:LDRS']
+  root$$startgame LDRS=1 STRS=1 eg=['0x13ff630:LDRS', '0x13ff640:STRS']
+  root$$sendr LDRS=2 STRS=0 eg=['0x1429da8:LDRS', '0x142a000:LDRS']
+  root$$creatperson LDRS=0 STRS=1 eg=['0x13f0318:STRS']
+
+=== _feel float touches n=25 ===
+  person$$leaveevent LDRS=5 STRS=5 eg=['0x13d4308:LDRS', '0x13d4324:STRS', '0x13d483c:LDRS']
+  root$$doevent LDRS=6 STRS=0 eg=['0x13faa54:LDRS', '0x13fab3c:LDRS', '0x13fabbc:LDRS']
+  person$$reladead LDRS=2 STRS=2 eg=['0x13d1118:LDRS', '0x13d1128:STRS', '0x13d131c:LDRS']
+  person$$relaleave LDRS=1 STRS=1 eg=['0x13d216c:LDRS', '0x13d217c:STRS']
+  person$$get_feel LDRS=1 STRS=0 eg=['0x13cc150:LDRS']
+  person$$set_feel LDRS=0 STRS=1 eg=['0x13cc160:STRS']
+  person$$getlvups LDRS=1 STRS=0 eg=['0x13cb7ec:LDRS']
+
+=== _love float touches n=6 ===
+  person$$set_love LDRS=4 STRS=1 eg=['0x13cc348:STRS', '0x13cc3c4:LDRS', '0x13cc3f4:LDRS']
+  person$$get_love LDRS=1 STRS=0 eg=['0x13cc298:LDRS']
+
+=== _lust float touches n=11 ===
+  person$$addday LDRS=0 STRS=4 eg=['0x13cddd8:STRS', '0x13cddf0:STRS', '0x13cdf0c:STRS']
+  person$$addlove LDRS=0 STRS=2 eg=['0x13cc1fc:STRS', '0x13cc214:STRS']
+  person$$set_lust LDRS=0 STRS=2 eg=['0x13cc9f8:STRS', '0x13cca10:STRS']
+  person$$lostyang LDRS=0 STRS=2 eg=['0x13d3cb0:STRS', '0x13d3cc8:STRS']
+  person$$get_lust LDRS=1 STRS=0 eg=['0x13cc9dc:LDRS']
+
+=== doevent BL unique callees ===
+34 System.Collections.Generic.Dictionary<int, object>$$get_Item
+19 ?@0x1299670
+15 root$$addhistory
+8 ?@0x12995cc
+8 person$$addhistory
+8 person$$set_ftype
+7 person$$get_love
+6 person$$set_love
+6 person$$set_feel
+6 UnityEngine.Random$$Range
+5 UnityEngine.Random$$get_value
+4 System.Collections.Generic.List.Enumerator<int>$$Dispose
+4 person$$wedding
+3 person$$set_fami
+3 person$$set_yang
+3 ?@0x1299818
+2 person$$set_exp
+2 person$$get_ftype
+2 mydicint$$set_Item
+2 root$$refreshpbtlove
+2 root$$wedding
+2 System.Collections.Generic.HashSet<int>$$Remove
+2 ?@0x1298574
+1 person$$sublvs
+1 person$$get_lust
+1 person$$set_lust
+1 person$$addflag
+1 System.Collections.Generic.List<int>$$GetEnumerator
+1 System.Collections.Generic.List.Enumerator<int>$$MoveNext
+1 root$$checklive
+1 person$$addlove
+1 root$$get_level_l
+1 root$$setdan
+1 root$$setr
+1 root$$setg
+1 person$$lostyang
+1 root$$dayevent
+1 person$$dead
+1 root$$creatpersonwithm
+1 person$$setfriends
+1 ?@0x1299820
+1 ?@0x29ad820
+1 ?@0x29ad830
+1 ?@0x1348058
+1 ?@0x108b208
+
+=== methods with 'event' in name (root) ===
+0x13d6b2c act1event 0xa780
+0x13f91dc addeventlove 0x48
+0x13ed240 dayevent 0x1f38
+0x13fa734 doevent 0x14b8
+0x141c2c8 addinfohistory 0x188
+0x141dc58 showinfo 0x305c
+0x13e831c showinfo0 0x162c
+0x1422498 ondayevent 0x6c
+0x14133a8 leaveevent 0x2b8
+0x14132fc addevent 0xac

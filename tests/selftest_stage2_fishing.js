@@ -85,7 +85,6 @@ function cloneContent() {
   return JSON.parse(JSON.stringify({
     GATHERING: GatheringContent.GATHERING,
     FISH_SPECIES: GatheringContent.FISH_SPECIES,
-    RESOURCE_QUALITIES: GatheringContent.RESOURCE_QUALITIES,
     JUNK_POOL: GatheringContent.JUNK_POOL,
     SPECIAL_POOL: GatheringContent.SPECIAL_POOL,
     FISHING_PARITY: GatheringContent.FISHING_PARITY
@@ -221,7 +220,7 @@ exact(Object.keys(defaultRules).sort(), [
 ].forEach(([extraRoll, quantity]) => {
   const model = clearStocks(freshModel());
   model.systems.gathering.fishStocks.spiritShrimp = 1;
-  model.player.mastery.fishing.spiritShrimp.level = 99;
+  model.player.mastery.fishing.pond.level = 99;
   const result = makeRules([0, 0, extraRoll]).rules.fish(
     model,
     'pond',
@@ -332,7 +331,7 @@ exact(Object.keys(defaultRules).sort(), [
     'the one inventory transaction contains every rolled output');
 }
 
-// Fishing progression is shared by species across spots.
+// Fishing progression is tracked per fishing spot.
 {
   const model = clearStocks(freshModel());
   model.player.skills.fishing.level = 8;
@@ -357,10 +356,14 @@ exact(Object.keys(defaultRules).sort(), [
   );
   ok(second.ok && second.result.speciesId === 'spiritShrimp',
     'the same live species can be caught at another unlocked spot');
-  exact(second.state.player.mastery.fishing.spiritShrimp, {
+  exact(caught.state.player.mastery.fishing.pond, {
     level: 1,
-    xp: 13
-  }, 'one species mastery record receives XP from both spots');
+    xp: 5
+  }, 'pond catch advances pond mastery only');
+  exact(second.state.player.mastery.fishing.shallow, {
+    level: 1,
+    xp: 8
+  }, 'shallow catch advances shallow mastery only');
   exact(second.state.player.skills.fishing, { level: 8, xp: 26 },
     'spot XP advances the fishing skill exactly once per catch');
   ok(second.state.player.xiwei === 3,
@@ -979,7 +982,7 @@ exact(Object.keys(defaultRules).sort(), [
       model.systems.gathering.fishRecoverAnchorMs = 1000;
       model.systems.gathering.fishRecoverBaseSeconds = null;
     },
-    (model) => { model.player.mastery.fishing.spiritCarp.level = 0; }
+    (model) => { model.player.mastery.fishing.pond.level = 0; }
   ];
   invalidModels.forEach((mutate, index) => {
     const model = freshModel();

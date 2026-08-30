@@ -432,13 +432,8 @@ for (const expected of Expected.growthTendencies) {
   ], expected, 'spirit-beast growth row is exact: ' + expected[0]);
 }
 
-ok(Object.keys(Gathering.RESOURCE_QUALITIES).join(',') === 'common,fine,rare',
-  'resource qualities keep stable common/fine/rare order');
-ok(JSON.stringify(Gathering.RESOURCE_QUALITIES) === JSON.stringify({
-  common: { weight: 70, capacityMultiplier: 1, extraYieldChance: 0 },
-  fine: { weight: 25, capacityMultiplier: 1.25, extraYieldChance: 0.15 },
-  rare: { weight: 5, capacityMultiplier: 1.5, extraYieldChance: 0.30 }
-}), 'resource quality values are canonical');
+ok(Gathering.RESOURCE_QUALITIES == null,
+  'resource spot qualities are removed from gathering content');
 ok(Gathering.GATHERING.herb.explore.masteryId === 'explore:herb',
   'herb exploration has stable mastery ID');
 ok(Gathering.GATHERING.mining.explore.masteryId === 'explore:mining',

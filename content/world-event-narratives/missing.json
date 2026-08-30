@@ -1,0 +1,19 @@
+[
+  {
+    "id": "missing-0119",
+    "weight": 6,
+    "type": "missing",
+    "actors": "solo",
+    "template": "{a}从{loc}一别后再无音讯，有人疑其失踪。",
+    "statusAny": [
+      "missing"
+    ]
+  },
+  {
+    "id": "solo-extra-12",
+    "weight": 8,
+    "type": "missing",
+    "actors": "solo",
+    "template": "一连数日，{loc}再不见{a}的踪迹。"
+  }
+]

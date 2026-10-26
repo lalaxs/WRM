@@ -2,7 +2,7 @@
 const fs = require('fs');
 const vm = require('vm');
 
-const gameRuntimeFiles = ['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'];
+const gameRuntimeFiles = ['game.js', 'game-appearance.js', 'game-persist.js', 'game-runtime.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-commands-combat.js', 'game-commands-homestead.js', 'game-commands-social.js', 'game-commands-sect.js', 'game-commands-legacy.js', 'game-api.js'];
 
 // ── 桩：Canvas 2D 上下文（所有方法 no-op）──
 function stubCtx() {
@@ -871,7 +871,7 @@ const lockedCommandsSnapshot = JSON.stringify({
 });
 G.setCurrent('lianqi');
 G.randomize();
-G.stepPart('hair', 1);
+G.stepPart('hair_qian', 1);
 G.tryBreakthrough();
 G.enterLunhui();
 G.confirmCreate();

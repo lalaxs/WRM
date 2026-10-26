@@ -25,7 +25,12 @@
   const DEPENDENCY_LAYERS = Object.freeze([
     Object.freeze({
       id: 'platform',
-      owns: Object.freeze(['platform.js', 'AdManager.js', 'nie-manifest.js']),
+      owns: Object.freeze([
+        'platform.js',
+        'AdManager.js',
+        'nie-manifest.js',
+        'nie-hair-rules.js'
+      ]),
       mayDependOn: Object.freeze([])
     }),
     Object.freeze({
@@ -42,10 +47,18 @@
       id: 'game',
       owns: Object.freeze([
         'game.js',
+        'game-appearance.js',
+        'game-persist.js',
+        'game-runtime.js',
         'game-queries.js',
         'game-queries-social.js',
         'game-queries-combat.js',
         'game-commands.js',
+        'game-commands-combat.js',
+        'game-commands-homestead.js',
+        'game-commands-social.js',
+        'game-commands-sect.js',
+        'game-commands-legacy.js',
         'game-api.js'
       ]),
       mayDependOn: Object.freeze(['game', 'core', 'content', 'platform'])
@@ -68,8 +81,27 @@
    * 首屏同步脚本（顺序即依赖顺序；不含 ?v=）。
    * 修改后请同步 index.html，并跑 selftest_runtime_modules。
    */
+  /** Game 层 classic script 链（顺序即依赖；boot 在 game-runtime 末尾）。 */
+  const GAME_SCRIPTS = Object.freeze([
+    'game.js',
+    'game-appearance.js',
+    'game-persist.js',
+    'game-runtime.js',
+    'game-queries.js',
+    'game-queries-social.js',
+    'game-queries-combat.js',
+    'game-commands.js',
+    'game-commands-combat.js',
+    'game-commands-homestead.js',
+    'game-commands-social.js',
+    'game-commands-sect.js',
+    'game-commands-legacy.js',
+    'game-api.js'
+  ]);
+
   const BOOT_SCRIPTS = Object.freeze([
     'nie-manifest.js',
+    'nie-hair-rules.js',
     'platform.js',
     'AdManager.js',
     'content/fishing-parity.js',
@@ -107,9 +139,17 @@
     'core/person-factory.js',
     'core/relation-seed.js',
     'core/sect-offices.js',
+    'core/npc-spirit-pets.js',
     'core/sect-missions.js',
     'core/sect-pavilion.js',
     'core/world-event-picker.js',
+    'core/stage4-state-util.js',
+    'core/stage4-state-npc.js',
+    'core/stage4-state-relationships.js',
+    'core/stage4-state-events.js',
+    'core/stage4-state-sects.js',
+    'core/stage4-state-world.js',
+    'core/stage4-state-lineage.js',
     'core/stage4-state.js',
     'core/relationships.js',
     'core/person-graph.js',
@@ -147,17 +187,12 @@
     'core/legacy-transition.js',
     'core/stage5-rules.js',
     'runtime-modules.js',
-    'core/lazy-content.js',
-    'game.js',
-    'game-queries.js',
-    'game-queries-social.js',
-    'game-queries-combat.js',
-    'game-commands.js',
-    'game-api.js',
+    'core/lazy-content.js'
+  ].concat(GAME_SCRIPTS).concat([
     'ui/ui-core.js',
     'ui/ui-modals.js',
     'ui.js'
-  ]);
+  ]));
 
   /** 测试环境一次加载的 UI 全量（boot + pages）。 */
   const UI_BOOT_SCRIPTS = Object.freeze([
@@ -212,11 +247,20 @@
     'platform.js',
     'AdManager.js',
     'runtime-modules.js',
+    'nie-hair-rules.js',
     'game.js',
+    'game-appearance.js',
+    'game-persist.js',
+    'game-runtime.js',
     'game-queries.js',
     'game-queries-social.js',
     'game-queries-combat.js',
     'game-commands.js',
+    'game-commands-combat.js',
+    'game-commands-homestead.js',
+    'game-commands-social.js',
+    'game-commands-sect.js',
+    'game-commands-legacy.js',
     'game-api.js',
     'ui/ui-core.js',
     'ui/ui-home.js',
@@ -262,6 +306,14 @@
     'core/npc-roster.js',
     'core/person-factory.js',
     'core/relation-seed.js',
+    'core/npc-spirit-pets.js',
+    'core/stage4-state-util.js',
+    'core/stage4-state-npc.js',
+    'core/stage4-state-relationships.js',
+    'core/stage4-state-events.js',
+    'core/stage4-state-sects.js',
+    'core/stage4-state-world.js',
+    'core/stage4-state-lineage.js',
     'core/stage4-state.js',
     'core/relationships.js',
     'core/world-event-picker.js',
@@ -458,6 +510,7 @@
     BOOT_STYLES: BOOT_STYLES,
     DEFERRED_STYLES: DEFERRED_STYLES,
     GAME_STYLE_HREF: GAME_STYLE_HREF,
+    GAME_SCRIPTS: GAME_SCRIPTS,
     BOOT_SCRIPTS: BOOT_SCRIPTS,
     UI_BOOT_SCRIPTS: UI_BOOT_SCRIPTS,
     UI_PAGE_SCRIPTS: UI_PAGE_SCRIPTS,

@@ -199,8 +199,8 @@ const GameAPI = Object.freeze({
         phase: 'game',
         appearance: {
           indices: {
-            body: 0, cloth: 0, nose: 0, mouth: 0,
-            eyes: 0, eyebrush: 0, hair: 0
+            hair_hou: 0, cloth: 0, body: 0, mouth: 0,
+            nose: 0, eyes: 0, hair_qian: 0, deco: 0
           }
         },
         modals: {

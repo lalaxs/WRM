@@ -1,0 +1,51 @@
+[
+  {
+    "id": "travel_return-0113",
+    "weight": 11,
+    "type": "travel_return",
+    "actors": "solo",
+    "template": "{a}游历归来，途经{loc}，风尘还没洗干净。"
+  },
+  {
+    "id": "travel_return-0114",
+    "weight": 11,
+    "type": "travel_return",
+    "actors": "solo",
+    "template": "{a}回到{loc}，把见闻三言两语说与留守之人。"
+  },
+  {
+    "id": "travel_return-0115",
+    "weight": 11,
+    "type": "travel_return",
+    "actors": "solo",
+    "template": "{a}自远方返回{loc}，袖中多了一枚陌生令牌。"
+  },
+  {
+    "id": "travel_return-0116",
+    "weight": 10,
+    "type": "travel_return",
+    "actors": "pair",
+    "template": "{a}结束游历，在{loc}遇见{b}，把半路上的奇遇说与对方听。"
+  },
+  {
+    "id": "solo-extra-7",
+    "weight": 8,
+    "type": "travel_return",
+    "actors": "solo",
+    "template": "{a}风尘仆仆回到{loc}，先去报了平安。"
+  },
+  {
+    "id": "solo-extra-8",
+    "weight": 8,
+    "type": "travel_return",
+    "actors": "solo",
+    "template": "{a}带回一筐外域果子，在{loc}分给熟识之人。"
+  },
+  {
+    "id": "travel-return-solo-2540",
+    "weight": 12,
+    "type": "travel_return",
+    "actors": "solo",
+    "template": "{a}结束游历回到{loc}，风尘还没洗干净，眼神却比去时亮了些，先问近况可安。"
+  }
+]

@@ -237,6 +237,8 @@ if (NpcRoster) {
   ok(indexSource.indexOf('core/npc-generator.js') <
        indexSource.indexOf('core/npc-roster.js') &&
      indexSource.indexOf('core/npc-roster.js') <
+       indexSource.indexOf('core/stage4-state-util.js') &&
+     indexSource.indexOf('core/stage4-state-util.js') <
        indexSource.indexOf('core/stage4-state.js'),
   '浏览器严格按人物生成器、名册、Stage4State 顺序加载');
 }

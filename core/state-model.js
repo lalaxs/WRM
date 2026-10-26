@@ -705,16 +705,10 @@
     // 避免长离线后每 ~80ms 全量扫 worldEvents/NPC/关系网。
     if (options && options.trustedSimulation === true && isRecord(model)) {
       const appearance = isRecord(model.appearance) ? model.appearance : null;
-      runtime.created = !!model.created;
-      runtime.parts = cloneRecord(
-        appearance && appearance.parts
-          ? appearance.parts
-          : (isRecord(model.parts) ? model.parts : {})
-      );
-      runtime.player = cloneJson(model.player, null);
-      runtime.current = cloneJson(model.current, null);
-      runtime.rngState = GameRandom.normalizeSeed(model.rngState);
-      runtime.offlineLimitSeconds = Math.min(
+      const partsSource = appearance && appearance.parts
+        ? appearance.parts
+        : (isRecord(model.parts) ? model.parts : {});
+      const offlineLimitSeconds = Math.min(
         MAX_OFFLINE_LIMIT_SECONDS,
         Math.max(
           DEFAULT_OFFLINE_LIMIT_SECONDS,
@@ -725,14 +719,45 @@
           )
         )
       );
-      runtime.systems = cloneJson(model.systems, normalizeSystems());
-      runtime.pendingOfflineReports = cloneArray(model.pendingOfflineReports);
-      runtime.reportArchive = cloneArray(model.reportArchive);
-      runtime.processedThroughMs = finiteNumber(
+      const processedThroughMs = finiteNumber(
         model.processedThroughMs,
         finiteNumber(model.savedAt, 0, 0),
         0
       );
+      // mutateInPlace：queryView 与 runtime 共享嵌套引用，Simulation 已原地改完；
+      // 只同步顶层字段，禁止再 cloneJson(systems/player) 把收益抵消掉。
+      if (options.inplace === true) {
+        runtime.created = !!model.created;
+        runtime.parts = isRecord(partsSource) ? partsSource : {};
+        runtime.player = model.player || null;
+        runtime.current = model.current || null;
+        runtime.rngState = GameRandom.normalizeSeed(model.rngState);
+        runtime.offlineLimitSeconds = offlineLimitSeconds;
+        runtime.systems = isRecord(model.systems)
+          ? model.systems
+          : normalizeSystems();
+        runtime.pendingOfflineReports = Array.isArray(
+          model.pendingOfflineReports
+        )
+          ? model.pendingOfflineReports
+          : [];
+        runtime.reportArchive = Array.isArray(model.reportArchive)
+          ? model.reportArchive
+          : [];
+        runtime.processedThroughMs = processedThroughMs;
+        runtime.lastActionStop = model.lastActionStop || null;
+        return runtime;
+      }
+      runtime.created = !!model.created;
+      runtime.parts = cloneRecord(partsSource);
+      runtime.player = cloneJson(model.player, null);
+      runtime.current = cloneJson(model.current, null);
+      runtime.rngState = GameRandom.normalizeSeed(model.rngState);
+      runtime.offlineLimitSeconds = offlineLimitSeconds;
+      runtime.systems = cloneJson(model.systems, normalizeSystems());
+      runtime.pendingOfflineReports = cloneArray(model.pendingOfflineReports);
+      runtime.reportArchive = cloneArray(model.reportArchive);
+      runtime.processedThroughMs = processedThroughMs;
       runtime.lastActionStop = cloneJson(model.lastActionStop, null);
       return runtime;
     }

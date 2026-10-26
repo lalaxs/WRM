@@ -55,7 +55,8 @@
   const TICK_SECONDS = 0.25;
   // Offline combat advances multiple ticks per simulation step (Melvor-style
   // O(actions) batching). Online stays at one tick so the UI can animate.
-  const OFFLINE_COMBAT_BATCH_TICKS = 40;
+  // 480 tick ≈ 120s 战斗；12h 离线约 360 次 complete，显著低于旧值 40（约 4320 次）。
+  const OFFLINE_COMBAT_BATCH_TICKS = 480;
   const EMPTY_SECT = Object.freeze({
     sectId: null,
     favoredTechniqueIds: Object.freeze([]),

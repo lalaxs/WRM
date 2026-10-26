@@ -4,7 +4,7 @@ const fs = require('fs');
 
 const ui = require('./ui_scripts').readUiSource();
 const css = fs.readFileSync('styles.css', 'utf8');
-const game = ['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js']
+const game = ['game.js', 'game-appearance.js', 'game-persist.js', 'game-runtime.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-commands-combat.js', 'game-commands-homestead.js', 'game-commands-social.js', 'game-commands-sect.js', 'game-commands-legacy.js', 'game-api.js']
   .map((file) => fs.readFileSync(file, 'utf8')).join('\n');
 let pass = 0;
 let fail = 0;
@@ -25,6 +25,9 @@ function ok(value, message) {
   ['关系排序', /relationship-sort/],
   ['魅力技能栏', /skillId:\s*'charm'/],
   ['人物双列卡片', /person-card-grid/],
+  ['人物卡虚拟列表', /person-card-virtual/],
+  ['人物卡可视区同步', /syncPersonListWindow/],
+  ['人物卡滚动可视', /schedulePersonListWindow/],
   ['人物弹窗页签', /信息[\s\S]*经历/],
   ['人物弹窗挂载', /personDetail/],
   ['关系爱心颜色', /heart-affection/],

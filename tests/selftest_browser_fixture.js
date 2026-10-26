@@ -74,6 +74,13 @@ const expectedScripts = [
   '../core/sect-offices.js',
   '../core/sect-missions.js',
   '../core/sect-pavilion.js',
+  '../core/stage4-state-util.js',
+  '../core/stage4-state-npc.js',
+  '../core/stage4-state-relationships.js',
+  '../core/stage4-state-events.js',
+  '../core/stage4-state-sects.js',
+  '../core/stage4-state-world.js',
+  '../core/stage4-state-lineage.js',
   '../core/stage4-state.js',
   '../core/save-system.js',
   'stage2-engineering-save.js'
@@ -94,10 +101,18 @@ ok(
 const productionText = [
   'index.html',
   'game.js',
+  'game-appearance.js',
+  'game-persist.js',
+  'game-runtime.js',
   'game-queries.js',
   'game-queries-social.js',
   'game-queries-combat.js',
   'game-commands.js',
+  'game-commands-combat.js',
+  'game-commands-homestead.js',
+  'game-commands-social.js',
+  'game-commands-sect.js',
+  'game-commands-legacy.js',
   'game-api.js',
   ...require('./ui_scripts').UI_SCRIPT_FILES
 ]

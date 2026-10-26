@@ -1,0 +1,17 @@
+[
+  {
+    "id": "treasure-0178",
+    "weight": 8,
+    "type": "treasure",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}同时发现一缕灵光，互不相让。"
+  },
+  {
+    "id": "treasure-0179",
+    "weight": 8,
+    "type": "treasure",
+    "actors": "pair",
+    "template": "{a}在{loc}得一物，分一半给同行的{b}。",
+    "affinityMin": 20
+  }
+]

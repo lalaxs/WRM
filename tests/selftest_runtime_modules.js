@@ -67,6 +67,33 @@ assert.deepStrictEqual(
   'dependency layers stay ordered platform→…→ui'
 );
 
+function topLevelBindingNames(source) {
+  const names = new Set();
+  const re = /^(?:const|let|function)\s+([A-Za-z_$][\w$]*)/gm;
+  let match;
+  while ((match = re.exec(source)) !== null) {
+    names.add(match[1]);
+  }
+  return names;
+}
+
+const gameSource = fs.readFileSync(path.join(root, 'game.js'), 'utf8');
+const gameBindings = topLevelBindingNames(gameSource);
+RuntimeModules.GAME_SCRIPTS.slice(1).forEach(function (rel) {
+  if (rel === 'game-api.js') return;
+  const splitSource = fs.readFileSync(path.join(root, rel), 'utf8');
+  const duplicates = [];
+  topLevelBindingNames(splitSource).forEach(function (name) {
+    if (gameBindings.has(name)) duplicates.push(name);
+  });
+  assert.strictEqual(
+    duplicates.length,
+    0,
+    rel + ' must not redeclare game.js top-level bindings: ' +
+      duplicates.join(', ')
+  );
+});
+
 console.log('runtime modules contract selftest passed');
 console.log('  boot scripts:', RuntimeModules.BOOT_SCRIPTS.length);
 console.log('  deferred UI pages:', RuntimeModules.UI_PAGE_SCRIPTS.length);

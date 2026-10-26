@@ -1,0 +1,160 @@
+[
+  {
+    "id": "confess_npc-0093",
+    "weight": 10,
+    "type": "confess_npc",
+    "actors": "pair",
+    "template": "有人见剑仙{a}在{loc}与{b}短暂交谈，语气淡然，先寒暄近况，再提手头难处。",
+    "tagNone": [
+      "partner",
+      "enemy"
+    ],
+    "affinityMin": 60
+  },
+  {
+    "id": "confess_npc-0094",
+    "weight": 10,
+    "type": "confess_npc",
+    "actors": "pair",
+    "template": "{a}在{loc}当着{b}的面把话说破，成败听天。",
+    "personalityA": [
+      "chicheng"
+    ],
+    "affinityMin": 55
+  },
+  {
+    "id": "confess_npc-0095",
+    "weight": 9,
+    "type": "confess_npc",
+    "actors": "pair",
+    "template": "{a}在{loc}只留下一句「你知道的」，便把玉佩推到{b}面前。",
+    "personalityA": [
+      "qingleng"
+    ],
+    "affinityMin": 65
+  },
+  {
+    "id": "confess-tension-1501",
+    "weight": 14,
+    "type": "confess_npc",
+    "actors": "pair",
+    "template": "{a}在{loc}走向{b}时表面镇定，话说出口前顿了顿。话说出口后，{b}沉默片刻，先愣了片刻才应声。",
+    "tagNone": [
+      "enemy",
+      "partner"
+    ],
+    "affinityMin": 38
+  },
+  {
+    "id": "confess-tension-1502",
+    "weight": 13,
+    "type": "confess_npc",
+    "actors": "pair",
+    "template": "{a}在{loc}把心意说破，声音发紧。{b}先别开眼，脸却红透，半晌才低声回了一句我听见了。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 40
+  },
+  {
+    "id": "confess-tension-1503",
+    "weight": 12,
+    "type": "confess_npc",
+    "actors": "pair",
+    "template": "{a}在{loc}坦白时，{b}面上仍冷。可他握剑的手指收紧又松开，终于没有退开那半步。",
+    "personalityB": [
+      "qingleng"
+    ],
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 42
+  },
+  {
+    "id": "confess-tension-1504",
+    "weight": 12,
+    "type": "confess_npc",
+    "actors": "pair",
+    "template": "风过{loc}，{a}话未说完先笑了一下，笑意却不稳。{b}伸手想扶，停在半空，最后只轻轻碰了碰他袖口。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 38
+  },
+  {
+    "id": "confess-tension-1505",
+    "weight": 11,
+    "type": "confess_npc",
+    "actors": "pair",
+    "template": "{a}在{loc}把喜欢你三个字说出口，话说得发紧。{b}愣了片刻，答得很慢。",
+    "tagAny": [
+      "life-debt",
+      "impressed",
+      "friend"
+    ],
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 45
+  },
+  {
+    "id": "confess-tension-1506",
+    "weight": 11,
+    "type": "confess_npc",
+    "actors": "pair",
+    "template": "{a}在{loc}跪也不是站也不是，只把信物塞进{b}手里。{b}手发凉，却把那物攥进了袖里。",
+    "tagNone": [
+      "enemy"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ],
+    "affinityMin": 40
+  },
+  {
+    "id": "confess-tension-1507",
+    "weight": 10,
+    "type": "confess_npc",
+    "actors": "pair",
+    "template": "{b}在{loc}听完{a}的表白，先后退半步，又自己走了回来。月下两人相对，呼吸都放得很轻。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 48
+  },
+  {
+    "id": "confess-tension-1508",
+    "weight": 10,
+    "type": "confess_npc",
+    "actors": "pair",
+    "template": "{a}在{loc}本想说完就走，却被{b}叫住。对方脸上仍淡，问出口的却是：你……再说一遍。",
+    "tagNone": [
+      "enemy",
+      "partner"
+    ],
+    "affinityMin": 36
+  },
+  {
+    "id": "confess_npc-fm-soft-1",
+    "weight": 14,
+    "type": "confess_npc",
+    "actors": "pair",
+    "template": "{a}在{loc}把心意说得很轻，像怕惊扰。{b}脸一红，半晌才应声，心里却已出汗。",
+    "pairGenderAny": [
+      "fm"
+    ],
+    "affinityMin": 35
+  },
+  {
+    "id": "confess-warm-1",
+    "weight": 18,
+    "type": "confess_npc",
+    "actors": "pair",
+    "template": "{a}在{loc}把心意说出口，话说得发紧。{b}先愣住，许久才应了一声，既像拒绝，又像没拒绝干净。",
+    "arcAny": [
+      "warm",
+      "bond"
+    ],
+    "affinityMin": 40
+  }
+]

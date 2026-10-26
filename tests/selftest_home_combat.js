@@ -107,7 +107,7 @@ const stage3Files = [
 stage3Files.forEach((f) =>
   vm.runInContext(fs.readFileSync(f, 'utf8'), sandbox, { filename: f })
 );
-['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+['game.js', 'game-appearance.js', 'game-persist.js', 'game-runtime.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-commands-combat.js', 'game-commands-homestead.js', 'game-commands-social.js', 'game-commands-sect.js', 'game-commands-legacy.js', 'game-api.js'].forEach((file) => {
   vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
 });
 

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="120" viewBox="0 0 240 90" role="img" aria-label="炼虚裂境">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#A898C0"/><stop offset="100%" stop-color="#4A3A6A"/></linearGradient></defs>
+  <rect width="240" height="90" fill="url(#g)"/>
+  <rect width="240" height="90" fill="#4A3A6A" opacity=".12"/>
+  <path fill="#201830" opacity=".5" d="M40 20 L70 90 L20 90Z"/><path fill="#A898C0" opacity=".55" d="M120 10 L160 90 L90 90Z"/><path fill="#201830" opacity=".4" d="M190 30 L230 90 L160 90Z"/><circle cx="170" cy="36" r="4" fill="#fff" opacity=".55"/><circle cx="96" cy="28" r="3" fill="#fff" opacity=".4"/>
+  <rect y="62" width="240" height="28" fill="#1A1520" opacity=".28"/>
+</svg>

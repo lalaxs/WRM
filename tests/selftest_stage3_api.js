@@ -120,6 +120,13 @@ const SCRIPT_ORDER = [
   'core/sect-offices.js',
   'core/sect-missions.js',
   'core/sect-pavilion.js',
+  'core/stage4-state-util.js',
+  'core/stage4-state-npc.js',
+  'core/stage4-state-relationships.js',
+  'core/stage4-state-events.js',
+  'core/stage4-state-sects.js',
+  'core/stage4-state-world.js',
+  'core/stage4-state-lineage.js',
   'core/stage4-state.js',
   'core/relationships.js',
   'core/person-graph.js',
@@ -264,7 +271,7 @@ function createRuntime(options) {
       filename: file
     });
   });
-  ['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+  ['game.js', 'game-appearance.js', 'game-persist.js', 'game-runtime.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-commands-combat.js', 'game-commands-homestead.js', 'game-commands-social.js', 'game-commands-sect.js', 'game-commands-legacy.js', 'game-api.js'].forEach((file) => {
   vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
 });
   const harness = sandbox.__GameTestHarness;
@@ -343,7 +350,7 @@ const API = runtime.api;
 
 const stage1And2Queries = [
   'app', 'navigation', 'top', 'home', 'inventory', 'itemInfo', 'breakModal',
-  'skillPage', 'gatherPage', 'homestead', 'charm', 'offline',
+  'skillPage', 'gatherPage', 'homestead', 'charm', 'offline', 'settlingOffline',
   'events', 'persistence', 'calendar'
 ];
 const stage3Queries = [

@@ -1,0 +1,153 @@
+[
+  {
+    "id": "rescue-0089",
+    "weight": 9,
+    "type": "rescue",
+    "actors": "pair",
+    "template": "{a}在{loc}发现重伤的{b}，险些来迟。守至天亮时，{b}才哑着嗓子记住了那只扶住自己的手。",
+    "statusB": [
+      "injured"
+    ]
+  },
+  {
+    "id": "rescue-0090",
+    "weight": 10,
+    "type": "rescue",
+    "actors": "pair",
+    "template": "{a}以百草谷医术在{loc}稳住{b}的伤势，针落之时手微颤，对方睁眼第一句却是道谢。",
+    "officeRankA": [
+      "hall",
+      "elder",
+      "honor"
+    ],
+    "sectAny": [
+      "baicao-valley"
+    ],
+    "statusB": [
+      "injured"
+    ]
+  },
+  {
+    "id": "rescue-1001",
+    "weight": 11,
+    "type": "rescue",
+    "actors": "pair",
+    "template": "{a}赶到{loc}时，{b}已半跪在血泊里。{a}拼着反噬压住伤势，天亮时{b}睁眼，嗓音发哑，却先抓住了那只不肯松的手。",
+    "statusB": [
+      "injured"
+    ]
+  },
+  {
+    "id": "rescue-1002",
+    "weight": 10,
+    "type": "rescue",
+    "actors": "pair",
+    "template": "魔兽退尽，{a}才敢在{loc}低头看{b}的伤。止血的布条勒得发白，{b}却笑了一下，说还好是你。",
+    "statusB": [
+      "injured"
+    ]
+  },
+  {
+    "id": "rescue-1003",
+    "weight": 10,
+    "type": "rescue",
+    "actors": "pair",
+    "template": "{a}在{loc}听见呼救，冲进烟尘时{b}灵力将溃。拖出来后两人倒地喘息，才发觉彼此还活着。",
+    "pairGenderNone": [
+      "fm"
+    ]
+  },
+  {
+    "id": "rescue-1004",
+    "weight": 9,
+    "type": "rescue",
+    "actors": "pair",
+    "template": "{a}在{loc}看见重伤的{b}，扑上去挡下一击。事后{b}骂他鲁莽，声音却发紧。",
+    "personalityA": [
+      "chicheng"
+    ],
+    "statusB": [
+      "injured"
+    ]
+  },
+  {
+    "id": "rescue-1005",
+    "weight": 9,
+    "type": "rescue",
+    "actors": "pair",
+    "template": "{a}表情没变地在{loc}救下{b}，话极少。可守到对方醒来时，袖口的血已经干透。",
+    "personalityA": [
+      "qingleng"
+    ],
+    "statusB": [
+      "injured"
+    ]
+  },
+  {
+    "id": "rescue-1006",
+    "weight": 9,
+    "type": "rescue",
+    "actors": "pair",
+    "template": "{a}在{loc}以身饲雷，硬生生把{b}从劫余余波里拽了出来。事后两人相对无言，只有未散的焦味。",
+    "statusB": [
+      "injured"
+    ]
+  },
+  {
+    "id": "rescue-1007",
+    "weight": 8,
+    "type": "rescue",
+    "actors": "pair",
+    "template": "{b}在{loc}遇伏，{a}赶到时刀已近喉。刃光偏开的一瞬，{b}看见的不是胜负，而是那双不肯退的眼睛。"
+  },
+  {
+    "id": "rescue-1008",
+    "weight": 8,
+    "type": "rescue",
+    "actors": "pair",
+    "template": "{a}在{loc}发现同门{b}重伤，喂药时手发颤。对方醒来，第一句却是别哭，把未落的泪又逼了回去。",
+    "statusB": [
+      "injured"
+    ]
+  },
+  {
+    "id": "rescue-tension-1930",
+    "weight": 13,
+    "type": "rescue",
+    "actors": "pair",
+    "template": "{a}在{loc}守到{b}醒来，想笑却笑不稳。{b}开口先问你有没有事，声音哑得厉害，手却先抓住了他的袖。",
+    "statusB": [
+      "injured"
+    ]
+  },
+  {
+    "id": "rescue-tension-1931",
+    "weight": 12,
+    "type": "rescue",
+    "actors": "pair",
+    "template": "在{loc}，血止住后，{a}才敢低头看{b}。对方睫毛湿着，偏还要逞强说没事。他没揭穿，只把温巾又拧紧了些。",
+    "statusB": [
+      "injured"
+    ]
+  },
+  {
+    "id": "rescue-fm-soft-1",
+    "weight": 14,
+    "type": "rescue",
+    "actors": "pair",
+    "template": "{a}在{loc}扶起受伤的{b}，动作很轻，像怕碰痛他。守到他睁眼，她才松了口气，话却只剩「别再乱跑」。",
+    "pairGenderAny": [
+      "fm"
+    ]
+  },
+  {
+    "id": "rescue-mf-assert-1",
+    "weight": 14,
+    "type": "rescue",
+    "actors": "pair",
+    "template": "{a}在{loc}把重伤的{b}抱离险地，守到她醒来。她开口先问他有没有事，手却先抓住了他的袖。",
+    "pairGenderAny": [
+      "mf"
+    ]
+  }
+]

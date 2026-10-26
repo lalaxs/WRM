@@ -55,6 +55,7 @@
   const CANONICAL_ENEMY_STATUSES = Object.freeze({
     shock: true,
     slow: true,
+    binding: true,
     burn: true,
     poison: true,
     weaken: true
@@ -64,6 +65,9 @@
     shield: true,
     inspire: true,
     guard: true
+  });
+  const ENEMY_STATUS_ALIASES = Object.freeze({
+    binding: 'slow'
   });
 
   function own(value, key) {
@@ -90,9 +94,18 @@
 
   function probeModelCloneCapability(model) {
     if (typeof proxyDetector === 'function') return true;
-    if (typeof stateCloneProbe !== 'function') return false;
+    if (typeof stateCloneProbe === 'function') {
+      try {
+        stateCloneProbe(model);
+        return true;
+      } catch (error) {
+        /* fall through to JSON probe */
+      }
+    }
+    // 浏览器 structuredClone 失败（体积/类型）时不要直接判死；
+    // JSON 可克隆即可支撑装备页查询，避免整页空白。
     try {
-      stateCloneProbe(model);
+      JSON.parse(JSON.stringify(model));
       return true;
     } catch (error) {
       return false;
@@ -421,7 +434,10 @@
     }
     if (type === 'enemyHasStatus' || type === 'enemyMissingStatus') {
       if (!exactDataKeys(value, ['type', 'statusId'])) return null;
-      const statusId = dataValue(value, 'statusId');
+      let statusId = dataValue(value, 'statusId');
+      if (typeof statusId === 'string' && own(ENEMY_STATUS_ALIASES, statusId)) {
+        statusId = ENEMY_STATUS_ALIASES[statusId];
+      }
       return typeof statusId === 'string' &&
         statusId.trim().length > 0 &&
         own(CANONICAL_ENEMY_STATUSES, statusId)
@@ -533,7 +549,9 @@
   function validateInventory(inventory) {
     if (!plainRecord(inventory)) return false;
     const stacks = dataValue(inventory, 'stacks');
-    const bindings = dataValue(inventory, 'bindings');
+    const rawBindings = dataValue(inventory, 'bindings');
+    // 缺 bindings 视为空表，避免热路径浅合并后整页装备查询被判 invalid。
+    const bindings = typeof rawBindings === 'undefined' ? {} : rawBindings;
     const equipmentState = dataValue(inventory, 'equipment');
     const instances = plainRecord(equipmentState)
       ? strictArrayValues(dataValue(equipmentState, 'instances'))
@@ -553,7 +571,10 @@
     }
     const stackIds = Object.keys(stacks);
     for (let index = 0; index < stackIds.length; index++) {
-      if (!safeInteger(dataValue(stacks, stackIds[index]), 1)) return false;
+      const quantity = dataValue(stacks, stackIds[index]);
+      // 容忍历史/ensurePlayer 残留的 0 堆叠；非整数或负数仍视为坏档。
+      if (quantity === 0) continue;
+      if (!safeInteger(quantity, 1)) return false;
     }
     const boundIds = Object.keys(bindings);
     for (let index = 0; index < boundIds.length; index++) {
@@ -598,7 +619,9 @@
       : ['weapon', 'armor', 'accessory'];
     for (let index = 0; index < slotsToValidate.length; index++) {
       const slot = slotsToValidate[index];
-      const instanceId = dataValue(equipmentState, slot);
+      const rawInstanceId = dataValue(equipmentState, slot);
+      // 缺槽位键时按未穿戴处理；勿把 undefined 当成非法引用。
+      const instanceId = rawInstanceId === undefined ? null : rawInstanceId;
       if (instanceMode) {
         const instance = instanceId === null
           ? null

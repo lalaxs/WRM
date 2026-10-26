@@ -571,7 +571,10 @@
     }
     const stackIds = Object.keys(stacks);
     for (let index = 0; index < stackIds.length; index++) {
-      if (!safeInteger(dataValue(stacks, stackIds[index]), 1)) return false;
+      const quantity = dataValue(stacks, stackIds[index]);
+      // 容忍历史/ensurePlayer 残留的 0 堆叠；非整数或负数仍视为坏档。
+      if (quantity === 0) continue;
+      if (!safeInteger(quantity, 1)) return false;
     }
     const boundIds = Object.keys(bindings);
     for (let index = 0; index < boundIds.length; index++) {

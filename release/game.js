@@ -7,7 +7,7 @@ const runtimeRoot = typeof globalThis !== 'undefined' ? globalThis : this;
 // 云隐小师妹 · 角色创建流程 + 主界面骨架（TapTap H5 小游戏 · 原生 JS + Canvas2D）
 // 设计目标：验证「选部件 → 离屏合成 → 缓存位图 → 每帧只 blit」链路
 //            在浏览器 / TapTap H5 容器里都能跑，且帧率、内存可控。
-// 资源：NIE/ 占位素材（男 b_ / 女 g_），由 nie-manifest.js 提供清单。
+// 资源：NIE/boy、NIE/girl 捏脸素材，由 nie-manifest.js 提供清单。
 // 桥接层：所有平台能力走 Platform.*（platform.js，标准 Web API），禁止 tap.* / 沙箱 API。
 // ============================================================
 
@@ -16,32 +16,77 @@ const NIE = (typeof require !== 'undefined')
   ? require('./nie-manifest.js')
   : (typeof NIE_MANIFEST !== 'undefined' ? NIE_MANIFEST : null);
 
+const HairRules = (typeof require !== 'undefined')
+  ? require('./nie-hair-rules.js')
+  : (typeof NieHairRules !== 'undefined' ? NieHairRules : null);
+
 // 资源基址：真机为 ''（包内根目录）；浏览器垫片由 index.html 设为 '../'
 const ASSET_BASE = (typeof window !== 'undefined' && window.NIE_ASSET_BASE)
   ? window.NIE_ASSET_BASE : '';
 
 // 部件类别 + 合成 z 序（从底到顶，决定叠图先后）
-const CATS = ['body', 'cloth', 'nose', 'mouth', 'eyes', 'eyebrush', 'hair'];
+const CATS = [
+  'hair_hou', 'cloth', 'body', 'mouth', 'nose', 'eyes', 'hair_qian', 'deco'
+];
 const CAT_LABEL = {
-  body: '身体', cloth: '衣服', nose: '鼻子', mouth: '嘴',
-  eyes: '眼睛', eyebrush: '眉眼', hair: '头发'
+  hair_hou: '后发', cloth: '衣服', body: '脸型', mouth: '嘴',
+  nose: '鼻子', eyes: '眼睛', hair_qian: '前发', deco: '装饰'
 };
 
-function normalizeParts(raw) {
+function migrateLegacyParts(raw) {
   const source = raw && typeof raw === 'object' && !Array.isArray(raw)
-    ? raw
+    ? Object.assign({}, raw)
     : {};
+  if (Object.prototype.hasOwnProperty.call(source, 'hair') &&
+      !Object.prototype.hasOwnProperty.call(source, 'hair_hou')) {
+    source.hair_hou = source.hair;
+    source.hair_qian = source.hair;
+  }
+  delete source.eyebrush;
+  delete source.hair;
+  return source;
+}
+
+function normalizeParts(raw, gender) {
+  const g = gender === 'b' ? 'b' : 'g';
+  const source = migrateLegacyParts(raw);
+  const catalog = NIE && NIE[g] ? NIE[g] : null;
   const normalized = {};
   for (const cat of CATS) {
-    const list = NIE && NIE.g && Array.isArray(NIE.g[cat]) ? NIE.g[cat] : [];
+    const list = catalog && Array.isArray(catalog[cat]) ? catalog[cat] : [];
     const numeric = Number(source[cat]);
     const index = Number.isFinite(numeric) ? Math.floor(numeric) : 0;
-    normalized[cat] = index >= 0 && index < list.length ? index : 0;
+    normalized[cat] = list.length > 0
+      ? (index >= 0 && index < list.length ? index : 0)
+      : 0;
+  }
+  if (HairRules && typeof HairRules.normalizeHairParts === 'function') {
+    return HairRules.normalizeHairParts(g, normalized);
   }
   return normalized;
 }
 
-// 0.5 主题配色（浅紫 · 少女心 · 浅色调，写死 HEX，全游戏引用）
+function appearanceIndices() {
+  const indices = normalizeParts(state.parts, state.gender);
+  if (HairRules && typeof HairRules.styleIndex === 'function') {
+    indices.hair_style = HairRules.styleIndex(state.gender, indices);
+  }
+  return indices;
+}
+
+function appearanceCounts() {
+  const gender = state.gender === 'b' ? 'b' : 'g';
+  const catalog = NIE && NIE[gender] ? NIE[gender] : null;
+  const counts = {};
+  for (let index = 0; index < CATS.length; index++) {
+    const cat = CATS[index];
+    const list = catalog && Array.isArray(catalog[cat]) ? catalog[cat] : [];
+    counts[cat] = list.length;
+  }
+  return counts;
+}
+
+// 0.5 主题配色
 // 改色只需动这里一处。详见《云隐小师妹_美术UI规范.md》。
 // 背景天空渐变 —— 单一真相取自 styles.css 的 --sky-top / --sky-bottom，
 // 与 DOM UI 的 :root 调色板同源，避免"双调色板"色差。
@@ -297,7 +342,10 @@ if (missingStage5Globals.length > 0) {
 // 2. 游戏状态
 const state = {
   gender: 'g',                       // 玩家恒为女；'b' 男性仅供 NPC 自动生成
-  parts: { body: 0, cloth: 0, eyebrush: 0, eyes: 0, hair: 0, mouth: 0, nose: 0 },
+  parts: {
+    hair_hou: 0, cloth: 0, body: 0, mouth: 0,
+    nose: 0, eyes: 0, hair_qian: 0, deco: 0
+  },
   navIndex: 0,                       // 左侧导航选中项（0 = 洞府）
   phase: 'create',                   // 'create' 创建角色 | 'game' 主游戏 | 'edit' 编辑形象 | 'lunhui' 轮回结算
   created: false,                    // 是否已完成首次创建（写入 cloud_save_v1 快照）
@@ -306,6 +354,8 @@ const state = {
   cache: null,                       // 合成后的缓存位图（离屏画布）
   current: null,                     // 当前动作（梅尔沃式·一次只做一件事）：{key,count,done,elapsed}
   showOffline: false,                // 是否弹出离线收益面板
+  settlingOffline: false,            // 启动离线结算进行中（先出壳再结算）
+  _offlineSettleProgress: null,      // { fromMs, currentMs, toMs } 结算进度（仅运行时）
   offlineResult: null,              // 离线收益结算结果
   pendingOfflineReports: [],        // v2 完整待领取报告；Task 6 接管展示前不得丢失
   offlineLimitSeconds: 43200,
@@ -692,21 +742,49 @@ const ICON_TINT = {
 
 // 3. 图片懒加载缓存（按需加载，不一次解码全部 153 张 → 守 iOS 内存红线）
 const imgCache = {};
-function assetRel(g, c, i) {
-  const list = NIE[g][c];
-  const name = list[i] || list[0];
-  if (c === 'body') return 'NIE/' + name;            // 身体在根目录：NIE/b_body.png
-  return 'NIE/' + g + '_' + c + '/' + name;        // 其余在子目录：NIE/b_cloth/b_cloth_1.png
+function nieAssetFolder(g) {
+  return g === 'b' ? 'boy' : 'girl';
 }
-function assetPath(g, c, i) { return ASSET_BASE + assetRel(g, c, i); }
+
+function assetRel(g, c, i) {
+  const catalog = NIE && NIE[g] ? NIE[g] : null;
+  const list = catalog && Array.isArray(catalog[c]) ? catalog[c] : [];
+  if (!list.length) return null;
+  const name = list[i] || list[0];
+  if (!name) return null;
+  return 'NIE/' + nieAssetFolder(g) + '/' + name;
+}
+
+function assetPath(g, c, i) {
+  const rel = assetRel(g, c, i);
+  if (!rel) return '';
+  const segments = rel.split('/');
+  const fileName = segments.pop();
+  return ASSET_BASE + segments.join('/') + '/' + encodeURIComponent(fileName);
+}
 function loadImg(g, c, i) {
   const key = g + '/' + c + '/' + i;
   if (imgCache[key]) return imgCache[key];
+  const src = assetPath(g, c, i);
+  if (!src) return null;
   const img = Platform.createImage();
   img._ready = false;
   img.onload = () => {
     img._ready = true;
-    state.dirty = true;          // ← 任何图片加载完成 → 自动重复合成预览
+    // 仅当加载的是玩家当前装备部件时才脏化玩家合成；
+    // NPC 立绘共用 loadImg，否则会在批量加载时每帧触发全量合成卡顿。
+    if (state.gender === g &&
+        state.parts &&
+        Number(state.parts[c]) === Number(i)) {
+      state.dirty = true;
+      try {
+        if (typeof XiuxianUi !== 'undefined' &&
+            XiuxianUi &&
+            XiuxianUi.shell) {
+          XiuxianUi.shell._avatarDirty = true;
+        }
+      } catch (error) { /* ignore */ }
+    }
   };
   img.onerror = () => { console.warn('[捏脸] 加载失败:', assetPath(g, c, i)); };
   img.src = assetPath(g, c, i);
@@ -726,6 +804,8 @@ function composite() {
   ensureOff();
   offCtx.clearRect(0, 0, 300, 300);
   for (const c of CATS) {
+    const list = NIE[state.gender][c];
+    if (!Array.isArray(list) || list.length === 0) continue;
     const i = state.parts[c];
     const img = loadImg(state.gender, c, i);
     if (img && (img._ready || img.complete)) {
@@ -758,11 +838,24 @@ function randomNieParts(seedText, genderId) {
   const parts = {};
   let cursor = hashSeed(seedText + ':' + gender);
   CATS.forEach(function (cat) {
+    if (cat === 'hair_hou' || cat === 'hair_qian') return;
     const list = catalog && Array.isArray(catalog[cat]) ? catalog[cat] : [];
     const count = Math.max(1, list.length || 1);
     cursor = (Math.imul(cursor, 1664525) + 1013904223) >>> 0;
     parts[cat] = cursor % count;
   });
+  parts.hair_hou = 0;
+  parts.hair_qian = 0;
+  if (HairRules && typeof HairRules.randomStyleIndex === 'function') {
+    cursor = (Math.imul(cursor, 1664525) + 1013904223) >>> 0;
+    const styled = HairRules.applyStyleIndex(
+      gender,
+      parts,
+      HairRules.randomStyleIndex(gender, cursor)
+    );
+    parts.hair_hou = styled.hair_hou;
+    parts.hair_qian = styled.hair_qian;
+  }
   return { gender: gender, parts: parts };
 }
 
@@ -812,8 +905,12 @@ function drawCharacterAppearance(targetCanvas, appearance, options) {
     if (!scratchCtx) return false;
     scratchCtx.clearRect(0, 0, 300, 300);
     let painted = 0;
+    let expected = 0;
     for (let index = 0; index < CATS.length; index++) {
       const cat = CATS[index];
+      const list = NIE[gender] && NIE[gender][cat];
+      if (!Array.isArray(list) || list.length === 0) continue;
+      expected++;
       const partIndex = Number.isFinite(parts[cat]) ? parts[cat] : 0;
       const img = loadImg(gender, cat, partIndex);
       if (img && (img._ready || img.complete)) {
@@ -822,14 +919,15 @@ function drawCharacterAppearance(targetCanvas, appearance, options) {
       }
     }
     if (!painted) return false;
-    complete = painted === CATS.length;
+    complete = painted === expected;
     if (complete) rememberNiePortrait(cacheKey, scratch);
   }
   const target = targetCanvas.getContext('2d');
   if (!target) return false;
   const targetDpr = typeof window !== 'undefined' &&
     Number.isFinite(Number(window.devicePixelRatio))
-    ? Math.max(1, Number(window.devicePixelRatio))
+    // 高 DPR 手机上 3x 立绘绘制成本过高；2x 观感足够。
+    ? Math.max(1, Math.min(2, Number(window.devicePixelRatio)))
     : 1;
   const hintedWidth = options && Number(options.cssWidth);
   const hintedHeight = options && Number(options.cssHeight);
@@ -884,7 +982,8 @@ function drawCharacter(targetCanvas) {
   if (!target) return false;
   const targetDpr = typeof window !== 'undefined' &&
     Number.isFinite(Number(window.devicePixelRatio))
-    ? Math.max(1, Number(window.devicePixelRatio))
+    // 高 DPR 手机上 3x 立绘绘制成本过高；2x 观感足够。
+    ? Math.max(1, Math.min(2, Number(window.devicePixelRatio)))
     : 1;
   const cssWidth = Math.max(
     1,
@@ -1003,6 +1102,16 @@ function ensurePlayer(p) {
         r.inventory = Object.assign({}, p.inventory, {
           stacks: Object.assign({}, d.inventory.stacks, incoming)
         });
+        if (!r.inventory.bindings || typeof r.inventory.bindings !== 'object') {
+          r.inventory.bindings = {};
+        }
+        if (!r.inventory.equipment || typeof r.inventory.equipment !== 'object') {
+          r.inventory.equipment = { instances: [] };
+        } else if (!Array.isArray(r.inventory.equipment.instances)) {
+          r.inventory.equipment = Object.assign({}, r.inventory.equipment, {
+            instances: []
+          });
+        }
       } else r[k] = p[k];
     }
   }
@@ -1341,23 +1450,118 @@ function setCurrent(key, count) {
   return result.ok;
 }
 
-function simulateModel(model, fromMs, toMs, source, mainActionLimitSeconds) {
+function simulateModel(
+  model,
+  fromMs,
+  toMs,
+  source,
+  mainActionLimitSeconds,
+  options
+) {
   const elapsedSeconds = Math.max(0, (toMs - fromMs) / 1000);
   const monthCap = stage4Bootstrap &&
     stage4Bootstrap.WorldMonth &&
     Number.isFinite(stage4Bootstrap.WorldMonth.OFFLINE_MONTH_CAP)
     ? stage4Bootstrap.WorldMonth.OFFLINE_MONTH_CAP
-    : 500;
+    : 48;
+  const extra = options && typeof options === 'object' ? options : {};
   const result = Simulation.advance(model, elapsedSeconds, {
     source,
     fromMs,
     mainActionLimitSeconds,
     offlineMonthCap: source === 'offline' ? monthCap : null,
+    timeBudgetMs: extra.timeBudgetMs,
+    mutateInPlace: extra.mutateInPlace === true,
     rules: simulationRuntime.rules,
     lanes: simulationRuntime.lanes
   });
-  result.state.processedThroughMs = toMs;
+  const advancedTo = result.done
+    ? toMs
+    : (
+      result.report && Number.isFinite(result.report.toMs)
+        ? result.report.toMs
+        : fromMs
+    );
+  result.state.processedThroughMs = advancedTo;
   return result;
+}
+
+// 性能采样：URL 带 ?perf=1 时每 5s 打一次 advance/ui/frame 均值。
+const PerfStats = (function () {
+  let enabled = false;
+  try {
+    enabled = typeof location !== 'undefined' &&
+      /(?:\?|&)perf=1(?:&|$)/.test(String(location.search || ''));
+  } catch (error) {
+    enabled = false;
+  }
+  const buckets = {
+    advance: [],
+    ui: [],
+    frame: []
+  };
+  function sample(name, ms) {
+    if (!enabled) return;
+    const list = buckets[name];
+    if (!list) return;
+    const value = Number(ms);
+    if (!Number.isFinite(value) || value < 0) return;
+    list.push(value);
+    if (list.length > 180) list.shift();
+  }
+  function avg(list) {
+    if (!list.length) return 0;
+    let sum = 0;
+    for (let i = 0; i < list.length; i++) sum += list[i];
+    return sum / list.length;
+  }
+  function report() {
+    return {
+      advanceMs: Math.round(avg(buckets.advance) * 10) / 10,
+      uiMs: Math.round(avg(buckets.ui) * 10) / 10,
+      frameMs: Math.round(avg(buckets.frame) * 10) / 10,
+      samples: {
+        advance: buckets.advance.length,
+        ui: buckets.ui.length,
+        frame: buckets.frame.length
+      }
+    };
+  }
+  if (enabled && typeof setInterval === 'function') {
+    setInterval(function () {
+      console.log('[perf]', report());
+    }, 5000);
+  }
+  return {
+    enabled: enabled,
+    sample: sample,
+    report: report
+  };
+})();
+
+function recoverRuntimeFromLastSave(nowMs) {
+  try {
+    if (typeof SaveSystem === 'undefined' ||
+        !SaveSystem ||
+        typeof SaveSystem.load !== 'function') {
+      return false;
+    }
+    const now = Number.isFinite(nowMs) ? Math.max(0, Math.floor(nowMs)) : Date.now();
+    const loaded = SaveSystem.load(Platform, now);
+    const snapshot = loaded && loaded.snapshot;
+    if (!snapshot) return false;
+    const model = StateModel.normalize(snapshot, now);
+    if (!model || !model.player) return false;
+    applyModelToRuntime(model);
+    state._last = now;
+    return true;
+  } catch (error) {
+    console.error(
+      '[recoverRuntimeFromLastSave]',
+      error && error.stack ? error.stack : error
+    );
+    return false;
+  }
 }
 
 function advanceRuntime(fromMs, toMs, source, mainActionLimitSeconds) {
@@ -1368,20 +1572,59 @@ function advanceRuntime(fromMs, toMs, source, mainActionLimitSeconds) {
   const prevStatus = state.player && state.player.lifecycle
     ? state.player.lifecycle.status
     : null;
-  // 在线热路径：queryView 免去每帧 normalize+snapshot；Simulation.advance 入口会再隔离拷贝。
+  // 在线热路径：queryView（共享嵌套引用）+ Simulation mutateInPlace + apply inplace。
   // 离线/重载仍走 fromRuntime，保证落盘边界干净。
-  const model = source === 'online' &&
-    typeof StateModel.queryView === 'function'
+  const onlineInPlace = source === 'online' &&
+    typeof StateModel.queryView === 'function';
+  const model = onlineInPlace
     ? StateModel.queryView(state /* runtime */, fromMs)
     : StateModel.fromRuntime(state /* runtime */, fromMs);
-  const result = simulateModel(
-    model,
-    fromMs,
-    toMs,
-    source,
-    mainActionLimitSeconds
-  );
-  StateModel.applyToRuntime(state /* runtime */, result.state);
+  let result = null;
+  const advanceStarted = PerfStats.enabled ? Date.now() : 0;
+  try {
+    result = simulateModel(
+      model,
+      fromMs,
+      toMs,
+      source,
+      mainActionLimitSeconds,
+      onlineInPlace ? { mutateInPlace: true } : null
+    );
+  } catch (error) {
+    console.error(
+      '[advanceRuntime]',
+      error && error.stack ? error.stack : error
+    );
+    // 原地推进失败后 runtime 可能半脏：尽量从最近成功存档回滚。
+    if (onlineInPlace) {
+      const recovered = recoverRuntimeFromLastSave(toMs);
+      if (!recovered && typeof setPersistenceIssue === 'function') {
+        setPersistenceIssue({
+          kind: 'repair',
+          message: '模拟异常，请重试存档或刷新页面',
+          now: toMs
+        });
+      }
+    }
+    if (PerfStats.enabled) {
+      PerfStats.sample('advance', Date.now() - advanceStarted);
+    }
+    return null;
+  }
+  // 在线：信任 Simulation 输出，跳过 apply 时的 Stage4 全量 normalize。
+  // 离线结算仍走完整 normalize，保证落盘前形态干净。
+  if (typeof StateModel.applyToRuntime === 'function') {
+    StateModel.applyToRuntime(
+      state /* runtime */,
+      result.state,
+      onlineInPlace
+        ? { trustedSimulation: true, inplace: true }
+        : (source === 'online' ? { trustedSimulation: true } : null)
+    );
+  } else {
+    StateModel.applyToRuntime(state /* runtime */, result.state);
+  }
+  invalidateQueryModelCache();
   state._lastSimulationReport = result.report;
   // 边缘触发：生命周期状态「进入安全缓冲」时弹一次提示（不每帧弹）
   const newStatus = state.player && state.player.lifecycle
@@ -1391,6 +1634,9 @@ function advanceRuntime(fromMs, toMs, source, mainActionLimitSeconds) {
       newStatus === 'safety_buffer' &&
       !state.showLifespanBuffer) {
     state.showLifespanBuffer = true;
+  }
+  if (PerfStats.enabled) {
+    PerfStats.sample('advance', Date.now() - advanceStarted);
   }
   return result.report;
 }
@@ -1547,10 +1793,19 @@ function tryBreakthrough() {
 }
 
 function isPersistenceLocked() {
-  return !!state._persistenceIssue;
+  return !!state._persistenceIssue || !!state.settlingOffline;
 }
 
 function getPersistenceStatus() {
+  if (state.settlingOffline) {
+    return {
+      locked: true,
+      kind: 'settle',
+      message: '正在结算离线收益…',
+      error: null,
+      canRetry: false
+    };
+  }
   const issue = state._persistenceIssue;
   if (!issue) {
     return {
@@ -1582,6 +1837,16 @@ function clearPersistenceIssue() {
 }
 
 function runtimeModelAt() {
+  // 命令/自动存档热路径：只深拷贝，不在此处 Stage4 全量 normalize。
+  // 完整 normalize 留给 persistModel → toSnapshotInput（存档边界）。
+  if (typeof StateModel.captureRuntime === 'function') {
+    return StateModel.captureRuntime(
+      state /* runtime */,
+      Number.isFinite(state.processedThroughMs)
+        ? state.processedThroughMs
+        : Date.now()
+    );
+  }
   return StateModel.fromRuntime(
     state /* runtime */,
     Number.isFinite(state.processedThroughMs)
@@ -1709,11 +1974,12 @@ const persistenceRecovery = (function () {
       : Number.isFinite(descriptor.now)
         ? descriptor.now
       : candidate.processedThroughMs;
-    if (!persistModel(candidate, saveAt)) return false;
+    const saved = persistModel(candidate, saveAt);
+    if (!saved) return false;
 
     held = null;
     clearPersistenceIssue();
-    applyModelToRuntime(candidate);
+    applyModelToRuntime(saved, { trustedSimulation: true });
     state._lastSimulationReport = report || state._lastSimulationReport;
     state._last = Date.now();
     state._hiddenAt = null;
@@ -1782,7 +2048,8 @@ function persistCurrentModel(now) {
   candidate.processedThroughMs = watermark; // 修复离线结算：保存时把结算水位线对齐到当前真实时间，避免刷新/关闭后把在线时段误算成离线
   const saved = persistModel(candidate, watermark);
   if (saved) {
-    applyModelToRuntime(candidate);
+    // saved 已是 toSnapshotInput 规范化结果，写回时跳过二次 normalize。
+    applyModelToRuntime(saved, { trustedSimulation: true });
     return true;
   }
   persistenceRecovery.hold({
@@ -1843,14 +2110,9 @@ function stage2QueryModel() {
     queryModelFrameId = queryModelRenderFrame;
     return queryModelTTLCache;
   }
-  // Combat loadout queries require a full cloneable model. queryView is a
-  // hot-path projection that can omit/reshape fields CombatLoadouts rejects
-  // while a session is active — prefer fromRuntime in that window.
-  const combatSessionActive = !!(state.systems &&
-    state.systems.combat &&
-    state.systems.combat.session);
-  const model = (!combatSessionActive &&
-      typeof StateModel.queryView === 'function')
+  // Combat loadouts 严检若拒收 queryView，由 queryCombatLoadouts 单次回退 fromRuntime；
+  // 战斗热路径禁止每帧全量 normalize。
+  const model = typeof StateModel.queryView === 'function'
     ? StateModel.queryView(state, state.processedThroughMs)
     : StateModel.fromRuntime(state, state.processedThroughMs);
   queryModelFrameCache = model;
@@ -1860,23 +2122,33 @@ function stage2QueryModel() {
   return model;
 }
 
-function applyModelToRuntime(model) {
+function applyModelToRuntime(model, options) {
   invalidateQueryModelCache();
-  StateModel.applyToRuntime(state /* runtime */, model);
+  StateModel.applyToRuntime(state /* runtime */, model, options || null);
   state.parts = normalizeParts(
-    model.appearance && model.appearance.parts
+    model.appearance && model.appearance.parts,
+    state.gender
   );
   state.player = state.player ? ensurePlayer(state.player) : null;
   state.offlineResult = null;
-  state.showOffline = state.pendingOfflineReports.length > 0;
+  state.showOffline = typeof SimulationReport !== 'undefined' &&
+    SimulationReport &&
+    typeof SimulationReport.isMeaningfulOfflineReports === 'function'
+    ? SimulationReport.isMeaningfulOfflineReports(state.pendingOfflineReports)
+    : state.pendingOfflineReports.length > 0;
 }
 
 function persistModel(model, nowMs) {
-  return SaveSystem.save(
-    Platform,
-    StateModel.toSnapshotInput(model),
-    nowMs
-  ) === true;
+  // 存档边界：唯一必做的全量 normalize。成功时返回规范化快照供写回 runtime。
+  try {
+    const snapshot = StateModel.toSnapshotInput(model);
+    if (SaveSystem.save(Platform, snapshot, nowMs) !== true) {
+      return null;
+    }
+    return snapshot;
+  } catch (error) {
+    return null;
+  }
 }
 
 function normalizeStartupModel(snapshot, now) {
@@ -1965,7 +2237,8 @@ function snapshotNeedsCombatRuntime(snapshot) {
 function settleStartupOffline(snapshot, nowMs) {
   const now = Math.max(0, Math.floor(Number(nowMs) || 0));
   const model = normalizeStartupModel(snapshot, now);
-  if (isPersistenceLocked()) {
+  // 仅真实存档故障才跳过；settlingOffline 锁不能挡住本函数本身。
+  if (state._persistenceIssue) {
     return {
       ok: false,
       snapshot: cloneRuntimeState(snapshot),
@@ -2000,12 +2273,17 @@ function settleStartupOffline(snapshot, nowMs) {
     report.warnings.push('clock_rollback');
     candidate = StateModel.normalize(model, now);
     candidate.processedThroughMs = model.processedThroughMs;
-    candidate.pendingOfflineReports = SimulationReport.addPending(
-      model.pendingOfflineReports,
-      report
-    );
-    newReports.push(report);
-    if (!persistModel(candidate, now)) {
+    if (SimulationReport.isMeaningfulOfflineReport(report)) {
+      candidate.pendingOfflineReports = SimulationReport.addPending(
+        model.pendingOfflineReports,
+        report
+      );
+      newReports.push(report);
+    } else {
+      candidate.pendingOfflineReports = model.pendingOfflineReports || [];
+    }
+    const savedRollback = persistModel(candidate, now);
+    if (!savedRollback) {
       applyModelToRuntime(model);
       persistenceRecovery.hold({
         kind: 'offline',
@@ -2026,6 +2304,7 @@ function settleStartupOffline(snapshot, nowMs) {
         newReports: []
       };
     }
+    candidate = savedRollback;
     didPersist = true;
   } else if (now - from >= MIN_OFFLINE_SETTLE_MS) {
     const limit = model.systems &&
@@ -2034,13 +2313,18 @@ function settleStartupOffline(snapshot, nowMs) {
       : (model.offlineLimitSeconds || 43200);
     const result = simulateModel(model, from, now, 'offline', limit);
     report = result.report;
-    result.state.pendingOfflineReports = SimulationReport.addPending(
-      model.pendingOfflineReports,
-      report
-    );
     candidate = result.state;
-    newReports.push(report);
-    if (!persistModel(candidate, now)) {
+    if (SimulationReport.isMeaningfulOfflineReport(report)) {
+      candidate.pendingOfflineReports = SimulationReport.addPending(
+        model.pendingOfflineReports,
+        report
+      );
+      newReports.push(report);
+    } else {
+      candidate.pendingOfflineReports = model.pendingOfflineReports || [];
+    }
+    const savedOffline = persistModel(candidate, now);
+    if (!savedOffline) {
       applyModelToRuntime(model);
       persistenceRecovery.hold({
         kind: 'offline',
@@ -2055,7 +2339,9 @@ function settleStartupOffline(snapshot, nowMs) {
         candidateSummary: {
           processedThroughMs: result.state.processedThroughMs,
           rngState: result.state.rngState,
-          pendingReportCount: result.state.pendingOfflineReports.length
+          pendingReportCount: (
+            result.state.pendingOfflineReports || []
+          ).length
         }
       });
       toast('离线收益保存失败，请重试');
@@ -2067,25 +2353,317 @@ function settleStartupOffline(snapshot, nowMs) {
         newReports: []
       };
     }
+    candidate = savedOffline;
     didPersist = true;
   }
 
-  applyModelToRuntime(candidate);
+  applyModelToRuntime(
+    candidate,
+    didPersist ? { trustedSimulation: true } : null
+  );
   state._lastSimulationReport = report;
   state._offlineSec = Math.max(0, (now - from) / 1000);
-  const savedSnapshot = didPersist
-    ? SaveSystem.load(Platform, now).snapshot
-    : SaveSystem.createSnapshot(
+  state._offlineSettleProgress = null;
+  if (didPersist) {
+    const savedSnapshot = SaveSystem.load(Platform, now).snapshot;
+    return {
+      ok: true,
+      snapshot: savedSnapshot,
+      state: StateModel.normalize(savedSnapshot, now),
+      report,
+      newReports
+    };
+  }
+  // 未落盘时优先走 createSnapshot；测试 harness 缺 Stage4 时回退为候选快照。
+  try {
+    const savedSnapshot = SaveSystem.createSnapshot(
       StateModel.toSnapshotInput(candidate),
       now
     );
-  return {
-    ok: true,
-    snapshot: savedSnapshot,
-    state: StateModel.normalize(savedSnapshot, now),
-    report,
-    newReports
+    return {
+      ok: true,
+      snapshot: savedSnapshot,
+      state: StateModel.normalize(savedSnapshot, now),
+      report,
+      newReports
+    };
+  } catch (error) {
+    return {
+      ok: true,
+      snapshot: StateModel.toSnapshotInput(candidate),
+      state: candidate,
+      report,
+      newReports
+    };
+  }
+}
+
+function offlineLimitFromModel(model) {
+  if (model && model.systems &&
+      Number.isFinite(model.systems.offlineLimitSeconds)) {
+    return model.systems.offlineLimitSeconds;
+  }
+  return model && Number.isFinite(model.offlineLimitSeconds)
+    ? model.offlineLimitSeconds
+    : 43200;
+}
+
+function formatOfflineSettleProgress(progress) {
+  if (!progress) return '正在结算离线收益，请稍候…';
+  const from = Number(progress.fromMs) || 0;
+  const to = Number(progress.toMs) || 0;
+  const current = Number(progress.currentMs) || from;
+  const total = Math.max(0, to - from);
+  if (!(total > 0)) return '正在结算离线收益，请稍候…';
+  const done = Math.max(0, Math.min(total, current - from));
+  const pct = Math.max(0, Math.min(100, Math.floor((done / total) * 100)));
+  return '正在结算离线收益… ' + pct + '%';
+}
+
+function finishChunkedOfflineSettle(job) {
+  const now = job.now;
+  const from = job.from;
+  let candidate = job.model;
+  const reports = Array.isArray(job.reports) ? job.reports : [];
+  const meaningful = reports.filter(SimulationReport.isMeaningfulOfflineReport);
+  const report = meaningful.length
+    ? meaningful[meaningful.length - 1]
+    : (reports.length ? reports[reports.length - 1] : null);
+  if (meaningful.length) {
+    let pending = job.basePending || [];
+    meaningful.forEach(function (item) {
+      pending = SimulationReport.addPending(pending, item);
+    });
+    candidate.pendingOfflineReports = pending;
+  } else {
+    candidate.pendingOfflineReports = job.basePending || [];
+  }
+  const savedOffline = persistModel(candidate, now);
+  if (!savedOffline) {
+    applyModelToRuntime(job.baseModel);
+    persistenceRecovery.hold({
+      kind: 'offline',
+      message: '离线收益保存失败，请重试',
+      savedAt: from,
+      now,
+      fromMs: from,
+      toMs: now,
+      source: 'offline',
+      mainActionLimitSeconds: job.limit,
+      baseModel: job.baseModel,
+      candidateSummary: {
+        processedThroughMs: candidate.processedThroughMs,
+        rngState: candidate.rngState,
+        pendingReportCount: (candidate.pendingOfflineReports || []).length
+      }
+    });
+    toast('离线收益保存失败，请重试');
+    state._offlineSettleJob = null;
+    state._offlineSettleProgress = null;
+    return false;
+  }
+  applyModelToRuntime(savedOffline, { trustedSimulation: true });
+  state._lastSimulationReport = report;
+  state._offlineSec = Math.max(0, (now - from) / 1000);
+  state._offlineSettleJob = null;
+  state._offlineSettleProgress = null;
+  return true;
+}
+
+function abortChunkedOfflineSettle(job, error) {
+  console.error(
+    '[offlineSettle]',
+    error && error.stack ? error.stack : error
+  );
+  try {
+    if (job && job.baseModel) {
+      applyModelToRuntime(job.baseModel);
+    }
+  } catch (restoreError) {
+    console.error(
+      '[offlineSettle] restore failed',
+      restoreError && restoreError.stack ? restoreError.stack : restoreError
+    );
+  }
+  state._offlineSettleJob = null;
+  state._offlineSettleProgress = null;
+  state.settlingOffline = false;
+  if (typeof toast === 'function') {
+    toast('离线结算失败，已恢复结算前状态');
+  }
+  return true;
+}
+
+function stepChunkedOfflineSettle() {
+  const job = state._offlineSettleJob;
+  if (!job) return true;
+  const cursor = job.cursorMs;
+  const now = job.now;
+  if (!(cursor < now)) {
+    return finishChunkedOfflineSettle(job);
+  }
+  // 每片最多推进一段游戏时间，并用墙钟预算打断，保证结算中弹窗可刷新。
+  const CHUNK_GAME_MS = 10 * 60 * 1000;
+  const TIME_BUDGET_MS = 32;
+  const sliceEnd = Math.min(now, cursor + CHUNK_GAME_MS);
+  let result = null;
+  try {
+    result = simulateModel(
+      job.model,
+      cursor,
+      sliceEnd,
+      'offline',
+      job.mainLimitLeft,
+      // job.model 已是独立工作副本；片间原地推进，避免每片双倍整树拷贝。
+      { timeBudgetMs: TIME_BUDGET_MS, mutateInPlace: true }
+    );
+  } catch (error) {
+    return abortChunkedOfflineSettle(job, error);
+  }
+  job.model = result.state;
+  let advancedTo = Number.isFinite(result.state.processedThroughMs)
+    ? result.state.processedThroughMs
+    : cursor;
+  // 单片零推进（极端卡顿）：去掉时间片预算强制跑完本片，避免跳过游戏逻辑。
+  if (advancedTo <= cursor && sliceEnd > cursor) {
+    let forced = null;
+    try {
+      forced = simulateModel(
+        job.model,
+        cursor,
+        sliceEnd,
+        'offline',
+        job.mainLimitLeft,
+        { mutateInPlace: true }
+      );
+    } catch (error) {
+      return abortChunkedOfflineSettle(job, error);
+    }
+    job.model = forced.state;
+    advancedTo = Number.isFinite(forced.state.processedThroughMs)
+      ? forced.state.processedThroughMs
+      : sliceEnd;
+    if (forced.report) {
+      job.reports.push(forced.report);
+      const used = Number(forced.report.mainActionSeconds) || 0;
+      job.mainLimitLeft = Math.max(0, job.mainLimitLeft - used);
+    }
+  } else if (result.report) {
+    job.reports.push(result.report);
+    const used = Number(result.report.mainActionSeconds) || 0;
+    job.mainLimitLeft = Math.max(0, job.mainLimitLeft - used);
+  }
+  job.cursorMs = Math.max(cursor, advancedTo);
+  state._offlineSettleProgress = {
+    fromMs: job.from,
+    currentMs: job.cursorMs,
+    toMs: job.now
   };
+  // 结算中不必每片触发玩家立绘重合成。
+  if (job.cursorMs >= job.now) {
+    return finishChunkedOfflineSettle(job);
+  }
+  return false;
+}
+
+function startupNeedsOfflineSettle(snapshot, nowMs) {
+  const now = Math.max(0, Math.floor(Number(nowMs) || 0));
+  if (state._persistenceIssue) return false;
+  const model = normalizeStartupModel(snapshot, now);
+  if (!model.player) return false;
+  const rawThrough = Number.isFinite(model.processedThroughMs)
+    ? model.processedThroughMs
+    : 0;
+  if (rawThrough > now) return true;
+  const from = sanitizeOfflineFromMs(model, now);
+  return now - from >= MIN_OFFLINE_SETTLE_MS;
+}
+
+// 长离线结算可能数百毫秒～数十秒：先出游戏壳与「结算中」提示，再分帧追算，
+// 避免启动期长时间白屏。短间隔（<1 分钟）仍同步走完，无感知。
+function scheduleStartupOfflineSettle(snapshot, nowMs) {
+  const now = Math.max(0, Math.floor(Number(nowMs) || 0));
+  const harness = !!(runtimeRoot &&
+    runtimeRoot.__GAME_TEST_HARNESS_REQUEST__ === true);
+  // 测试桩常把 rAF/setTimeout 做成空函数；若仍走延迟路径，settlingOffline 会永久卡死。
+  if (harness || !startupNeedsOfflineSettle(snapshot, now)) {
+    settleStartupOffline(snapshot, now);
+    return;
+  }
+  const model = normalizeStartupModel(snapshot, now);
+  if (state._persistenceIssue || !model.player) {
+    settleStartupOffline(snapshot, now);
+    return;
+  }
+  const rawThrough = Number.isFinite(model.processedThroughMs)
+    ? model.processedThroughMs
+    : 0;
+  if (rawThrough > now) {
+    // 时钟回拨路径短且需立刻落盘，仍同步处理。
+    settleStartupOffline(snapshot, now);
+    return;
+  }
+  const from = sanitizeOfflineFromMs(model, now);
+  if (rawThrough !== from) {
+    model.processedThroughMs = from;
+  }
+  const limit = offlineLimitFromModel(model);
+  state.settlingOffline = true;
+  state._offlineSettleProgress = {
+    fromMs: from,
+    currentMs: from,
+    toMs: now
+  };
+  state._offlineSettleJob = {
+    model: model,
+    baseModel: cloneRuntimeState(model),
+    basePending: model.pendingOfflineReports || [],
+    from: from,
+    now: now,
+    cursorMs: from,
+    limit: limit,
+    mainLimitLeft: limit,
+    reports: []
+  };
+  state.dirty = true;
+
+  function runSettleSlice() {
+    try {
+      const done = stepChunkedOfflineSettle();
+      if (!done) {
+        if (typeof setTimeout === 'function') {
+          setTimeout(runSettleSlice, 0);
+        } else {
+          while (!stepChunkedOfflineSettle()) { /* sync fallback */ }
+          state.settlingOffline = false;
+          state.dirty = true;
+        }
+        return;
+      }
+    } catch (error) {
+      abortChunkedOfflineSettle(state._offlineSettleJob, error);
+    } finally {
+      if (!state._offlineSettleJob) {
+        state.settlingOffline = false;
+        state.dirty = true;
+      }
+    }
+  }
+
+  function afterPaint() {
+    if (typeof setTimeout === 'function') {
+      setTimeout(runSettleSlice, 0);
+    } else {
+      runSettleSlice();
+    }
+  }
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(function () {
+      requestAnimationFrame(afterPaint);
+    });
+  } else {
+    afterPaint();
+  }
 }
 
 function persistSafely(now) {
@@ -2423,7 +3001,10 @@ function commitModel(mutator, nowMs, recovery, options) {
   if (rawThrough !== settleFrom) {
     state.processedThroughMs = settleFrom;
   }
-  const base = StateModel.fromRuntime(state /* runtime */, settleFrom);
+  // 成熟闲置热路径：命令只深拷贝 runtime，不在点击时 Stage4 全量 normalize。
+  const base = typeof StateModel.captureRuntime === 'function'
+    ? StateModel.captureRuntime(state /* runtime */, settleFrom)
+    : StateModel.fromRuntime(state /* runtime */, settleFrom);
   base.processedThroughMs = settleFrom;
   let candidate = base;
   let settledToTimestamp = false;
@@ -2453,11 +3034,11 @@ function commitModel(mutator, nowMs, recovery, options) {
     return result;
   }
 
-  let saved = false;
+  let saved = null;
   try {
     saved = persistModel(candidate, now);
   } catch (error) {
-    saved = false;
+    saved = null;
   }
   if (!saved) {
     const descriptor = recovery || {};
@@ -2474,9 +3055,9 @@ function commitModel(mutator, nowMs, recovery, options) {
       retryable: true
     });
   }
-  applyModelToRuntime(candidate);
-  const newStatus = candidate.player && candidate.player.lifecycle
-    ? candidate.player.lifecycle.status
+  applyModelToRuntime(saved, { trustedSimulation: true });
+  const newStatus = saved.player && saved.player.lifecycle
+    ? saved.player.lifecycle.status
     : null;
   if (settledToTimestamp &&
       newStatus === 'safety_buffer' &&
@@ -2498,10 +3079,15 @@ function acknowledgeOffline(reportIds) {
   if (isPersistenceLocked()) {
     return commandResult(false, 'persistence_locked', false, null, null);
   }
-  const model = StateModel.fromRuntime(
-    state /* runtime */,
-    state.processedThroughMs
-  );
+  const model = typeof StateModel.captureRuntime === 'function'
+    ? StateModel.captureRuntime(
+      state /* runtime */,
+      state.processedThroughMs
+    )
+    : StateModel.fromRuntime(
+      state /* runtime */,
+      state.processedThroughMs
+    );
   const ids = new Set(reportIds || []);
   const selected = model.pendingOfflineReports.filter(function (report) {
     return ids.has(report.id);
@@ -2510,7 +3096,8 @@ function acknowledgeOffline(reportIds) {
     return commandResult(true, 'no_change', false, null, null);
   }
 
-  const candidate = StateModel.normalize(model, model.processedThroughMs);
+  // 不在领取时额外 Stage4.normalize；落盘 toSnapshotInput 会做边界规范化。
+  const candidate = model;
   candidate.reportArchive = SimulationReport.archive(
     model.reportArchive,
     selected,
@@ -2522,7 +3109,8 @@ function acknowledgeOffline(reportIds) {
     }
   );
   const saveAt = candidate.processedThroughMs;
-  if (!persistModel(candidate, saveAt)) {
+  const saved = persistModel(candidate, saveAt);
+  if (!saved) {
     persistenceRecovery.hold({
       kind: 'closeOffline',
       message: '保存失败，离线收益仍待领取',
@@ -2532,17 +3120,22 @@ function acknowledgeOffline(reportIds) {
     });
     return commandResult(false, 'save_failed', false, null, null);
   }
-  applyModelToRuntime(candidate);
+  applyModelToRuntime(saved, { trustedSimulation: true });
   return commandResult(true, 'acknowledged', true, null, {
     reportIds: selected.map(function (report) { return report.id; })
   });
 }
 
 function closeOffline() {
-  const model = StateModel.fromRuntime(
-    state /* runtime */,
-    state.processedThroughMs
-  );
+  const model = typeof StateModel.captureRuntime === 'function'
+    ? StateModel.captureRuntime(
+      state /* runtime */,
+      state.processedThroughMs
+    )
+    : StateModel.fromRuntime(
+      state /* runtime */,
+      state.processedThroughMs
+    );
   return acknowledgeOffline(
     model.pendingOfflineReports.map(function (report) { return report.id; })
   ).ok;
@@ -2811,8 +3404,8 @@ function publishGainTipsFromReport(report) {
 
 
 function onlineAdvanceMinMs() {
-  // 在线推进每次都会 fromRuntime + Simulation 深拷贝整份世界。
-  // 不必跟 rAF 60Hz 对齐；战斗稍密，其余约 12Hz 足够。
+  // 在线推进已走 mutateInPlace；仍不必跟 rAF 60Hz 对齐。
+  // 战斗稍密，其余约 12Hz 足够。
   const key = state.current && state.current.key;
   if (typeof key === 'string' && key.indexOf('combat:') === 0) return 33;
   return 80;
@@ -2918,6 +3511,7 @@ function render() {
   // 帧率统计
   const now = Date.now(); frames++;
   if (now - fpsT > 1000) { fps = Math.round(frames * 1000 / (now - fpsT)); frames = 0; fpsT = now; }
+  const frameStarted = PerfStats.enabled ? now : 0;
 
   // 主循环防护：任何一帧（引擎/合成/UI）抛异常都绝不允许中断 requestAnimationFrame，
   // 否则单帧错误会令整个游戏卡死（敌人刷出后双方不再出手 = 僵持）。
@@ -2965,12 +3559,19 @@ function render() {
   // Canvas 只画「游戏世界」（此处角色立绘已在头像小画布内渲染）。
   try {
     if (uiDriven) {
+      const uiStarted = PerfStats.enabled ? Date.now() : 0;
       window.UI.renderGame();
+      if (PerfStats.enabled) {
+        PerfStats.sample('ui', Date.now() - uiStarted);
+      }
     }
   } catch (err) {
     console.error('[render] UI.renderGame error:', err && err.stack ? err.stack : err);
   }
 
+  if (PerfStats.enabled) {
+    PerfStats.sample('frame', Date.now() - frameStarted);
+  }
   requestAnimationFrame(render);
 }
 
@@ -3071,12 +3672,24 @@ function onHit(name) {
 // 序号步进：按传入部件类别，±1 调整序号（到头循环）
 function stepPart(cat, d) {
   if (isPersistenceLocked()) return false;
+  if (cat === 'hair_style') {
+    if (!HairRules) return false;
+    const next = HairRules.stepStyle(state.gender, state.parts, d);
+    state.parts.hair_hou = next.hair_hou;
+    state.parts.hair_qian = next.hair_qian;
+    state.dirty = true;
+    return true;
+  }
+  if (cat === 'hair_hou' || cat === 'hair_qian') {
+    return stepPart('hair_style', d);
+  }
   const list = NIE[state.gender][cat];
+  if (!Array.isArray(list)) return false;
   const n = list.length;
-  if (n <= 0) return;
+  if (n <= 0) return false;
   let i = state.parts[cat] + d;
-  if (i < 0) i = n - 1;          // 循环到末尾
-  if (i >= n) i = 0;              // 循环到开头
+  if (i < 0) i = n - 1;
+  if (i >= n) i = 0;
   state.parts[cat] = i;
   state.dirty = true;
   return true;
@@ -3084,8 +3697,19 @@ function stepPart(cat, d) {
 function randomize() {
   if (isPersistenceLocked()) return false;
   for (const c of CATS) {
-    const n = NIE[state.gender][c].length;
+    if (c === 'hair_hou' || c === 'hair_qian') continue;
+    const list = NIE[state.gender][c];
+    const n = Array.isArray(list) ? list.length : 0;
     state.parts[c] = n > 0 ? Math.floor(gameRandom() * n) : 0;
+  }
+  if (HairRules) {
+    const styled = HairRules.applyStyleIndex(
+      state.gender,
+      state.parts,
+      HairRules.randomStyleIndex(state.gender, Math.floor(gameRandom() * 1e9))
+    );
+    state.parts.hair_hou = styled.hair_hou;
+    state.parts.hair_qian = styled.hair_qian;
   }
   state.dirty = true;
   return true;
@@ -3233,13 +3857,13 @@ Platform.getSystemInfoAsync({
             resumeStartupAt: now
           });
         } else {
-          settleStartupOffline(
+          scheduleStartupOfflineSettle(
             SaveSystem.load(Platform, now).snapshot,
             now
           );
         }
       } else {
-        settleStartupOffline(save, now);
+        scheduleStartupOfflineSettle(save, now);
       }
 
       state._last = now;

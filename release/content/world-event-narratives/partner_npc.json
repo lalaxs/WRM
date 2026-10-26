@@ -1,0 +1,35 @@
+[
+  {
+    "id": "partner_npc-0096",
+    "weight": 8,
+    "type": "partner_npc",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}结下道侣之契，对天立誓同心。",
+    "tagAny": [
+      "lover"
+    ],
+    "affinityMin": 70
+  },
+  {
+    "id": "partner-tension-1901",
+    "weight": 12,
+    "type": "partner_npc",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}正式结成道侣。说完后两人都静了片刻。",
+    "tagAny": [
+      "lover"
+    ],
+    "affinityMin": 65
+  },
+  {
+    "id": "partner-tension-1902",
+    "weight": 11,
+    "type": "partner_npc",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}结契。礼成后谁都没立刻笑，只是对上眼很久，像把余生都按进这一眼里。",
+    "tagAny": [
+      "lover"
+    ],
+    "affinityMin": 68
+  }
+]

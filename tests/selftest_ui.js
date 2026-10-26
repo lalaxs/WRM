@@ -291,6 +291,11 @@ function createRuntime(store, now, controls, withUI, options) {
     sandbox,
     { filename: 'nie-manifest.js' }
   );
+  vm.runInContext(
+    fs.readFileSync('nie-hair-rules.js', 'utf8'),
+    sandbox,
+    { filename: 'nie-hair-rules.js' }
+  );
   const stage4Bootstrap = [
     'content/regions.js',
     'content/sects.js',
@@ -307,6 +312,13 @@ function createRuntime(store, now, controls, withUI, options) {
     'core/sect-offices.js',
     'core/sect-missions.js',
     'core/sect-pavilion.js',
+    'core/stage4-state-util.js',
+    'core/stage4-state-npc.js',
+    'core/stage4-state-relationships.js',
+    'core/stage4-state-events.js',
+    'core/stage4-state-sects.js',
+    'core/stage4-state-world.js',
+    'core/stage4-state-lineage.js',
     'core/stage4-state.js',
     'core/relationships.js',
     'core/dns.js',
@@ -429,7 +441,7 @@ function createRuntime(store, now, controls, withUI, options) {
       }
     }));
   }
-  ['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+  ['game.js', 'game-appearance.js', 'game-persist.js', 'game-runtime.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-commands-combat.js', 'game-commands-homestead.js', 'game-commands-social.js', 'game-commands-sect.js', 'game-commands-legacy.js', 'game-api.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
   });
   if (withUI) {
@@ -517,8 +529,8 @@ function createStage2UiFixtureRuntime(fixture) {
         phase: 'game',
         appearance: {
           indices: {
-            body: 0, cloth: 0, nose: 0, mouth: 0,
-            eyes: 0, eyebrush: 0, hair: 0
+            hair_hou: 0, cloth: 0, body: 0, mouth: 0,
+            nose: 0, eyes: 0, hair_qian: 0, deco: 0
           }
         },
         modals: {
@@ -764,13 +776,14 @@ function baseSnapshot(now, extra) {
     created: true,
     appearance: {
       parts: {
-        body: 0,
+        hair_hou: 0,
         cloth: 0,
-        eyebrush: 0,
-        eyes: 0,
-        hair: 0,
+        body: 0,
         mouth: 0,
-        nose: 0
+        nose: 0,
+        eyes: 0,
+        hair_qian: 0,
+        deco: 0
       }
     },
     player: playerSnapshot(),
@@ -864,7 +877,7 @@ function ok(condition, message) {
 }
 
 const uiSource = require('./ui_scripts').readUiSource();
-const gameSource = ['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js']
+const gameSource = ['game.js', 'game-appearance.js', 'game-persist.js', 'game-runtime.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-commands-combat.js', 'game-commands-homestead.js', 'game-commands-social.js', 'game-commands-sect.js', 'game-commands-legacy.js', 'game-api.js']
   .map((file) => fs.readFileSync(file, 'utf8')).join('\n');
 const stylesSource = fs.readFileSync('styles.css', 'utf8');
 ok(!/\bGameAPI\.state\b|\ba\.state\b/.test(uiSource),
@@ -1183,7 +1196,7 @@ ok(
 );
 [
   API.commands.randomizeAppearance(),
-  API.commands.stepAppearance({ part: 'hair', delta: 1 }),
+  API.commands.stepAppearance({ part: 'hair_qian', delta: 1 }),
   API.commands.switchNav({ index: 0 }),
   API.commands.openBreak(),
   API.commands.closeBreak(),
@@ -3597,7 +3610,7 @@ ok(
 const lockedApp = JSON.stringify(failureRuntime.api.queries.app());
 const lockedResults = [
   failureRuntime.api.commands.randomizeAppearance(),
-  failureRuntime.api.commands.stepAppearance({ part: 'hair', delta: 1 }),
+  failureRuntime.api.commands.stepAppearance({ part: 'hair_qian', delta: 1 }),
   failureRuntime.api.commands.saveAppearance(),
   failureRuntime.api.commands.attemptBreak(),
   failureRuntime.api.commands.startAction({ key: 'caiyao' }),
@@ -4359,16 +4372,16 @@ const editSettingsIndex =
 editFailureRuntime.api.commands.switchNav({ index: editSettingsIndex });
 const editedHairResult =
   editFailureRuntime.api.commands.stepAppearance({
-    part: 'hair',
+    part: 'hair_qian',
     delta: 1
   });
-const editedHairIndex = editedHairResult.data
-  ? editedHairResult.data.index
+const editedHairQian = editedHairResult.data
+  ? editedHairResult.data.hair_qian
   : null;
 ok(
   editFailureRuntime.api.commands.saveAppearance().code === 'save_failed' &&
     editFailureRuntime.api.queries.app().phase === 'edit' &&
-    JSON.parse(editFailureStore.cloud_save_v1).appearance.parts.hair === 0,
+    JSON.parse(editFailureStore.cloud_save_v1).appearance.parts.hair_qian === 0,
   'failed appearance save enters the shared persistence lock'
 );
 editFailureRuntime.ui.renderGame();
@@ -4394,7 +4407,7 @@ const appearanceAfterRetry = JSON.parse(
 ok(
   editFailureRuntime.api.queries.persistence().locked === false &&
     editFailureRuntime.api.queries.app().phase === 'game' &&
-    appearanceAfterRetry.appearance.parts.hair === editedHairIndex &&
+    appearanceAfterRetry.appearance.parts.hair_qian === editedHairQian &&
     byClass(editFailureRuntime.root, 'persistence-error').every(
       (element) => element.style.display === 'none'
     ) &&

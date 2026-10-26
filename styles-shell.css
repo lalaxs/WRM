@@ -134,7 +134,7 @@ body {
   box-shadow: 0 2px 10px var(--shadow);
 }
 .avatar {
-  width: 64px; height: 64px; flex: none; border-radius: 14px;
+  width: 64px; height: 64px; flex: none; border-radius: 12px;
   background: linear-gradient(180deg, var(--sky-top), var(--mist));
   border: 1px solid var(--line);
 }

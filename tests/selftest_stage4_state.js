@@ -103,11 +103,22 @@ const browserSandbox = {
 };
 browserSandbox.globalThis = browserSandbox;
 vm.createContext(browserSandbox);
-vm.runInContext(
-  fs.readFileSync('core/stage4-state.js', 'utf8'),
-  browserSandbox,
-  { filename: 'core/stage4-state.js' }
-);
+[
+  'core/stage4-state-util.js',
+  'core/stage4-state-npc.js',
+  'core/stage4-state-relationships.js',
+  'core/stage4-state-events.js',
+  'core/stage4-state-sects.js',
+  'core/stage4-state-world.js',
+  'core/stage4-state-lineage.js',
+  'core/stage4-state.js'
+].forEach(function (file) {
+  vm.runInContext(
+    fs.readFileSync(file, 'utf8'),
+    browserSandbox,
+    { filename: file }
+  );
+});
 ok(browserSandbox.Stage4State.VERSION === 5 &&
    Object.isFrozen(browserSandbox.Stage4State),
 'Stage4State UMD 浏览器边界与 CommonJS 一致冻结');
@@ -1022,13 +1033,14 @@ function v4Fixture() {
     created: true,
     appearance: {
       parts: {
-        body: 2,
+        hair_hou: 2,
         cloth: 3,
-        eyebrush: 1,
+        body: 0,
         eyes: 4,
-        hair: 5,
+        hair_qian: 5,
         mouth: 2,
-        nose: 1
+        nose: 1,
+        deco: 0
       }
     },
     player: {

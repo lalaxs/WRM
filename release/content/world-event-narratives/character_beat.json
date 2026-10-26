@@ -1,0 +1,298 @@
+[
+  {
+    "id": "beat-chicheng-01",
+    "weight": 14,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}练剑到很晚，收势时骂了自己一句蠢，随后又安静下来。",
+    "personalityA": [
+      "chicheng"
+    ]
+  },
+  {
+    "id": "beat-chicheng-02",
+    "weight": 13,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}本想把话说出口，演练几遍后还是没说，只把石子踢进了溪里。",
+    "personalityA": [
+      "chicheng"
+    ]
+  },
+  {
+    "id": "beat-qingleng-01",
+    "weight": 14,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}独自在{loc}檐下打坐，雪落肩头也没去管，过了很久才站起来。",
+    "personalityA": [
+      "qingleng"
+    ]
+  },
+  {
+    "id": "beat-qingleng-02",
+    "weight": 13,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}翻完一卷功法，把折角的书页抚平，动作比平日轻。",
+    "personalityA": [
+      "qingleng"
+    ]
+  },
+  {
+    "id": "beat-rechen-01",
+    "weight": 14,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}给路边伤兽包扎完，兽走后独自坐了很久，笑意淡了。",
+    "personalityA": [
+      "rechen"
+    ]
+  },
+  {
+    "id": "beat-rechen-02",
+    "weight": 12,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}提着糖葫芦路过{loc}，到路口停住，最后还是自己吃了。",
+    "personalityA": [
+      "rechen"
+    ]
+  },
+  {
+    "id": "beat-shuaituo-01",
+    "weight": 13,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}坊市闲逛，临走在旧剑摊前站了很久，最终空着手离开。",
+    "personalityA": [
+      "shuaituo"
+    ],
+    "regionTypes": [
+      "market",
+      "town"
+    ]
+  },
+  {
+    "id": "beat-shuaituo-02",
+    "weight": 12,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}屋顶看云，口哨吹到一半停住，把未写完的游记合上了。",
+    "personalityA": [
+      "shuaituo"
+    ]
+  },
+  {
+    "id": "beat-zhizhuo-01",
+    "weight": 14,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}把同一式剑法复盘到天亮，停手后望了东方一眼，没说话。",
+    "personalityA": [
+      "zhizhuo"
+    ]
+  },
+  {
+    "id": "beat-zhizhuo-02",
+    "weight": 13,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}桌上擦拭一枚旧玉佩，旁人问起，只说是念想。",
+    "personalityA": [
+      "zhizhuo"
+    ]
+  },
+  {
+    "id": "beat-renhou-01",
+    "weight": 13,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}替人劝完架，独自坐到廊下，先笑了笑，随后捂住了眼睛。",
+    "personalityA": [
+      "renhou"
+    ],
+    "regionTypes": [
+      "sectBase"
+    ]
+  },
+  {
+    "id": "beat-renhou-02",
+    "weight": 12,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}给{loc}的流浪猫留下干粮，自己只喝了半盏冷茶。",
+    "personalityA": [
+      "renhou"
+    ]
+  },
+  {
+    "id": "beat-jiaojin-01",
+    "weight": 13,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}胜过同辈后并无喜色，回房关上门，对着铜镜把衣冠整理好。",
+    "personalityA": [
+      "jiaojin"
+    ]
+  },
+  {
+    "id": "beat-jiaojin-02",
+    "weight": 12,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}拒绝了{loc}一场热闹邀约，人散后却在窗边站了很久。",
+    "personalityA": [
+      "jiaojin"
+    ]
+  },
+  {
+    "id": "beat-wenya-01",
+    "weight": 14,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}抚琴一曲未完，弦音忽然滞住，低头调了半晌弦。",
+    "personalityA": [
+      "wenya"
+    ]
+  },
+  {
+    "id": "beat-wenya-02",
+    "weight": 13,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}替人抄完书札，独自留在{loc}灯下，把一张空白纸折了又折。",
+    "personalityA": [
+      "wenya"
+    ]
+  },
+  {
+    "id": "beat-mood-lover-01",
+    "weight": 15,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}夜里睡不着，起身推窗，风灌进来时才发觉屋里只剩自己。",
+    "tagAny": [
+      "lover",
+      "partner"
+    ]
+  },
+  {
+    "id": "beat-mood-lover-02",
+    "weight": 14,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}写了半封信又烧掉，灰烬落在{loc}桌上，盯着看了很久。",
+    "tagAny": [
+      "lover",
+      "partner"
+    ]
+  },
+  {
+    "id": "beat-mood-impressed-01",
+    "weight": 14,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}走过那人常站的位置，脚步乱了半拍，随即装作无事走开。",
+    "tagAny": [
+      "impressed"
+    ]
+  },
+  {
+    "id": "beat-mood-debt-01",
+    "weight": 14,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}夜里梦见旧伤，惊醒后坐在{loc}床沿，摸了摸腕上的疤。",
+    "tagAny": [
+      "life-debt"
+    ]
+  },
+  {
+    "id": "beat-mood-friend-01",
+    "weight": 12,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}得了好消息想找人说，跑到{loc}路口才想起对方不在，把笑意收了回去。",
+    "tagAny": [
+      "friend",
+      "close-friend"
+    ]
+  },
+  {
+    "id": "beat-mood-enemy-01",
+    "weight": 11,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}磨剑到刃亮，停手看镜中自己，眼神很冷，冷完又有些疲惫。",
+    "tagAny": [
+      "enemy"
+    ]
+  },
+  {
+    "id": "beat-important-01",
+    "weight": 13,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}悟到一层关窍，本该高兴，却先捂住胸口把气息稳住。"
+  },
+  {
+    "id": "beat-important-02",
+    "weight": 12,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}对着{loc}宗门碑文站了很久，最后拂去碑上尘土，转身离开。"
+  },
+  {
+    "id": "beat-important-03",
+    "weight": 12,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}把一枚旧令牌压在{loc}枕下，睡前又取出看了一眼。"
+  },
+  {
+    "id": "beat-important-04",
+    "weight": 11,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "雨夜，{a}在{loc}独酌，杯触唇边又放下，低声说了句对不住。"
+  },
+  {
+    "id": "beat-important-05",
+    "weight": 11,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}整理行李，同一件外衣装进又取出，最终还是留下了。"
+  },
+  {
+    "id": "beat-important-06",
+    "weight": 12,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}拒绝了一次捷径机缘，独自走回{loc}。路上有人笑他傻，他没争辩。",
+    "personalityAny": [
+      "zhizhuo",
+      "jiaojin",
+      "qingleng"
+    ]
+  },
+  {
+    "id": "beat-important-07",
+    "weight": 11,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}听见孩童唱起旧曲，脚步一顿，弯腰帮拾起掉落的糖纸。",
+    "personalityAny": [
+      "rechen",
+      "renhou",
+      "wenya"
+    ]
+  },
+  {
+    "id": "beat-important-08",
+    "weight": 12,
+    "type": "character_beat",
+    "actors": "solo",
+    "template": "{a}在{loc}立誓前夜失眠，写下三个字又涂掉，把纸揉成一团。"
+  }
+]

@@ -102,6 +102,25 @@
     }
   }
 
+  function digestWorld(world) {
+    if (!world || typeof world !== 'object') return world;
+    const events = Array.isArray(world.worldEvents) ? world.worldEvents : [];
+    const last = events.length ? events[events.length - 1] : null;
+    const out = {};
+    Object.keys(world).forEach(function (key) {
+      if (key === 'worldEvents') {
+        // 见闻正文不进守卫串：长离线后可达数百～上千条，stringify 会拖垮在线 tick。
+        out.worldEvents = {
+          length: events.length,
+          lastId: last && last.id != null ? last.id : null
+        };
+      } else {
+        out[key] = world[key];
+      }
+    });
+    return out;
+  }
+
   function digestNpcs(npcs) {
     if (!npcs || typeof npcs !== 'object') return npcs;
     const records = npcs.records && typeof npcs.records === 'object'
@@ -142,6 +161,8 @@
     Object.keys(systems).forEach(function (key) {
       if (key === 'npcs') {
         out.npcs = digestNpcs(systems.npcs);
+      } else if (key === 'world') {
+        out.world = digestWorld(systems.world);
       } else {
         out[key] = systems[key];
       }
@@ -149,8 +170,8 @@
     return out;
   }
 
-  // 变更守卫摘要：保留全部顶层键，仅压缩 NPC records；
-  // 避免对含大量 NPC 的整树先深拷贝再 stringify。
+  // 变更守卫摘要：保留全部顶层键，压缩 NPC records 与 worldEvents；
+  // 避免对含大量见闻的整树先深拷贝再 stringify。
   function jsonToken(state) {
     if (!state || typeof state !== 'object') {
       return JSON.stringify(state);
@@ -473,7 +494,10 @@
     if (!Number.isFinite(suppliedFromMs) || suppliedFromMs < 0) {
       throw new RangeError('fromMs must be a non-negative finite number');
     }
-    const state = cloneJsonValue(model);
+    // 默认仍隔离拷贝，保证测试与命令路径输入不被改。
+    // 在线热路径 / 离线分片工作副本可显式 mutateInPlace，跳过整树深拷贝。
+    const mutateInPlace = config.mutateInPlace === true;
+    const state = mutateInPlace ? model : cloneJsonValue(model);
     const fromMs = logicalFromMs(state, suppliedFromMs);
     const elapsedRealityParts = decimalParts(elapsedSeconds);
     const toMs = decimalPartsToNumber(
@@ -519,7 +543,9 @@
     if (elapsedSeconds === 0) {
       return {
         state,
-        report
+        report,
+        remainingSeconds: 0,
+        done: true
       };
     }
 
@@ -532,6 +558,19 @@
     let transitions = 0;
     let activeActionKey = initialActionKey;
     let mainDisabled = false;
+    const timeBudgetMs = config.timeBudgetMs == null
+      ? null
+      : Number(config.timeBudgetMs);
+    if (timeBudgetMs != null &&
+        (!Number.isFinite(timeBudgetMs) || timeBudgetMs < 0)) {
+      throw new RangeError('timeBudgetMs must be a non-negative finite number');
+    }
+    const wallStartedAt = timeBudgetMs != null &&
+      typeof Date !== 'undefined' &&
+      typeof Date.now === 'function'
+      ? Date.now()
+      : null;
+    let budgetExhausted = false;
 
     function nowMs() {
       const elapsed = subtractDecimalParts(
@@ -584,7 +623,7 @@
       offlineMonthBudget: config.source === 'offline'
         ? (Number.isFinite(config.offlineMonthCap)
           ? Math.max(0, Math.floor(config.offlineMonthCap))
-          : 500)
+          : 48)
         : null,
       random() {
         const value = config.rules.random(state);
@@ -610,12 +649,19 @@
       });
     }
 
-    // Online keeps the full JSON equality guard. Offline skips the expensive
-    // stringify when time actually advanced (Melvor-style batch settlement);
-    // zero-step loops still trip via transitionLimit / strict guard.
-    const strictMutationGuard = config.source !== 'offline';
+    // Online and offline both skip full-tree JSON equality when time advanced.
+    // After long offline, worldEvents/relationships make per-tick stringify the
+    // dominant cost of every click/frame. Zero-step loops still trip the guard.
+    const strictMutationGuard = false;
 
     while (remaining > 0) {
+      if (wallStartedAt != null &&
+          timeBudgetMs != null &&
+          (transitions & 15) === 0 &&
+          Date.now() - wallStartedAt >= timeBudgetMs) {
+        budgetExhausted = true;
+        break;
+      }
       helpers.remainingSeconds = remaining;
       let descriptor = null;
       let inspection = null;
@@ -851,10 +897,22 @@
       )
     );
 
+    if (budgetExhausted && remaining > 0) {
+      report.toMs = nowMs();
+      report.requestedSeconds = Math.max(
+        0,
+        (report.toMs - report.fromMs) / 1000
+      );
+    }
+
     return {
-      // 在线短步进的结果会立刻 applyToRuntime，再克隆一次整树没有收益。
-      state: config.source === 'online' ? state : cloneJsonValue(state),
-      report: cloneJsonValue(report)
+      // 在线短步进 / 显式 mutateInPlace：调用方已持有可写工作副本，勿再整树拷出。
+      state: (config.source === 'online' || mutateInPlace)
+        ? state
+        : cloneJsonValue(state),
+      report: cloneJsonValue(report),
+      remainingSeconds: remaining,
+      done: !(remaining > 0)
     };
   }
 

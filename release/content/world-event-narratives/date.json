@@ -1,0 +1,363 @@
+[
+  {
+    "id": "date-lover-1",
+    "weight": 15,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}小坐，分着喝同一杯茶。分开时谁都多停了一息。",
+    "tagAny": [
+      "lover",
+      "partner",
+      "dao-companion"
+    ],
+    "affinityMin": 40
+  },
+  {
+    "id": "date-lover-2",
+    "weight": 15,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}在{loc}给{b}别上一支新折的花。{b}没躲，只是呼吸乱了半拍。",
+    "tagAny": [
+      "lover",
+      "partner",
+      "dao-companion"
+    ],
+    "affinityMin": 40
+  },
+  {
+    "id": "date-lover-3",
+    "weight": 15,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}看夜市灯火，回来时已近半夜。分开时谁都没先提散。",
+    "tagAny": [
+      "lover",
+      "partner",
+      "dao-companion"
+    ],
+    "affinityMin": 40
+  },
+  {
+    "id": "date-0091",
+    "weight": 13,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}与{b}相约在{loc}散步，坊市将打烊时，两人仍不愿先说散。",
+    "tagNone": [
+      "enemy"
+    ],
+    "regionTypes": [
+      "market",
+      "town"
+    ],
+    "affinityMin": 50
+  },
+  {
+    "id": "date-0092",
+    "weight": 12,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}在{loc}备了两份点心，专等{b}一起来。对方来了，两人谁都没提散。",
+    "personalityAny": [
+      "rechen",
+      "wenya"
+    ],
+    "affinityMin": 45
+  },
+  {
+    "id": "persona-tag-chicheng-lover",
+    "weight": 11,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}在{loc}直白说想多见{b}几面。",
+    "personalityAny": [
+      "chicheng"
+    ],
+    "tagAny": [
+      "lover"
+    ]
+  },
+  {
+    "id": "persona-tag-qingleng-lover",
+    "weight": 11,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}在{loc}静静站在{b}身侧，未说爱字。",
+    "personalityAny": [
+      "qingleng"
+    ],
+    "tagAny": [
+      "lover"
+    ]
+  },
+  {
+    "id": "persona-tag-rechen-lover",
+    "weight": 11,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}在{loc}拉着{b}的手不肯松，笑意明亮。",
+    "personalityAny": [
+      "rechen"
+    ],
+    "tagAny": [
+      "lover"
+    ]
+  },
+  {
+    "id": "persona-tag-shuaituo-lover",
+    "weight": 11,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}在{loc}把一朵路边花插到{b}耳后，笑着跑开。",
+    "personalityAny": [
+      "shuaituo"
+    ],
+    "tagAny": [
+      "lover"
+    ]
+  },
+  {
+    "id": "persona-tag-zhizhuo-lover",
+    "weight": 11,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}在{loc}问{b}可否成约，一脸认真。",
+    "personalityAny": [
+      "zhizhuo"
+    ],
+    "tagAny": [
+      "lover"
+    ]
+  },
+  {
+    "id": "persona-tag-renhou-lover",
+    "weight": 11,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}在{loc}给{b}披上外袍，叮嘱夜里凉。",
+    "personalityAny": [
+      "renhou"
+    ],
+    "tagAny": [
+      "lover"
+    ]
+  },
+  {
+    "id": "persona-tag-jiaojin-lover",
+    "weight": 11,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}在{loc}送{b}一枚有署名的玉佩，神情倨傲却认真。",
+    "personalityAny": [
+      "jiaojin"
+    ],
+    "tagAny": [
+      "lover"
+    ]
+  },
+  {
+    "id": "persona-tag-wenya-lover",
+    "weight": 11,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}在{loc}写下一笺短诗，悄悄塞给{b}。",
+    "personalityAny": [
+      "wenya"
+    ],
+    "tagAny": [
+      "lover"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ]
+  },
+  {
+    "id": "date-tension-1401",
+    "weight": 16,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}在{loc}向{b}走去时步子很稳，步子比平时稳些。{b}表面淡淡点头，应得很轻。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 30
+  },
+  {
+    "id": "date-tension-1402",
+    "weight": 16,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}与{b}约在{loc}小坐。茶凉了一半，谁都没先提散。",
+    "tagAny": [
+      "lover",
+      "friend",
+      "impressed"
+    ],
+    "affinityMin": 35
+  },
+  {
+    "id": "date-tension-1403",
+    "weight": 16,
+    "type": "date",
+    "actors": "pair",
+    "template": "夜风过{loc}，{a}把外袍往{b}肩上捎了捎。{b}嘴上说不必，手却按住了那角衣料，久久没松。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 28
+  },
+  {
+    "id": "date-tension-1404",
+    "weight": 15,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}在{loc}并肩走了很久才开口，声音发紧。{b}应得很淡，可侧目时睫毛颤了一下。",
+    "tagAny": [
+      "lover",
+      "close-friend"
+    ],
+    "affinityMin": 40
+  },
+  {
+    "id": "date-tension-1405",
+    "weight": 15,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}邀{b}同游{loc}。{b}面上清冷如常，脚步却悄悄放慢，好让两人始终并排。",
+    "personalityB": [
+      "qingleng"
+    ],
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 25
+  },
+  {
+    "id": "date-tension-1406",
+    "weight": 15,
+    "type": "date",
+    "actors": "pair",
+    "template": "灯火将尽，{a}在{loc}本打算告辞，话到唇边又咽下。{b}假装看远处山影，其实一直在等那句留下。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 32
+  },
+  {
+    "id": "date-tension-1407",
+    "weight": 14,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}在{loc}给{b}别上一支花，动作很轻。{b}没躲，只是呼吸乱了半拍，连谢谢都说得发干。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 30
+  },
+  {
+    "id": "date-tension-1408",
+    "weight": 14,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}同撑一把伞。伞缘太窄，肩碰肩时两人都僵了一瞬，却谁也没有挪开。",
+    "tagAny": [
+      "lover"
+    ],
+    "affinityMin": 45
+  },
+  {
+    "id": "date-tension-1409",
+    "weight": 14,
+    "type": "date",
+    "actors": "pair",
+    "template": "{b}在{loc}等得久了，看见{a}赶来才松开攥紧的袖口。开口却只淡淡一句：来了。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 28
+  },
+  {
+    "id": "date-tension-1410",
+    "weight": 13,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}与{b}路过{loc}，{a}故意落后半步。{b}忽然停住回望，两人都装作无事。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 38
+  },
+  {
+    "id": "date-tension-1411",
+    "weight": 13,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}在{loc}把热羹推到{b}面前，自己先别过脸。{b}接过时手相触，两人都像被烫到。",
+    "tagNone": [
+      "enemy"
+    ],
+    "affinityMin": 33
+  },
+  {
+    "id": "date-tension-1412",
+    "weight": 13,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}在{loc}低声唤{b}的名字，尾音发颤。{b}应了，却把目光落在石阶上，像怕一对上眼就会失控。",
+    "tagAny": [
+      "lover",
+      "partner"
+    ],
+    "affinityMin": 50
+  },
+  {
+    "id": "date-fm-soft-1",
+    "weight": 13,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}在{loc}邀{b}同走一段夜路，步子放得很慢。他本想先开口，却被她一句「今晚风好」堵得轻笑出声。",
+    "tagAny": [
+      "lover",
+      "partner",
+      "impressed",
+      "friend"
+    ],
+    "pairGenderAny": [
+      "fm"
+    ]
+  },
+  {
+    "id": "date-warm-1",
+    "weight": 22,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}与{b}约在{loc}见面。路上话很少，落座后才慢慢松开。分开时{b}想伸手，又改成整理袖口。",
+    "arcAny": [
+      "warm",
+      "bond",
+      "mend"
+    ]
+  },
+  {
+    "id": "date-warm-2",
+    "weight": 22,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}并肩走了一段。有人远远唤{b}，{a}下意识停步。{b}回过头来，回过头来。",
+    "arcAny": [
+      "warm",
+      "bond"
+    ]
+  },
+  {
+    "id": "date-bond-1",
+    "weight": 20,
+    "type": "date",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}赴约。表面仍像寻常同行，可分开前{a}替{b}理了理衣领，动作轻得几乎不敢被看见。",
+    "arcAny": [
+      "bond"
+    ]
+  }
+]

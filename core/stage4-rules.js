@@ -33,10 +33,12 @@
   'use strict';
 
   const ACTIVE_STEP_SECONDS = 900;
+  const OFFLINE_ACTIVE_STEP_SECONDS = 3600;
   const BACKGROUND_STEP_SECONDS = 21600;
   const SECT_STEP_SECONDS = 86400;
   // 离线一次结算内各车道最多完整推演的步数；超出只吃掉时间、跳过细节。
-  const OFFLINE_ACTIVE_STEP_CAP = 96;
+  // 粗粒步长 3600s 后，48 步仍覆盖约 48h 活跃时间。
+  const OFFLINE_ACTIVE_STEP_CAP = 48;
   const OFFLINE_BACKGROUND_STEP_CAP = 24;
   const OFFLINE_SECT_STEP_CAP = 48;
 
@@ -503,8 +505,9 @@
       target.npcProgressPendingSeconds = 0;
       if (!(pending > 0) || !NpcSimulation) return;
       let steps = 0;
+      // 离线用更大步长扫表，减少全员 NPC 遍历次数；仍按步交织年龄与修为。
       while (pending > 0 && steps < OFFLINE_ACTIVE_STEP_CAP) {
-        const chunk = Math.min(ACTIVE_STEP_SECONDS, pending);
+        const chunk = Math.min(OFFLINE_ACTIVE_STEP_SECONDS, pending);
         if (typeof NpcSimulation.advanceAges === 'function') {
           NpcSimulation.advanceAges(state, chunk);
         }

@@ -7,7 +7,7 @@ const runtimeRoot = typeof globalThis !== 'undefined' ? globalThis : this;
 // 云隐小师妹 · 角色创建流程 + 主界面骨架（TapTap H5 小游戏 · 原生 JS + Canvas2D）
 // 设计目标：验证「选部件 → 离屏合成 → 缓存位图 → 每帧只 blit」链路
 //            在浏览器 / TapTap H5 容器里都能跑，且帧率、内存可控。
-// 资源：NIE/ 占位素材（男 b_ / 女 g_），由 nie-manifest.js 提供清单。
+// 资源：NIE/boy、NIE/girl 捏脸素材，由 nie-manifest.js 提供清单。
 // 桥接层：所有平台能力走 Platform.*（platform.js，标准 Web API），禁止 tap.* / 沙箱 API。
 // ============================================================
 
@@ -16,32 +16,77 @@ const NIE = (typeof require !== 'undefined')
   ? require('./nie-manifest.js')
   : (typeof NIE_MANIFEST !== 'undefined' ? NIE_MANIFEST : null);
 
+const HairRules = (typeof require !== 'undefined')
+  ? require('./nie-hair-rules.js')
+  : (typeof NieHairRules !== 'undefined' ? NieHairRules : null);
+
 // 资源基址：真机为 ''（包内根目录）；浏览器垫片由 index.html 设为 '../'
 const ASSET_BASE = (typeof window !== 'undefined' && window.NIE_ASSET_BASE)
   ? window.NIE_ASSET_BASE : '';
 
 // 部件类别 + 合成 z 序（从底到顶，决定叠图先后）
-const CATS = ['body', 'cloth', 'nose', 'mouth', 'eyes', 'eyebrush', 'hair'];
+const CATS = [
+  'hair_hou', 'cloth', 'body', 'mouth', 'nose', 'eyes', 'hair_qian', 'deco'
+];
 const CAT_LABEL = {
-  body: '身体', cloth: '衣服', nose: '鼻子', mouth: '嘴',
-  eyes: '眼睛', eyebrush: '眉眼', hair: '头发'
+  hair_hou: '后发', cloth: '衣服', body: '脸型', mouth: '嘴',
+  nose: '鼻子', eyes: '眼睛', hair_qian: '前发', deco: '装饰'
 };
 
-function normalizeParts(raw) {
+function migrateLegacyParts(raw) {
   const source = raw && typeof raw === 'object' && !Array.isArray(raw)
-    ? raw
+    ? Object.assign({}, raw)
     : {};
+  if (Object.prototype.hasOwnProperty.call(source, 'hair') &&
+      !Object.prototype.hasOwnProperty.call(source, 'hair_hou')) {
+    source.hair_hou = source.hair;
+    source.hair_qian = source.hair;
+  }
+  delete source.eyebrush;
+  delete source.hair;
+  return source;
+}
+
+function normalizeParts(raw, gender) {
+  const g = gender === 'b' ? 'b' : 'g';
+  const source = migrateLegacyParts(raw);
+  const catalog = NIE && NIE[g] ? NIE[g] : null;
   const normalized = {};
   for (const cat of CATS) {
-    const list = NIE && NIE.g && Array.isArray(NIE.g[cat]) ? NIE.g[cat] : [];
+    const list = catalog && Array.isArray(catalog[cat]) ? catalog[cat] : [];
     const numeric = Number(source[cat]);
     const index = Number.isFinite(numeric) ? Math.floor(numeric) : 0;
-    normalized[cat] = index >= 0 && index < list.length ? index : 0;
+    normalized[cat] = list.length > 0
+      ? (index >= 0 && index < list.length ? index : 0)
+      : 0;
+  }
+  if (HairRules && typeof HairRules.normalizeHairParts === 'function') {
+    return HairRules.normalizeHairParts(g, normalized);
   }
   return normalized;
 }
 
-// 0.5 主题配色（浅紫 · 少女心 · 浅色调，写死 HEX，全游戏引用）
+function appearanceIndices() {
+  const indices = normalizeParts(state.parts, state.gender);
+  if (HairRules && typeof HairRules.styleIndex === 'function') {
+    indices.hair_style = HairRules.styleIndex(state.gender, indices);
+  }
+  return indices;
+}
+
+function appearanceCounts() {
+  const gender = state.gender === 'b' ? 'b' : 'g';
+  const catalog = NIE && NIE[gender] ? NIE[gender] : null;
+  const counts = {};
+  for (let index = 0; index < CATS.length; index++) {
+    const cat = CATS[index];
+    const list = catalog && Array.isArray(catalog[cat]) ? catalog[cat] : [];
+    counts[cat] = list.length;
+  }
+  return counts;
+}
+
+// 0.5 主题配色
 // 改色只需动这里一处。详见《云隐小师妹_美术UI规范.md》。
 // 背景天空渐变 —— 单一真相取自 styles.css 的 --sky-top / --sky-bottom，
 // 与 DOM UI 的 :root 调色板同源，避免"双调色板"色差。
@@ -297,7 +342,10 @@ if (missingStage5Globals.length > 0) {
 // 2. 游戏状态
 const state = {
   gender: 'g',                       // 玩家恒为女；'b' 男性仅供 NPC 自动生成
-  parts: { body: 0, cloth: 0, eyebrush: 0, eyes: 0, hair: 0, mouth: 0, nose: 0 },
+  parts: {
+    hair_hou: 0, cloth: 0, body: 0, mouth: 0,
+    nose: 0, eyes: 0, hair_qian: 0, deco: 0
+  },
   navIndex: 0,                       // 左侧导航选中项（0 = 洞府）
   phase: 'create',                   // 'create' 创建角色 | 'game' 主游戏 | 'edit' 编辑形象 | 'lunhui' 轮回结算
   created: false,                    // 是否已完成首次创建（写入 cloud_save_v1 快照）
@@ -694,21 +742,49 @@ const ICON_TINT = {
 
 // 3. 图片懒加载缓存（按需加载，不一次解码全部 153 张 → 守 iOS 内存红线）
 const imgCache = {};
-function assetRel(g, c, i) {
-  const list = NIE[g][c];
-  const name = list[i] || list[0];
-  if (c === 'body') return 'NIE/' + name;            // 身体在根目录：NIE/b_body.png
-  return 'NIE/' + g + '_' + c + '/' + name;        // 其余在子目录：NIE/b_cloth/b_cloth_1.png
+function nieAssetFolder(g) {
+  return g === 'b' ? 'boy' : 'girl';
 }
-function assetPath(g, c, i) { return ASSET_BASE + assetRel(g, c, i); }
+
+function assetRel(g, c, i) {
+  const catalog = NIE && NIE[g] ? NIE[g] : null;
+  const list = catalog && Array.isArray(catalog[c]) ? catalog[c] : [];
+  if (!list.length) return null;
+  const name = list[i] || list[0];
+  if (!name) return null;
+  return 'NIE/' + nieAssetFolder(g) + '/' + name;
+}
+
+function assetPath(g, c, i) {
+  const rel = assetRel(g, c, i);
+  if (!rel) return '';
+  const segments = rel.split('/');
+  const fileName = segments.pop();
+  return ASSET_BASE + segments.join('/') + '/' + encodeURIComponent(fileName);
+}
 function loadImg(g, c, i) {
   const key = g + '/' + c + '/' + i;
   if (imgCache[key]) return imgCache[key];
+  const src = assetPath(g, c, i);
+  if (!src) return null;
   const img = Platform.createImage();
   img._ready = false;
   img.onload = () => {
     img._ready = true;
-    state.dirty = true;          // ← 任何图片加载完成 → 自动重复合成预览
+    // 仅当加载的是玩家当前装备部件时才脏化玩家合成；
+    // NPC 立绘共用 loadImg，否则会在批量加载时每帧触发全量合成卡顿。
+    if (state.gender === g &&
+        state.parts &&
+        Number(state.parts[c]) === Number(i)) {
+      state.dirty = true;
+      try {
+        if (typeof XiuxianUi !== 'undefined' &&
+            XiuxianUi &&
+            XiuxianUi.shell) {
+          XiuxianUi.shell._avatarDirty = true;
+        }
+      } catch (error) { /* ignore */ }
+    }
   };
   img.onerror = () => { console.warn('[捏脸] 加载失败:', assetPath(g, c, i)); };
   img.src = assetPath(g, c, i);
@@ -728,6 +804,8 @@ function composite() {
   ensureOff();
   offCtx.clearRect(0, 0, 300, 300);
   for (const c of CATS) {
+    const list = NIE[state.gender][c];
+    if (!Array.isArray(list) || list.length === 0) continue;
     const i = state.parts[c];
     const img = loadImg(state.gender, c, i);
     if (img && (img._ready || img.complete)) {
@@ -760,11 +838,24 @@ function randomNieParts(seedText, genderId) {
   const parts = {};
   let cursor = hashSeed(seedText + ':' + gender);
   CATS.forEach(function (cat) {
+    if (cat === 'hair_hou' || cat === 'hair_qian') return;
     const list = catalog && Array.isArray(catalog[cat]) ? catalog[cat] : [];
     const count = Math.max(1, list.length || 1);
     cursor = (Math.imul(cursor, 1664525) + 1013904223) >>> 0;
     parts[cat] = cursor % count;
   });
+  parts.hair_hou = 0;
+  parts.hair_qian = 0;
+  if (HairRules && typeof HairRules.randomStyleIndex === 'function') {
+    cursor = (Math.imul(cursor, 1664525) + 1013904223) >>> 0;
+    const styled = HairRules.applyStyleIndex(
+      gender,
+      parts,
+      HairRules.randomStyleIndex(gender, cursor)
+    );
+    parts.hair_hou = styled.hair_hou;
+    parts.hair_qian = styled.hair_qian;
+  }
   return { gender: gender, parts: parts };
 }
 
@@ -814,8 +905,12 @@ function drawCharacterAppearance(targetCanvas, appearance, options) {
     if (!scratchCtx) return false;
     scratchCtx.clearRect(0, 0, 300, 300);
     let painted = 0;
+    let expected = 0;
     for (let index = 0; index < CATS.length; index++) {
       const cat = CATS[index];
+      const list = NIE[gender] && NIE[gender][cat];
+      if (!Array.isArray(list) || list.length === 0) continue;
+      expected++;
       const partIndex = Number.isFinite(parts[cat]) ? parts[cat] : 0;
       const img = loadImg(gender, cat, partIndex);
       if (img && (img._ready || img.complete)) {
@@ -824,14 +919,15 @@ function drawCharacterAppearance(targetCanvas, appearance, options) {
       }
     }
     if (!painted) return false;
-    complete = painted === CATS.length;
+    complete = painted === expected;
     if (complete) rememberNiePortrait(cacheKey, scratch);
   }
   const target = targetCanvas.getContext('2d');
   if (!target) return false;
   const targetDpr = typeof window !== 'undefined' &&
     Number.isFinite(Number(window.devicePixelRatio))
-    ? Math.max(1, Number(window.devicePixelRatio))
+    // 高 DPR 手机上 3x 立绘绘制成本过高；2x 观感足够。
+    ? Math.max(1, Math.min(2, Number(window.devicePixelRatio)))
     : 1;
   const hintedWidth = options && Number(options.cssWidth);
   const hintedHeight = options && Number(options.cssHeight);
@@ -886,7 +982,8 @@ function drawCharacter(targetCanvas) {
   if (!target) return false;
   const targetDpr = typeof window !== 'undefined' &&
     Number.isFinite(Number(window.devicePixelRatio))
-    ? Math.max(1, Number(window.devicePixelRatio))
+    // 高 DPR 手机上 3x 立绘绘制成本过高；2x 观感足够。
+    ? Math.max(1, Math.min(2, Number(window.devicePixelRatio)))
     : 1;
   const cssWidth = Math.max(
     1,
@@ -1374,6 +1471,7 @@ function simulateModel(
     mainActionLimitSeconds,
     offlineMonthCap: source === 'offline' ? monthCap : null,
     timeBudgetMs: extra.timeBudgetMs,
+    mutateInPlace: extra.mutateInPlace === true,
     rules: simulationRuntime.rules,
     lanes: simulationRuntime.lanes
   });
@@ -1388,6 +1486,84 @@ function simulateModel(
   return result;
 }
 
+// 性能采样：URL 带 ?perf=1 时每 5s 打一次 advance/ui/frame 均值。
+const PerfStats = (function () {
+  let enabled = false;
+  try {
+    enabled = typeof location !== 'undefined' &&
+      /(?:\?|&)perf=1(?:&|$)/.test(String(location.search || ''));
+  } catch (error) {
+    enabled = false;
+  }
+  const buckets = {
+    advance: [],
+    ui: [],
+    frame: []
+  };
+  function sample(name, ms) {
+    if (!enabled) return;
+    const list = buckets[name];
+    if (!list) return;
+    const value = Number(ms);
+    if (!Number.isFinite(value) || value < 0) return;
+    list.push(value);
+    if (list.length > 180) list.shift();
+  }
+  function avg(list) {
+    if (!list.length) return 0;
+    let sum = 0;
+    for (let i = 0; i < list.length; i++) sum += list[i];
+    return sum / list.length;
+  }
+  function report() {
+    return {
+      advanceMs: Math.round(avg(buckets.advance) * 10) / 10,
+      uiMs: Math.round(avg(buckets.ui) * 10) / 10,
+      frameMs: Math.round(avg(buckets.frame) * 10) / 10,
+      samples: {
+        advance: buckets.advance.length,
+        ui: buckets.ui.length,
+        frame: buckets.frame.length
+      }
+    };
+  }
+  if (enabled && typeof setInterval === 'function') {
+    setInterval(function () {
+      console.log('[perf]', report());
+    }, 5000);
+  }
+  return {
+    enabled: enabled,
+    sample: sample,
+    report: report
+  };
+})();
+
+function recoverRuntimeFromLastSave(nowMs) {
+  try {
+    if (typeof SaveSystem === 'undefined' ||
+        !SaveSystem ||
+        typeof SaveSystem.load !== 'function') {
+      return false;
+    }
+    const now = Number.isFinite(nowMs) ? Math.max(0, Math.floor(nowMs)) : Date.now();
+    const loaded = SaveSystem.load(Platform, now);
+    const snapshot = loaded && loaded.snapshot;
+    if (!snapshot) return false;
+    const model = StateModel.normalize(snapshot, now);
+    if (!model || !model.player) return false;
+    applyModelToRuntime(model);
+    state._last = now;
+    return true;
+  } catch (error) {
+    console.error(
+      '[recoverRuntimeFromLastSave]',
+      error && error.stack ? error.stack : error
+    );
+    return false;
+  }
+}
+
 function advanceRuntime(fromMs, toMs, source, mainActionLimitSeconds) {
   if (!Number.isFinite(fromMs) ||
       !Number.isFinite(toMs)) {
@@ -1396,30 +1572,59 @@ function advanceRuntime(fromMs, toMs, source, mainActionLimitSeconds) {
   const prevStatus = state.player && state.player.lifecycle
     ? state.player.lifecycle.status
     : null;
-  // 在线热路径：queryView 免去每帧 normalize+snapshot；Simulation.advance 入口会再隔离拷贝。
+  // 在线热路径：queryView（共享嵌套引用）+ Simulation mutateInPlace + apply inplace。
   // 离线/重载仍走 fromRuntime，保证落盘边界干净。
-  const model = source === 'online' &&
-    typeof StateModel.queryView === 'function'
+  const onlineInPlace = source === 'online' &&
+    typeof StateModel.queryView === 'function';
+  const model = onlineInPlace
     ? StateModel.queryView(state /* runtime */, fromMs)
     : StateModel.fromRuntime(state /* runtime */, fromMs);
-  const result = simulateModel(
-    model,
-    fromMs,
-    toMs,
-    source,
-    mainActionLimitSeconds
-  );
+  let result = null;
+  const advanceStarted = PerfStats.enabled ? Date.now() : 0;
+  try {
+    result = simulateModel(
+      model,
+      fromMs,
+      toMs,
+      source,
+      mainActionLimitSeconds,
+      onlineInPlace ? { mutateInPlace: true } : null
+    );
+  } catch (error) {
+    console.error(
+      '[advanceRuntime]',
+      error && error.stack ? error.stack : error
+    );
+    // 原地推进失败后 runtime 可能半脏：尽量从最近成功存档回滚。
+    if (onlineInPlace) {
+      const recovered = recoverRuntimeFromLastSave(toMs);
+      if (!recovered && typeof setPersistenceIssue === 'function') {
+        setPersistenceIssue({
+          kind: 'repair',
+          message: '模拟异常，请重试存档或刷新页面',
+          now: toMs
+        });
+      }
+    }
+    if (PerfStats.enabled) {
+      PerfStats.sample('advance', Date.now() - advanceStarted);
+    }
+    return null;
+  }
   // 在线：信任 Simulation 输出，跳过 apply 时的 Stage4 全量 normalize。
   // 离线结算仍走完整 normalize，保证落盘前形态干净。
   if (typeof StateModel.applyToRuntime === 'function') {
     StateModel.applyToRuntime(
       state /* runtime */,
       result.state,
-      source === 'online' ? { trustedSimulation: true } : null
+      onlineInPlace
+        ? { trustedSimulation: true, inplace: true }
+        : (source === 'online' ? { trustedSimulation: true } : null)
     );
   } else {
     StateModel.applyToRuntime(state /* runtime */, result.state);
   }
+  invalidateQueryModelCache();
   state._lastSimulationReport = result.report;
   // 边缘触发：生命周期状态「进入安全缓冲」时弹一次提示（不每帧弹）
   const newStatus = state.player && state.player.lifecycle
@@ -1429,6 +1634,9 @@ function advanceRuntime(fromMs, toMs, source, mainActionLimitSeconds) {
       newStatus === 'safety_buffer' &&
       !state.showLifespanBuffer) {
     state.showLifespanBuffer = true;
+  }
+  if (PerfStats.enabled) {
+    PerfStats.sample('advance', Date.now() - advanceStarted);
   }
   return result.report;
 }
@@ -1902,14 +2110,9 @@ function stage2QueryModel() {
     queryModelFrameId = queryModelRenderFrame;
     return queryModelTTLCache;
   }
-  // Combat loadout queries require a full cloneable model. queryView is a
-  // hot-path projection that can omit/reshape fields CombatLoadouts rejects
-  // while a session is active — prefer fromRuntime in that window.
-  const combatSessionActive = !!(state.systems &&
-    state.systems.combat &&
-    state.systems.combat.session);
-  const model = (!combatSessionActive &&
-      typeof StateModel.queryView === 'function')
+  // Combat loadouts 严检若拒收 queryView，由 queryCombatLoadouts 单次回退 fromRuntime；
+  // 战斗热路径禁止每帧全量 normalize。
+  const model = typeof StateModel.queryView === 'function'
     ? StateModel.queryView(state, state.processedThroughMs)
     : StateModel.fromRuntime(state, state.processedThroughMs);
   queryModelFrameCache = model;
@@ -1923,7 +2126,8 @@ function applyModelToRuntime(model, options) {
   invalidateQueryModelCache();
   StateModel.applyToRuntime(state /* runtime */, model, options || null);
   state.parts = normalizeParts(
-    model.appearance && model.appearance.parts
+    model.appearance && model.appearance.parts,
+    state.gender
   );
   state.player = state.player ? ensurePlayer(state.player) : null;
   state.offlineResult = null;
@@ -2266,6 +2470,30 @@ function finishChunkedOfflineSettle(job) {
   return true;
 }
 
+function abortChunkedOfflineSettle(job, error) {
+  console.error(
+    '[offlineSettle]',
+    error && error.stack ? error.stack : error
+  );
+  try {
+    if (job && job.baseModel) {
+      applyModelToRuntime(job.baseModel);
+    }
+  } catch (restoreError) {
+    console.error(
+      '[offlineSettle] restore failed',
+      restoreError && restoreError.stack ? restoreError.stack : restoreError
+    );
+  }
+  state._offlineSettleJob = null;
+  state._offlineSettleProgress = null;
+  state.settlingOffline = false;
+  if (typeof toast === 'function') {
+    toast('离线结算失败，已恢复结算前状态');
+  }
+  return true;
+}
+
 function stepChunkedOfflineSettle() {
   const job = state._offlineSettleJob;
   if (!job) return true;
@@ -2278,28 +2506,39 @@ function stepChunkedOfflineSettle() {
   const CHUNK_GAME_MS = 10 * 60 * 1000;
   const TIME_BUDGET_MS = 32;
   const sliceEnd = Math.min(now, cursor + CHUNK_GAME_MS);
-  const result = simulateModel(
-    job.model,
-    cursor,
-    sliceEnd,
-    'offline',
-    job.mainLimitLeft,
-    { timeBudgetMs: TIME_BUDGET_MS }
-  );
+  let result = null;
+  try {
+    result = simulateModel(
+      job.model,
+      cursor,
+      sliceEnd,
+      'offline',
+      job.mainLimitLeft,
+      // job.model 已是独立工作副本；片间原地推进，避免每片双倍整树拷贝。
+      { timeBudgetMs: TIME_BUDGET_MS, mutateInPlace: true }
+    );
+  } catch (error) {
+    return abortChunkedOfflineSettle(job, error);
+  }
   job.model = result.state;
   let advancedTo = Number.isFinite(result.state.processedThroughMs)
     ? result.state.processedThroughMs
     : cursor;
   // 单片零推进（极端卡顿）：去掉时间片预算强制跑完本片，避免跳过游戏逻辑。
   if (advancedTo <= cursor && sliceEnd > cursor) {
-    const forced = simulateModel(
-      job.model,
-      cursor,
-      sliceEnd,
-      'offline',
-      job.mainLimitLeft,
-      null
-    );
+    let forced = null;
+    try {
+      forced = simulateModel(
+        job.model,
+        cursor,
+        sliceEnd,
+        'offline',
+        job.mainLimitLeft,
+        { mutateInPlace: true }
+      );
+    } catch (error) {
+      return abortChunkedOfflineSettle(job, error);
+    }
     job.model = forced.state;
     advancedTo = Number.isFinite(forced.state.processedThroughMs)
       ? forced.state.processedThroughMs
@@ -2320,7 +2559,7 @@ function stepChunkedOfflineSettle() {
     currentMs: job.cursorMs,
     toMs: job.now
   };
-  state.dirty = true;
+  // 结算中不必每片触发玩家立绘重合成。
   if (job.cursorMs >= job.now) {
     return finishChunkedOfflineSettle(job);
   }
@@ -2401,6 +2640,8 @@ function scheduleStartupOfflineSettle(snapshot, nowMs) {
         }
         return;
       }
+    } catch (error) {
+      abortChunkedOfflineSettle(state._offlineSettleJob, error);
     } finally {
       if (!state._offlineSettleJob) {
         state.settlingOffline = false;
@@ -3163,8 +3404,8 @@ function publishGainTipsFromReport(report) {
 
 
 function onlineAdvanceMinMs() {
-  // 在线推进每次都会 fromRuntime + Simulation 深拷贝整份世界。
-  // 不必跟 rAF 60Hz 对齐；战斗稍密，其余约 12Hz 足够。
+  // 在线推进已走 mutateInPlace；仍不必跟 rAF 60Hz 对齐。
+  // 战斗稍密，其余约 12Hz 足够。
   const key = state.current && state.current.key;
   if (typeof key === 'string' && key.indexOf('combat:') === 0) return 33;
   return 80;
@@ -3270,6 +3511,7 @@ function render() {
   // 帧率统计
   const now = Date.now(); frames++;
   if (now - fpsT > 1000) { fps = Math.round(frames * 1000 / (now - fpsT)); frames = 0; fpsT = now; }
+  const frameStarted = PerfStats.enabled ? now : 0;
 
   // 主循环防护：任何一帧（引擎/合成/UI）抛异常都绝不允许中断 requestAnimationFrame，
   // 否则单帧错误会令整个游戏卡死（敌人刷出后双方不再出手 = 僵持）。
@@ -3317,12 +3559,19 @@ function render() {
   // Canvas 只画「游戏世界」（此处角色立绘已在头像小画布内渲染）。
   try {
     if (uiDriven) {
+      const uiStarted = PerfStats.enabled ? Date.now() : 0;
       window.UI.renderGame();
+      if (PerfStats.enabled) {
+        PerfStats.sample('ui', Date.now() - uiStarted);
+      }
     }
   } catch (err) {
     console.error('[render] UI.renderGame error:', err && err.stack ? err.stack : err);
   }
 
+  if (PerfStats.enabled) {
+    PerfStats.sample('frame', Date.now() - frameStarted);
+  }
   requestAnimationFrame(render);
 }
 
@@ -3423,12 +3672,24 @@ function onHit(name) {
 // 序号步进：按传入部件类别，±1 调整序号（到头循环）
 function stepPart(cat, d) {
   if (isPersistenceLocked()) return false;
+  if (cat === 'hair_style') {
+    if (!HairRules) return false;
+    const next = HairRules.stepStyle(state.gender, state.parts, d);
+    state.parts.hair_hou = next.hair_hou;
+    state.parts.hair_qian = next.hair_qian;
+    state.dirty = true;
+    return true;
+  }
+  if (cat === 'hair_hou' || cat === 'hair_qian') {
+    return stepPart('hair_style', d);
+  }
   const list = NIE[state.gender][cat];
+  if (!Array.isArray(list)) return false;
   const n = list.length;
-  if (n <= 0) return;
+  if (n <= 0) return false;
   let i = state.parts[cat] + d;
-  if (i < 0) i = n - 1;          // 循环到末尾
-  if (i >= n) i = 0;              // 循环到开头
+  if (i < 0) i = n - 1;
+  if (i >= n) i = 0;
   state.parts[cat] = i;
   state.dirty = true;
   return true;
@@ -3436,8 +3697,19 @@ function stepPart(cat, d) {
 function randomize() {
   if (isPersistenceLocked()) return false;
   for (const c of CATS) {
-    const n = NIE[state.gender][c].length;
+    if (c === 'hair_hou' || c === 'hair_qian') continue;
+    const list = NIE[state.gender][c];
+    const n = Array.isArray(list) ? list.length : 0;
     state.parts[c] = n > 0 ? Math.floor(gameRandom() * n) : 0;
+  }
+  if (HairRules) {
+    const styled = HairRules.applyStyleIndex(
+      state.gender,
+      state.parts,
+      HairRules.randomStyleIndex(state.gender, Math.floor(gameRandom() * 1e9))
+    );
+    state.parts.hair_hou = styled.hair_hou;
+    state.parts.hair_qian = styled.hair_qian;
   }
   state.dirty = true;
   return true;

@@ -1,0 +1,60 @@
+[
+  {
+    "id": "seclusion_enter-0099",
+    "weight": 10,
+    "type": "seclusion_enter",
+    "actors": "solo",
+    "template": "{a}在{loc}落下一道禁制，正式闭关。",
+    "statusAny": [
+      "seclusion"
+    ]
+  },
+  {
+    "id": "seclusion_enter-0100",
+    "weight": 10,
+    "type": "seclusion_enter",
+    "actors": "solo",
+    "template": "{a}向左右交代事务后，在{loc}闭门不见客。",
+    "statusAny": [
+      "seclusion"
+    ]
+  },
+  {
+    "id": "seclusion_enter-0101",
+    "weight": 10,
+    "type": "seclusion_enter",
+    "actors": "solo",
+    "template": "{a}在{loc}洞府前贴上「谢客」二字，人影消失。",
+    "statusAny": [
+      "seclusion"
+    ]
+  },
+  {
+    "id": "solo-extra-1",
+    "weight": 8,
+    "type": "seclusion_enter",
+    "actors": "solo",
+    "template": "{a}在{loc}闭关前烧掉杂书，只留核心几卷。"
+  },
+  {
+    "id": "solo-extra-2",
+    "weight": 8,
+    "type": "seclusion_enter",
+    "actors": "solo",
+    "template": "{a}嘱托管事：闭关期间，{loc}一应事务勿扰。"
+  },
+  {
+    "id": "seclusion-enter-solo-2510",
+    "weight": 12,
+    "type": "seclusion_enter",
+    "actors": "solo",
+    "template": "{a}在{loc}闭关不见客，门落之前仍回头望了一眼，像把未说完的话也关了进去。"
+  },
+  {
+    "id": "seclusion-enter-solo-2511",
+    "weight": 11,
+    "type": "seclusion_enter",
+    "actors": "solo",
+    "template": "{a}在{loc}关门打坐，桌上茶未凉，人已入定。"
+  }
+]

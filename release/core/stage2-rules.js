@@ -23,6 +23,9 @@
     INVALID_ACTION: 'invalid_action',
     REQUIREMENTS_INVALID: 'requirements_invalid'
   });
+  // 离线单次 Simulation transition 内最多连续 complete 次数（采集/生产/钓鱼）。
+  // 对齐战斗 OFFLINE_COMBAT_BATCH_TICKS：仍逐次走 RNG，只减少 advance 环次数。
+  const OFFLINE_ACTION_BATCH = 120;
   const RESOURCE_SKILLS = Object.freeze([
     'herb', 'mining', 'woodcutting'
   ]);
@@ -1297,6 +1300,83 @@
       };
     }
 
+    function isOfflineSource(helpers) {
+      return !!(helpers && helpers.source === 'offline');
+    }
+
+    function offlineActionBoundary(state, descriptor, helpers) {
+      const duration = finiteNumber(descriptor && descriptor.duration, 0);
+      const first = currentBoundary(
+        state.current,
+        duration,
+        helpers.nowMs()
+      );
+      if (!isOfflineSource(helpers) || !(duration > 0)) return first;
+      // 已到期必须立刻 complete；否则大批量边界会被更短的 lane 抢走，主行动空转。
+      if (!(first > 0)) return 0;
+      let extra = OFFLINE_ACTION_BATCH - 1;
+      const current = state.current;
+      if (current &&
+          current.mode === 'finite' &&
+          Number.isFinite(current.count) &&
+          Number.isFinite(current.done)) {
+        const left = Math.max(0, current.count - current.done);
+        extra = Math.min(extra, Math.max(0, left - 1));
+      }
+      return first + extra * duration;
+    }
+
+    function completeActionOnce(state, descriptor, helpers) {
+      if (descriptor.kind === 'gather-explore') {
+        return completeExplore(state, descriptor, helpers);
+      }
+      if (descriptor.kind === 'gather-collect') {
+        return completeCollect(state, descriptor, helpers);
+      }
+      if (descriptor.kind === 'fish') {
+        return completeFish(state, descriptor, helpers);
+      }
+      if (descriptor.kind === 'produce') {
+        return completeProduction(state, descriptor, helpers);
+      }
+      if (descriptor.kind === 'beast-tame') {
+        return completeBeastTame(state, descriptor, helpers);
+      }
+      if (descriptor.kind === 'beast-train') {
+        return completeBeastTraining(state, descriptor, helpers);
+      }
+      return { stopReason: STOP.INVALID_ACTION };
+    }
+
+    function completeAction(state, descriptor, helpers) {
+      if (!isOfflineSource(helpers) ||
+          (
+            descriptor.kind !== 'gather-collect' &&
+            descriptor.kind !== 'fish' &&
+            descriptor.kind !== 'produce'
+          )) {
+        return completeActionOnce(state, descriptor, helpers);
+      }
+      let result = { stopReason: null };
+      let guard = 0;
+      while (
+        state.current &&
+        hasRemaining(state.current) &&
+        guard < OFFLINE_ACTION_BATCH
+      ) {
+        guard++;
+        // 本批沿用 getAction 时的 duration，与 nextBoundary 拉长量一致；
+        // 中途因升级刷新时长会导致与「按旧时长预约的批量窗」错位。
+        if (finiteNumber(state.current.elapsed, 0) + 1e-12 <
+            descriptor.duration) {
+          break;
+        }
+        result = completeActionOnce(state, descriptor, helpers);
+        if (result && result.stopReason != null) break;
+      }
+      return result;
+    }
+
     const stage2Rules = Object.freeze({
       start(state, key, nowMs) {
         const cloned = cloneJson(state);
@@ -1356,11 +1436,7 @@
         return descriptor;
       },
       nextBoundary(state, descriptor, helpers) {
-        return currentBoundary(
-          state.current,
-          descriptor.duration,
-          helpers.nowMs()
-        );
+        return offlineActionBoundary(state, descriptor, helpers);
       },
       elapse(state, descriptor, seconds, helpers) {
         elapseCurrent(state.current, seconds, helpers.nowMs());
@@ -1407,25 +1483,7 @@
         return { status: 'ready', reason: null };
       },
       complete(state, descriptor, helpers) {
-        if (descriptor.kind === 'gather-explore') {
-          return completeExplore(state, descriptor, helpers);
-        }
-        if (descriptor.kind === 'gather-collect') {
-          return completeCollect(state, descriptor, helpers);
-        }
-        if (descriptor.kind === 'fish') {
-          return completeFish(state, descriptor, helpers);
-        }
-        if (descriptor.kind === 'produce') {
-          return completeProduction(state, descriptor, helpers);
-        }
-        if (descriptor.kind === 'beast-tame') {
-          return completeBeastTame(state, descriptor, helpers);
-        }
-        if (descriptor.kind === 'beast-train') {
-          return completeBeastTraining(state, descriptor, helpers);
-        }
-        return { stopReason: STOP.INVALID_ACTION };
+        return completeAction(state, descriptor, helpers);
       },
       random(state) {
         const drawn = randomNext(state.rngState);

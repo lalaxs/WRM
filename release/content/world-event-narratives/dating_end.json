@@ -1,0 +1,9 @@
+[
+  {
+    "id": "dating-end-solo-2561",
+    "weight": 11,
+    "type": "dating_end",
+    "actors": "solo",
+    "template": "{a}结束约会重归{loc}日常，表面如常，心里还回味着刚才的交谈。"
+  }
+]

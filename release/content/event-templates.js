@@ -4,7 +4,7 @@
  *   - 原版：从 original-event-texts + original-event-slots 编译
  *   - 自研：编辑 content/h5-event-templates.json 后重新生成
  *
- * 占位符：{a}{b}{c}{gift}{young_pet}{pet_form}{linggen}{office}{baby}{sword}{craft}{loc}
+ * 占位符：{a}{b}{c}{you}{gift}{young_pet}{pet_form}{linggen}{office}{baby}{sword}{craft}{loc}
  */
 (function (root, factory) {
   'use strict';
@@ -66,9 +66,10 @@
     "source": "original",
     "needs": [
       "a",
-      "b"
+      "b",
+      "you"
     ],
-    "template": "{a}结识了同门{b}，他热情的邀请你一起修炼"
+    "template": "{a}结识了同门{b}，他热情的邀请{you}一起修炼"
   },
   "10": {
     "source": "original",
@@ -429,16 +430,18 @@
     "source": "original",
     "needs": [
       "a",
-      "b"
+      "b",
+      "you"
     ],
-    "template": "{a}在异兽肆虐的村庄救下了一名叫做{b}的孤儿，其欲拜你为师，是否同意？的孤儿，将之收为了弟子"
+    "template": "{a}在异兽肆虐的村庄救下了一名叫做{b}的孤儿，其欲拜{you}为师，是否同意？的孤儿，将之收为了弟子"
   },
   "61": {
     "source": "original",
     "needs": [
-      "a"
+      "a",
+      "you"
     ],
-    "template": "{a}的孤儿，其欲拜你为师，但你拒绝了"
+    "template": "{a}的孤儿，其欲拜{you}为师，但{you}拒绝了"
   },
   "62": {
     "source": "original",
@@ -459,9 +462,10 @@
     "source": "original",
     "needs": [
       "a",
-      "b"
+      "b",
+      "you"
     ],
-    "template": "{a}在秘境探索时遇到{b}，他身中情毒失去理智，你为了自身安全只好勉为其难的帮他解了毒"
+    "template": "{a}在秘境探索时遇到{b}，他身中情毒失去理智，{you}为了自身安全只好勉为其难的帮他解了毒"
   },
   "65": {
     "source": "original",
@@ -484,17 +488,19 @@
     "source": "original",
     "needs": [
       "a",
+      "you",
       "b"
     ],
-    "template": "{a}，他身中情毒奄奄一息，拼着最后一丝清明要求你速速离开，是否帮他解毒？{b}，他身中情毒奄奄一息，拼着最后一丝清明要求你速速离开，你最终决定舍身救他"
+    "template": "{a}，他身中情毒奄奄一息，拼着最后一丝清明要求{you}速速离开，是否帮他解毒？{b}，他身中情毒奄奄一息，拼着最后一丝清明要求{you}速速离开，{you}最终决定舍身救他"
   },
   "68": {
     "source": "original",
     "needs": [
       "a",
-      "b"
+      "b",
+      "you"
     ],
-    "template": "{a}拜访{b}，他身中情毒奄奄一息，拼着最后一丝清明要求你速速离开，你犹豫后选择了离开"
+    "template": "{a}拜访{b}，他身中情毒奄奄一息，拼着最后一丝清明要求{you}速速离开，{you}犹豫后选择了离开"
   },
   "69": {
     "source": "original",
@@ -545,17 +551,19 @@
     "source": "original",
     "needs": [
       "a",
-      "b"
+      "b",
+      "you"
     ],
-    "template": "{a}，他身中情毒奄奄一息，是否帮他解毒？{b}，他身中情毒奄奄一息，你最终决定舍身救他"
+    "template": "{a}，他身中情毒奄奄一息，是否帮他解毒？{b}，他身中情毒奄奄一息，{you}最终决定舍身救他"
   },
   "76": {
     "source": "original",
     "needs": [
       "a",
-      "b"
+      "b",
+      "you"
     ],
-    "template": "{a}拜访{b}，他身中情毒奄奄一息，你犹豫后选择了离开"
+    "template": "{a}拜访{b}，他身中情毒奄奄一息，{you}犹豫后选择了离开"
   },
   "77": {
     "source": "original",
@@ -583,16 +591,18 @@
     "source": "original",
     "needs": [
       "a",
-      "young_pet"
+      "young_pet",
+      "you"
     ],
-    "template": "{a}温养许久的蛋里竟然孵化出了一只{young_pet}。它对你颇为依恋，主动签订了主仆契约。不过这么小，看这样子，还要等很多年才能化形吧……"
+    "template": "{a}温养许久的蛋里竟然孵化出了一只{young_pet}。它对{you}颇为依恋，主动签订了主仆契约。不过这么小，看这样子，还要等很多年才能化形吧……"
   },
   "82": {
     "source": "original",
     "needs": [
-      "a"
+      "a",
+      "you"
     ],
-    "template": "{a}向你请求，若是你未能飞升与天同寿，便请在死前毁掉他，不要让他一个人度过剩下的没有止境的时间"
+    "template": "{a}向{you}请求，若是{you}未能飞升与天同寿，便请在死前毁掉他，不要让他一个人度过剩下的没有止境的时间"
   },
   "83": {
     "source": "original",
@@ -613,44 +623,50 @@
   "85": {
     "source": "original",
     "needs": [
-      "a"
+      "a",
+      "you"
     ],
-    "template": "{a}拔下自己的逆鳞作为礼物，许下和你生生世世的诺言"
+    "template": "{a}拔下自己的逆鳞作为礼物，许下和{you}生生世世的诺言"
   },
   "86": {
     "source": "original",
     "needs": [
-      "a"
+      "a",
+      "you"
     ],
-    "template": "{a}为你寻到了万年灵髓，突破率增加5%"
+    "template": "{a}为{you}寻到了万年灵髓，突破率增加5%"
   },
   "88": {
     "source": "original",
     "needs": [
-      "a"
+      "a",
+      "you"
     ],
-    "template": "{a}铸造本命剑的材料已经集齐，你当机立断立刻闭关铸造炼化了本命神剑"
+    "template": "{a}铸造本命剑的材料已经集齐，{you}当机立断立刻闭关铸造炼化了本命神剑"
   },
   "89": {
     "source": "original",
     "needs": [
-      "a"
+      "a",
+      "you"
     ],
-    "template": "{a}请求你炼化了他的凤火，这样不管度过多少轮回，他都能找到你的位置"
+    "template": "{a}请求{you}炼化了他的凤火，这样不管度过多少轮回，他都能找到{you}的位置"
   },
   "90": {
     "source": "original",
     "needs": [
-      "a"
+      "a",
+      "you"
     ],
-    "template": "{a}用自己的龙气温养了你的身体，令你的武力值全部恢复了"
+    "template": "{a}用自己的龙气温养了{you}的身体，令{you}的武力值全部恢复了"
   },
   "91": {
     "source": "original",
     "needs": [
-      "a"
+      "a",
+      "you"
     ],
-    "template": "{a}用他绚丽的凤舞取悦于你，这凝结天地灵气的舞姿令你精神一振，突破几率增加5%"
+    "template": "{a}用他绚丽的凤舞取悦于{you}，这凝结天地灵气的舞姿令{you}精神一振，突破几率增加5%"
   },
   "92": {
     "source": "original",
@@ -828,17 +844,19 @@
     "source": "original",
     "needs": [
       "a",
+      "you",
       "b"
     ],
-    "template": "{a}向你介绍了身中奇诡情毒的{b}，希望你能用你特别的心法为其解毒，是否帮忙？，你用你独特的心法为其解了毒，赠与你表示感激"
+    "template": "{a}向{you}介绍了身中奇诡情毒的{b}，希望{you}能用{you}特别的心法为其解毒，是否帮忙？，{you}用{you}独特的心法为其解了毒，赠与{you}表示感激"
   },
   "117": {
     "source": "original",
     "needs": [
       "a",
-      "b"
+      "b",
+      "you"
     ],
-    "template": "{a}拜访{b}，希望你能用你特别的心法为其解毒，你拒绝了这个请求"
+    "template": "{a}拜访{b}，希望{you}能用{you}特别的心法为其解毒，{you}拒绝了这个请求"
   },
   "118": {
     "source": "original",
@@ -1056,16 +1074,18 @@
     "source": "original",
     "needs": [
       "a",
+      "you",
       "b"
     ],
-    "template": "{a}向你提出结为道侣的请求，是否同意？{b}结为了道侣"
+    "template": "{a}向{you}提出结为道侣的请求，是否同意？{b}结为了道侣"
   },
   "147": {
     "source": "original",
     "needs": [
-      "a"
+      "a",
+      "you"
     ],
-    "template": "{a}向你提出结为道侣的请求，你拒绝了他"
+    "template": "{a}向{you}提出结为道侣的请求，{you}拒绝了他"
   },
   "148": {
     "source": "original",
@@ -1441,9 +1461,10 @@
     "source": "original",
     "needs": [
       "a",
-      "b"
+      "b",
+      "you"
     ],
-    "template": "{a}似乎是太久没有联系过{b}，对方对你的印象已经开始变淡了，有空去拜访一下吧"
+    "template": "{a}似乎是太久没有联系过{b}，对方对{you}的印象已经开始变淡了，有空去拜访一下吧"
   },
   "196": {
     "source": "original",
@@ -4064,9 +4085,10 @@
   "541": {
     "source": "original",
     "needs": [
-      "a"
+      "a",
+      "you"
     ],
-    "template": "{a}探讨剑法，对方虽然表情冷淡，但可以感受到对你剑法的尊敬"
+    "template": "{a}探讨剑法，对方虽然表情冷淡，但可以感受到对{you}剑法的尊敬"
   },
   "542": {
     "source": "original",
@@ -4356,8 +4378,8 @@
     "source": "h5",
     "needs": [
       "a",
-      "b",
-      "loc"
+      "loc",
+      "b"
     ],
     "template": "{a}在{loc}对{b}把心意说了出口，话未说尽，却已无法收回"
   }

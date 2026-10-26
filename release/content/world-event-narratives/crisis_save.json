@@ -1,0 +1,130 @@
+[
+  {
+    "id": "crisis_save-1101",
+    "weight": 12,
+    "type": "crisis_save",
+    "actors": "pair",
+    "template": "{a}在{loc}从魔兽围杀中拼力拖出{b}，二人倒在尘土里，胸口起伏剧烈，才敢确认对方还喘着气。",
+    "statusB": [
+      "injured"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ]
+  },
+  {
+    "id": "crisis_save-1102",
+    "weight": 11,
+    "type": "crisis_save",
+    "actors": "pair",
+    "template": "秘境将塌，{a}在{loc}一把拽住坠落的{b}。悬空一息，说得有些发紧，落地后谁都没有立刻松手。",
+    "regionTypes": [
+      "specialRealm"
+    ]
+  },
+  {
+    "id": "crisis_save-1103",
+    "weight": 11,
+    "type": "crisis_save",
+    "actors": "pair",
+    "template": "{b}的护体将碎，{a}在{loc}以自己的灵力硬接一记。事后{a}吐出一口血，{b}却先伸手扶住了他。",
+    "statusB": [
+      "injured"
+    ]
+  },
+  {
+    "id": "crisis_save-1104",
+    "weight": 10,
+    "type": "crisis_save",
+    "actors": "pair",
+    "template": "{a}在{loc}听见{b}的惨叫，连护身符都顾不上启。救出时衣袍尽毁，{b}却死死攥着他的袖口不放。",
+    "personalityAny": [
+      "chicheng",
+      "rechen"
+    ]
+  },
+  {
+    "id": "crisis_save-1105",
+    "weight": 10,
+    "type": "crisis_save",
+    "actors": "pair",
+    "template": "伏击骤起，{a}在{loc}把{b}护在身后，脊背中了一掌。敌人散去后，{b}才发现那掌本是冲着自己来的。"
+  },
+  {
+    "id": "crisis_save-1106",
+    "weight": 9,
+    "type": "crisis_save",
+    "actors": "pair",
+    "template": "{a}循着残踪在{loc}寻到气息将绝的{b}。喂下丹药的瞬间，{b}抓住他手腕，力气小得像一句别走。",
+    "statusB": [
+      "missing"
+    ]
+  },
+  {
+    "id": "crisis_save-1107",
+    "weight": 9,
+    "type": "crisis_save",
+    "actors": "pair",
+    "template": "{a}本想独善其身，却在{loc}还是踏进了血泊。救下{b}后他只淡淡说别再乱跑，声音却哑了。",
+    "personalityA": [
+      "zhizhuo"
+    ]
+  },
+  {
+    "id": "crisis_save-1108",
+    "weight": 9,
+    "type": "crisis_save",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}本是路人，却因同遭追杀并肩杀出。事后对上眼，陌生感竟薄得像一层纸。"
+  },
+  {
+    "id": "crisis_save-1109",
+    "weight": 8,
+    "type": "crisis_save",
+    "actors": "pair",
+    "template": "{a}在{loc}用尽随身灵药稳住{b}，药香未散，{b}已泪湿枕角，只重复一句多谢。",
+    "sectAny": [
+      "baicao-valley"
+    ],
+    "statusB": [
+      "injured"
+    ]
+  },
+  {
+    "id": "crisis_save-1110",
+    "weight": 8,
+    "type": "crisis_save",
+    "actors": "pair",
+    "template": "桥断人前，{a}在{loc}纵身一跃接住{b}。落地瞬间骨裂作响，{b}却把脸埋进他肩窝，久久不抬头。"
+  },
+  {
+    "id": "crisis_save-tension-1940",
+    "weight": 13,
+    "type": "crisis_save",
+    "actors": "pair",
+    "template": "{a}在{loc}把{b}拖出险地，两人跪在尘里喘气。{b}想道谢，话未出口先哽住。{a}别过脸，有点不自在。",
+    "pairGenderNone": [
+      "fm"
+    ]
+  },
+  {
+    "id": "crisis_save-tension-1941",
+    "weight": 12,
+    "type": "crisis_save",
+    "actors": "pair",
+    "template": "在{loc}，魔气退尽，{a}才发现自己一直握着{b}的手不放。松开时两人都像被烫到，又都假装只是余悸。",
+    "statusB": [
+      "injured"
+    ]
+  },
+  {
+    "id": "crisis_save-fm-soft-1",
+    "weight": 14,
+    "type": "crisis_save",
+    "actors": "pair",
+    "template": "险境里{a}在{loc}拽住{b}的衣袖把他拉出阵圈，脱困后先松开手。两人跪地喘息，她表面镇定，手却还在抖。",
+    "pairGenderAny": [
+      "fm"
+    ]
+  }
+]

@@ -494,7 +494,10 @@
     if (!Number.isFinite(suppliedFromMs) || suppliedFromMs < 0) {
       throw new RangeError('fromMs must be a non-negative finite number');
     }
-    const state = cloneJsonValue(model);
+    // 默认仍隔离拷贝，保证测试与命令路径输入不被改。
+    // 在线热路径 / 离线分片工作副本可显式 mutateInPlace，跳过整树深拷贝。
+    const mutateInPlace = config.mutateInPlace === true;
+    const state = mutateInPlace ? model : cloneJsonValue(model);
     const fromMs = logicalFromMs(state, suppliedFromMs);
     const elapsedRealityParts = decimalParts(elapsedSeconds);
     const toMs = decimalPartsToNumber(
@@ -903,8 +906,10 @@
     }
 
     return {
-      // 在线短步进的结果会立刻 applyToRuntime，再克隆一次整树没有收益。
-      state: config.source === 'online' ? state : cloneJsonValue(state),
+      // 在线短步进 / 显式 mutateInPlace：调用方已持有可写工作副本，勿再整树拷出。
+      state: (config.source === 'online' || mutateInPlace)
+        ? state
+        : cloneJsonValue(state),
       report: cloneJsonValue(report),
       remainingSeconds: remaining,
       done: !(remaining > 0)

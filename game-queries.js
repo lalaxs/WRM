@@ -1,11 +1,25 @@
 'use strict';
 
 function queryApp() {
+  // 游戏态不需要捏脸索引/数量；避免主循环每帧 normalizeParts。
+  const needAppearance = state.phase === 'create' || state.phase === 'edit';
+  let appearance = {
+    indices: state.parts || null,
+    counts: null
+  };
+  if (needAppearance) {
+    appearance = {
+      indices: typeof appearanceIndices === 'function'
+        ? appearanceIndices()
+        : (state.parts || null),
+      counts: typeof appearanceCounts === 'function'
+        ? appearanceCounts()
+        : null
+    };
+  }
   return readonlyQuery({
     phase: state.phase,
-    appearance: {
-      indices: normalizeParts(state.parts)
-    },
+    appearance: appearance,
     modals: {
       break: !!state.showBreak,
       offline: !!state.showOffline && !state.settlingOffline,

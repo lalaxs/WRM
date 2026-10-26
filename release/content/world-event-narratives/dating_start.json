@@ -1,0 +1,9 @@
+[
+  {
+    "id": "dating-start-solo-2560",
+    "weight": 11,
+    "type": "dating_start",
+    "actors": "solo",
+    "template": "{a}在{loc}暂时放下手头事，只为赴一场不敢声张的约。整理衣袖时，出发前又确认了一遍。"
+  }
+]

@@ -1,0 +1,73 @@
+[
+  {
+    "id": "travel_start-0110",
+    "weight": 9,
+    "type": "travel_start",
+    "actors": "solo",
+    "template": "{a}打点行装，离开{loc}，踏上游历之路。",
+    "personalityAny": [
+      "shuaituo",
+      "rechen",
+      "chicheng"
+    ],
+    "statusAny": [
+      "travel"
+    ]
+  },
+  {
+    "id": "travel_start-0111",
+    "weight": 9,
+    "type": "travel_start",
+    "actors": "solo",
+    "template": "{a}在{loc}辞别故人，说要去远方走走。",
+    "personalityAny": [
+      "shuaituo",
+      "rechen",
+      "chicheng"
+    ],
+    "statusAny": [
+      "travel"
+    ]
+  },
+  {
+    "id": "travel_start-0112",
+    "weight": 10,
+    "type": "travel_start",
+    "actors": "solo",
+    "template": "{a}从{loc}启程，背上青布包袱远去。",
+    "statusAny": [
+      "travel"
+    ]
+  },
+  {
+    "id": "solo-extra-5",
+    "weight": 8,
+    "type": "travel_start",
+    "actors": "solo",
+    "template": "{a}买好船票，从{loc}码头离去。",
+    "regionTypes": [
+      "town"
+    ]
+  },
+  {
+    "id": "solo-extra-6",
+    "weight": 8,
+    "type": "travel_start",
+    "actors": "solo",
+    "template": "{a}把钥匙交给邻舍，离开{loc}云游。"
+  },
+  {
+    "id": "travel-start-solo-2530",
+    "weight": 12,
+    "type": "travel_start",
+    "actors": "solo",
+    "template": "{a}从{loc}启程游历，行李不重，脚步却比平日沉，像带着未拆的难处上路。"
+  },
+  {
+    "id": "travel-start-solo-2531",
+    "weight": 11,
+    "type": "travel_start",
+    "actors": "solo",
+    "template": "{a}辞别{loc}，没有多留话。走到山口才停一下，终究没有回头。"
+  }
+]

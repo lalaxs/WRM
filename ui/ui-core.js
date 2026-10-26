@@ -11,10 +11,12 @@
   Ui.getPage = function getPage(key) {
     return Ui.__pages[key] || null;
   };
-  Ui.CATS = ['body', 'cloth', 'nose', 'mouth', 'eyes', 'eyebrush', 'hair'];
+  Ui.CATS = [
+    'hair_hou', 'hair_qian', 'cloth', 'body', 'mouth', 'nose', 'eyes', 'deco'
+  ];
   Ui.CAT_LABEL = {
-    body: '身体', cloth: '衣服', nose: '鼻子', mouth: '嘴',
-    eyes: '眼睛', eyebrush: '眉眼', hair: '头发'
+    hair_hou: '后发', hair_qian: '前发', cloth: '衣服', body: '脸型',
+    mouth: '嘴', nose: '鼻子', eyes: '眼睛', deco: '装饰'
   };
   Ui.root = null;
   Ui.shell = { built: false };
@@ -597,7 +599,7 @@
     const persistenceRetry = el('button', 'persistence-retry', persistenceRoot, '重试');
     persistenceRetry.addEventListener('click', () => {
       a.commands.retryPersistence();
-      Ui.renderGame();
+      Ui.renderGame(true);
     });
     Ui.persistenceUi = {
       root: persistenceRoot,
@@ -785,7 +787,8 @@
     } catch (error) {
       Ui.showToast('操作未完成，请稍后重试');
     }
-    Ui.renderGame();
+    // 用户操作立刻刷新，不走主循环 100ms 节流。
+    Ui.renderGame(true);
     return result;
   }
 
@@ -2019,9 +2022,9 @@
 
   function liveThrottleMs(key) {
     if (key === 'combat') {
-      // 进行中战斗要跟手；列表页不必每帧重查 loadouts。
+      // 进行中战斗约 20Hz 刷新条；列表页不必每帧重查 loadouts。
       const battle = Ui.contentState.refs && Ui.contentState.refs.battle;
-      return battle ? 0 : 120;
+      return battle ? 50 : 120;
     }
     if (key === 'home') return 100;
     if (key === 'sects') return 0; // liveSects 内部已节流

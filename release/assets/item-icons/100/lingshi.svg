@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" role="img" aria-label="灵石">
+  <path fill="#6BCFC8" d="M50 13 83 32v36L50 87 17 68V32z"/>
+  <path fill="#D5FFF7" d="M50 13 83 32 50 51 17 32z" opacity=".72"/>
+  <path fill="#FFFFFF" d="M39 30 50 24 62 30 50 37z" opacity=".35"/>
+  <path fill="#D5FFF7" d="M50 51 83 32v36L50 87z" opacity=".28"/>
+</svg>

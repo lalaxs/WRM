@@ -1,0 +1,59 @@
+[
+  {
+    "id": "duel-0079",
+    "weight": 2,
+    "type": "duel",
+    "actors": "pair",
+    "template": "{a}在{loc}向{b}下了战书，约在演武场比出输赢。",
+    "tagAny": [
+      "enemy"
+    ],
+    "affinityMax": -30
+  },
+  {
+    "id": "duel-0080",
+    "weight": 1,
+    "type": "duel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}拔剑对上，招招不留情面。",
+    "tagAny": [
+      "enemy"
+    ],
+    "affinityMax": -40
+  },
+  {
+    "id": "duel-0081",
+    "weight": 2,
+    "type": "duel",
+    "actors": "pair",
+    "template": "{a}与同门{b}在{loc}因真传名额暗自较劲，最后摆到台面上比剑。",
+    "officeRankAny": [
+      "trueDisciple",
+      "inner"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "duel-love-2401",
+    "weight": 10,
+    "type": "duel",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}以武泄愤，刀光里全是说不出口的妒意。收势后两人都没再多话，喘息却一样乱。",
+    "tagAny": [
+      "lover",
+      "impressed",
+      "friend"
+    ]
+  },
+  {
+    "id": "duel-love-2402",
+    "weight": 9,
+    "type": "duel",
+    "actors": "pair",
+    "template": "{a}在{loc}拔剑对上{b}。剑锋相抵时两人都愣了。",
+    "tagAny": [
+      "lover",
+      "friend"
+    ]
+  }
+]

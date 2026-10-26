@@ -1,0 +1,57 @@
+[
+  {
+    "id": "breakup-0098",
+    "weight": 6,
+    "type": "breakup",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}说开了，决定各自修行，不再纠葛。",
+    "tagAny": [
+      "lover"
+    ],
+    "affinityMax": 35
+  },
+  {
+    "id": "breakup-love-2301",
+    "weight": 14,
+    "type": "breakup",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}把话说开，声音稳得过头。信物交还时手相触，两人都像被烫到，却仍松开了。",
+    "tagAny": [
+      "lover",
+      "partner",
+      "dao-companion"
+    ]
+  },
+  {
+    "id": "breakup-love-2302",
+    "weight": 13,
+    "type": "breakup",
+    "actors": "pair",
+    "template": "分手那句在{loc}说得很短。{a}先转身，{b}站在原地。风一过，谁都没有回头的勇气。",
+    "tagAny": [
+      "lover",
+      "partner"
+    ]
+  },
+  {
+    "id": "breakup-love-2303",
+    "weight": 12,
+    "type": "breakup",
+    "actors": "pair",
+    "template": "{a}在{loc}说我们到此为止，{b}点头太快。散开十步，{b}却忽然停住，终究没有再叫住他。",
+    "tagAny": [
+      "lover"
+    ]
+  },
+  {
+    "id": "breakup-love-2304",
+    "weight": 11,
+    "type": "breakup",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}把话说断。伞留给了对方，自己冒雨离开。",
+    "tagAny": [
+      "lover",
+      "partner"
+    ]
+  }
+]

@@ -469,6 +469,11 @@
   function syncFarmPlotModal() {
     const m = Ui.modals.farmPlot;
     if (!m || !m.root) return;
+    // 未选田且弹窗未开：主循环里直接跳过，避免空转。
+    if (!Ui.farmUiState.selectedPlotId &&
+        m.root.style.display !== 'flex') {
+      return;
+    }
     const context = farmSelectedPlotContext();
     if (!context) {
       m.root.style.display = 'none';

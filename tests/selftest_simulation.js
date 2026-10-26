@@ -1569,6 +1569,75 @@ ok(JSON.stringify(fixtureBase) === fixtureBefore,
   'advance does not mutate input model');
 ok(fixtureOnce.state.current === null,
   'materials exhausted stops the action');
+
+{
+  const inplaceBase = JSON.parse(fixtureBefore);
+  const beforeTok = JSON.stringify(inplaceBase);
+  const inplaceOnce = Simulation.advance(inplaceBase, 6, {
+    source: 'offline',
+    fromMs: 1000,
+    mainActionLimitSeconds: 6,
+    mutateInPlace: true,
+    rules: fixtureRules(),
+    lanes: [fixtureLane()]
+  });
+  ok(inplaceOnce.state === inplaceBase,
+    'mutateInPlace returns the same object reference');
+  ok(JSON.stringify(inplaceBase) !== beforeTok,
+    'mutateInPlace mutates the working copy');
+  ok(JSON.stringify(inplaceOnce.state) === JSON.stringify(fixtureOnce.state),
+    'mutateInPlace reaches the same state as isolated advance');
+}
+
+{
+  // 隔离路径：中途抛错不得污染输入。
+  const isolated = JSON.parse(fixtureBefore);
+  const isolatedBefore = JSON.stringify(isolated);
+  let isolatedThrew = false;
+  try {
+    Simulation.advance(isolated, 6, {
+      source: 'online',
+      fromMs: 1000,
+      rules: Object.assign({}, fixtureRules(), {
+        getAction: function () {
+          throw new Error('injected_advance_failure');
+        }
+      }),
+      lanes: [fixtureLane()]
+    });
+  } catch (error) {
+    isolatedThrew = /injected_advance_failure/.test(String(error && error.message));
+  }
+  ok(isolatedThrew, 'isolated advance rethrows injected failure');
+  ok(JSON.stringify(isolated) === isolatedBefore,
+    'isolated advance leaves input untouched after throw');
+
+  // mutateInPlace：抛错前已写入的字段会留在工作副本（调用方负责回滚）。
+  const dirty = JSON.parse(fixtureBefore);
+  dirty.player = dirty.player || {};
+  dirty.player.xiwei = 0;
+  let dirtyThrew = false;
+  try {
+    Simulation.advance(dirty, 6, {
+      source: 'online',
+      fromMs: 1000,
+      mutateInPlace: true,
+      rules: Object.assign({}, fixtureRules(), {
+        getAction: function (model) {
+          model.player.xiwei = 999;
+          throw new Error('injected_inplace_failure');
+        }
+      }),
+      lanes: [fixtureLane()]
+    });
+  } catch (error) {
+    dirtyThrew = /injected_inplace_failure/.test(String(error && error.message));
+  }
+  ok(dirtyThrew, 'mutateInPlace advance rethrows injected failure');
+  ok(dirty.player.xiwei === 999,
+    'mutateInPlace leaves partial writes for caller rollback');
+}
+
 ok(fixtureOnce.report.action.stopReason === 'materials_exhausted' &&
   fixtureOnce.state.lastActionStop.reason === 'materials_exhausted' &&
   fixtureOnce.state.lastActionStop.atMs === 7000,

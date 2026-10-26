@@ -159,12 +159,44 @@ sandbox.window = {
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
 vm.runInContext(fs.readFileSync('nie-manifest.js', 'utf8'), sandbox);
+// SaveSystem 需要 Stage4；主沙箱故意不挂 Stage4 以免触发 game.js 全量 Stage4 bootstrap。
+const saveSandbox = {
+  Stage2State: require('../core/stage2-state.js'),
+  Stage3State: require('../core/stage3-state.js'),
+  Stage4State: require('../core/stage4-state.js'),
+  console: sandbox.console,
+  Math: sandbox.Math,
+  Date: sandbox.Date,
+  JSON: JSON,
+  Object: Object,
+  Array: Array,
+  Number: Number,
+  String: String,
+  Boolean: Boolean,
+  Error: Error,
+  Set: Set,
+  Infinity: Infinity,
+  NaN: NaN,
+  isFinite: isFinite,
+  isNaN: isNaN,
+  parseInt: parseInt,
+  parseFloat: parseFloat
+};
+saveSandbox.globalThis = saveSandbox;
+vm.createContext(saveSandbox);
+vm.runInContext(
+  fs.readFileSync('core/save-system.js', 'utf8'),
+  saveSandbox,
+  { filename: 'core/save-system.js' }
+);
+sandbox.SaveSystem = saveSandbox.SaveSystem;
 files.forEach((file) => {
+  if (file === 'core/save-system.js') return;
   vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, {
     filename: file
   });
 });
-['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+['game.js', 'game-appearance.js', 'game-persist.js', 'game-runtime.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-commands-combat.js', 'game-commands-homestead.js', 'game-commands-social.js', 'game-commands-sect.js', 'game-commands-legacy.js', 'game-api.js'].forEach((file) => {
   vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
 });
 

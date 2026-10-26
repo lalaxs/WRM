@@ -789,6 +789,13 @@ const stage2BrowserFiles = [
   'core/sect-offices.js',
   'core/sect-missions.js',
   'core/sect-pavilion.js',
+  'core/stage4-state-util.js',
+  'core/stage4-state-npc.js',
+  'core/stage4-state-relationships.js',
+  'core/stage4-state-events.js',
+  'core/stage4-state-sects.js',
+  'core/stage4-state-world.js',
+  'core/stage4-state-lineage.js',
   'core/stage4-state.js',
   'core/relationships.js',
   'core/dns.js',
@@ -839,7 +846,7 @@ stage2BrowserFiles.forEach((file) => {
     { filename: path }
   );
 });
-['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+['game.js', 'game-appearance.js', 'game-persist.js', 'game-runtime.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-commands-combat.js', 'game-commands-homestead.js', 'game-commands-social.js', 'game-commands-sect.js', 'game-commands-legacy.js', 'game-api.js'].forEach((file) => {
   vm.runInContext(fs.readFileSync(file, 'utf8'), browserSandbox, { filename: file });
 });
 ok(
@@ -893,10 +900,18 @@ const requiredStage3Order = [
   'core/techniques.js',
   'core/breakthrough.js',
   'game.js',
+  'game-appearance.js',
+  'game-persist.js',
+  'game-runtime.js',
   'game-queries.js',
   'game-queries-social.js',
   'game-queries-combat.js',
   'game-commands.js',
+  'game-commands-combat.js',
+  'game-commands-homestead.js',
+  'game-commands-social.js',
+  'game-commands-sect.js',
+  'game-commands-legacy.js',
   'game-api.js'
 ];
 ok(
@@ -1180,7 +1195,7 @@ function bootstrapWithMissingStage2Global(missingName) {
     sandbox
   );
   try {
-    ['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+    ['game.js', 'game-appearance.js', 'game-persist.js', 'game-runtime.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-commands-combat.js', 'game-commands-homestead.js', 'game-commands-social.js', 'game-commands-sect.js', 'game-commands-legacy.js', 'game-api.js'].forEach((file) => {
       vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
     });
     return { error: null, sandbox };
@@ -1243,7 +1258,7 @@ deferredStage3CombatGlobals.forEach((missingName) => {
   );
   let error = null;
   try {
-    ['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+    ['game.js', 'game-appearance.js', 'game-persist.js', 'game-runtime.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-commands-combat.js', 'game-commands-homestead.js', 'game-commands-social.js', 'game-commands-sect.js', 'game-commands-legacy.js', 'game-api.js'].forEach((file) => {
       vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
     });
   } catch (caught) {
@@ -1269,7 +1284,7 @@ loadFilesInto(legacyBootstrapSandbox, [
 ]);
 let legacyBootstrapError = null;
 try {
-  ['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+  ['game.js', 'game-appearance.js', 'game-persist.js', 'game-runtime.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-commands-combat.js', 'game-commands-homestead.js', 'game-commands-social.js', 'game-commands-sect.js', 'game-commands-legacy.js', 'game-api.js'].forEach((file) => {
     vm.runInContext(fs.readFileSync(file, 'utf8'), legacyBootstrapSandbox, { filename: file });
   });
 } catch (error) {

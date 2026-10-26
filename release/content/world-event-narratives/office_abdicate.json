@@ -1,0 +1,14 @@
+[
+  {
+    "id": "office_abdicate-0135",
+    "weight": 5,
+    "type": "office_abdicate",
+    "actors": "pair",
+    "template": "{a}在{loc}当众卸任，将印信交到{b}手中。",
+    "officeRankA": [
+      "leader",
+      "hall",
+      "elder"
+    ]
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "id": "office_challenge-0132",
+    "weight": 6,
+    "type": "office_challenge",
+    "actors": "pair",
+    "template": "{a}在{loc}向{b}所任之职发起挑战，依门规比试。",
+    "officeRankAny": [
+      "trueDisciple",
+      "hall",
+      "steward"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "office_challenge-0133",
+    "weight": 7,
+    "type": "office_challenge",
+    "actors": "pair",
+    "template": "{a}在{loc}太玄演武场向{b}问剑争席，剑光如雪。",
+    "sectAny": [
+      "taixuan-sword"
+    ],
+    "sameSect": true
+  }
+]

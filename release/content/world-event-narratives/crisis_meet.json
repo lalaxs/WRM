@@ -1,0 +1,85 @@
+[
+  {
+    "id": "crisis_meet-1301",
+    "weight": 12,
+    "type": "crisis_meet",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}遇上危险，一起脱困后互换了名字。"
+  },
+  {
+    "id": "crisis_meet-1302",
+    "weight": 11,
+    "type": "crisis_meet",
+    "actors": "pair",
+    "template": "洞府将崩，{a}一把拉住素不相识的{b}冲出{loc}。烟尘外，两人喘着气对视，才互换了名字。"
+  },
+  {
+    "id": "crisis_meet-1303",
+    "weight": 11,
+    "type": "crisis_meet",
+    "actors": "pair",
+    "template": "追杀将近，{a}与{b}在{loc}被迫背靠背。事后刀入鞘，{b}忽然问他姓名，声音还发紧。"
+  },
+  {
+    "id": "crisis_meet-1304",
+    "weight": 10,
+    "type": "crisis_meet",
+    "actors": "pair",
+    "template": "{a}坠入{loc}裂缝，被路过的{b}抓住衣领。得救后两人喘过气，互换了名字。"
+  },
+  {
+    "id": "crisis_meet-1305",
+    "weight": 10,
+    "type": "crisis_meet",
+    "actors": "pair",
+    "template": "{a}在{loc}救下素未谋面的{b}，本想即走。{b}却追上来，把半块干粮塞进他手里。",
+    "personalityAny": [
+      "chicheng"
+    ],
+    "pairGenderNone": [
+      "fm"
+    ]
+  },
+  {
+    "id": "crisis_meet-1306",
+    "weight": 9,
+    "type": "crisis_meet",
+    "actors": "pair",
+    "template": "毒雾弥漫，{a}与{b}在{loc}互换了解药。分开前，两人把对方的名字问清楚了。"
+  },
+  {
+    "id": "crisis_meet-1307",
+    "weight": 9,
+    "type": "crisis_meet",
+    "actors": "pair",
+    "template": "{a}在{loc}被困阵中，{b}破阵而入。脱困后，{a}第一句不是道谢，而是你为何肯来。"
+  },
+  {
+    "id": "crisis_meet-1308",
+    "weight": 8,
+    "type": "crisis_meet",
+    "actors": "pair",
+    "template": "雷劫余波扫过{loc}，{a}与{b}彼此扶持才站住。劫云散后，两人互换了名字。"
+  },
+  {
+    "id": "crisis_meet-tension-1810",
+    "weight": 13,
+    "type": "crisis_meet",
+    "actors": "pair",
+    "template": "在{loc}，{a}抓住{b}的手腕往外拖。脱困后才发觉自己手在抖，{b}回握的力道却不肯松。"
+  },
+  {
+    "id": "crisis_meet-tension-1811",
+    "weight": 12,
+    "type": "crisis_meet",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}背靠背撑过围杀。脱困后才互换了名字。"
+  },
+  {
+    "id": "crisis_meet-tension-1812",
+    "weight": 11,
+    "type": "crisis_meet",
+    "actors": "pair",
+    "template": "在{loc}，坠崖前一刻，{b}拽住了{a}。落地后，{a}才发现自己一直攥着对方的衣襟。"
+  }
+]

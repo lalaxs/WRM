@@ -1,0 +1,16 @@
+[
+  {
+    "id": "recover-solo-2501",
+    "weight": 12,
+    "type": "recover",
+    "actors": "solo",
+    "template": "{a}在{loc}伤势好了些，重新现身。路过旧处时脚步放轻，像怕惊动未散的梦。"
+  },
+  {
+    "id": "recover-solo-2502",
+    "weight": 11,
+    "type": "recover",
+    "actors": "solo",
+    "template": "{a}在{loc}养伤初愈，抬手试了试灵力，嘴角先松，眼底却还剩一层警惕。"
+  }
+]

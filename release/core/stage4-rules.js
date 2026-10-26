@@ -33,10 +33,12 @@
   'use strict';
 
   const ACTIVE_STEP_SECONDS = 900;
+  const OFFLINE_ACTIVE_STEP_SECONDS = 3600;
   const BACKGROUND_STEP_SECONDS = 21600;
   const SECT_STEP_SECONDS = 86400;
   // 离线一次结算内各车道最多完整推演的步数；超出只吃掉时间、跳过细节。
-  const OFFLINE_ACTIVE_STEP_CAP = 96;
+  // 粗粒步长 3600s 后，48 步仍覆盖约 48h 活跃时间。
+  const OFFLINE_ACTIVE_STEP_CAP = 48;
   const OFFLINE_BACKGROUND_STEP_CAP = 24;
   const OFFLINE_SECT_STEP_CAP = 48;
 
@@ -496,6 +498,35 @@
       return count;
     }
 
+    function flushOfflineNpcProgress(state, helpers) {
+      const target = world(state);
+      if (!target) return;
+      let pending = finite(target.npcProgressPendingSeconds, 0);
+      target.npcProgressPendingSeconds = 0;
+      if (!(pending > 0) || !NpcSimulation) return;
+      let steps = 0;
+      // 离线用更大步长扫表，减少全员 NPC 遍历次数；仍按步交织年龄与修为。
+      while (pending > 0 && steps < OFFLINE_ACTIVE_STEP_CAP) {
+        const chunk = Math.min(OFFLINE_ACTIVE_STEP_SECONDS, pending);
+        if (typeof NpcSimulation.advanceAges === 'function') {
+          NpcSimulation.advanceAges(state, chunk);
+        }
+        if (typeof NpcSimulation.advanceCultivation === 'function') {
+          NpcSimulation.advanceCultivation(state, chunk, helpers || {});
+        }
+        pending -= chunk;
+        steps += 1;
+      }
+      if (pending > 0) {
+        if (typeof NpcSimulation.advanceAges === 'function') {
+          NpcSimulation.advanceAges(state, pending);
+        }
+        if (typeof NpcSimulation.advanceCultivation === 'function') {
+          NpcSimulation.advanceCultivation(state, pending, helpers || {});
+        }
+      }
+    }
+
     const activeNpcLane = Object.freeze({
       id: 'stage4-active-npcs',
       nextBoundary: function (state, helpers) {
@@ -510,6 +541,13 @@
         if (!target) return;
         target.elapsedSeconds = finite(target.elapsedSeconds, 0) + seconds;
         addAccumulator(state, 'activeAccumulator', seconds);
+        // 离线：只累加待推进秒数，避免每个短周期主行动微步都扫全量 NPC。
+        // 在 resolve（offlineBatch 一次吞完）里按 ACTIVE_STEP 大步合并推进。
+        if (helpers && helpers.source === 'offline') {
+          target.npcProgressPendingSeconds =
+            finite(target.npcProgressPendingSeconds, 0) + seconds;
+          return;
+        }
         // 4C：全体在世 NPC 缓慢堆修为并尝试突破（与玩家同量级需求表）。
         // 事件仍只刷关系圈；修炼与事件解耦。
         if (NpcSimulation &&
@@ -536,7 +574,10 @@
           maxSteps,
           function () {}
         );
-        if (offline) burnWholeSteps(state, 'activeAccumulator', ACTIVE_STEP_SECONDS);
+        if (offline) {
+          burnWholeSteps(state, 'activeAccumulator', ACTIVE_STEP_SECONDS);
+          flushOfflineNpcProgress(state, helpers);
+        }
       }
     });
 
@@ -653,7 +694,8 @@
         if (months <= 0) return;
         cal.monthAccumulator = finite(cal.monthAccumulator, 0) -
           months * WorldMonth.MONTH_REAL_SECONDS;
-        // 长离线一次 resolve 可推进多月；超额由 advanceMonths / offlineMonthBudget 封顶。
+        // 长离线一次 resolve 可推进多月；超额由 advanceMonths / offlineMonthBudget
+        // 封顶（见 WorldCalendar.OFFLINE_MONTH_CAP），只推日历与年龄。
         if (typeof WorldMonth.advanceMonths === 'function') {
           WorldMonth.advanceMonths(
             state,
@@ -662,7 +704,13 @@
           );
           return;
         }
-        for (let index = 0; index < months; index++) {
+        const monthCap = Number.isFinite(WorldMonth.OFFLINE_MONTH_CAP)
+          ? WorldMonth.OFFLINE_MONTH_CAP
+          : 48;
+        const runnable = helpers && helpers.source === 'offline'
+          ? Math.min(months, monthCap)
+          : months;
+        for (let index = 0; index < runnable; index++) {
           WorldMonth.advanceOneMonth(state, worldHelpers(helpers));
         }
       }

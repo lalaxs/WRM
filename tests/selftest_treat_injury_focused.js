@@ -148,7 +148,7 @@ function createRuntime(store, now, controls, withUI, options) {
     'core/simulation.js', 'core/game-rules.js', 'core/stage2-rules.js', 'core/stage3-rules.js'
   ];
   stage3Dependencies.forEach((file) => vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file }));
-  ['game.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-api.js'].forEach((file) => {
+  ['game.js', 'game-appearance.js', 'game-persist.js', 'game-runtime.js', 'game-queries.js', 'game-queries-social.js', 'game-queries-combat.js', 'game-commands.js', 'game-commands-combat.js', 'game-commands-homestead.js', 'game-commands-social.js', 'game-commands-sect.js', 'game-commands-legacy.js', 'game-api.js'].forEach((file) => {
   vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });
 });
   if (withUI) require('./ui_scripts').loadUiScripts(vm, sandbox);

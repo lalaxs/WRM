@@ -1,0 +1,9 @@
+[
+  {
+    "id": "explore-return-solo-2551",
+    "weight": 11,
+    "type": "explore_return",
+    "actors": "solo",
+    "template": "{a}从{loc}险地归来，衣角破损，嘴角先松一口气，随即又把见闻咽了回去。"
+  }
+]

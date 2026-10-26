@@ -1,0 +1,17 @@
+[
+  {
+    "id": "sect_leave-0137",
+    "weight": 5,
+    "type": "sect_leave",
+    "actors": "solo",
+    "template": "{a}在{loc}交出令牌，申请离开门派，从此云游。"
+  },
+  {
+    "id": "sect_leave-0138",
+    "weight": 5,
+    "type": "sect_leave",
+    "actors": "pair",
+    "template": "{a}向{b}说明去意，在{loc}办完出宗手续。",
+    "sameSect": true
+  }
+]

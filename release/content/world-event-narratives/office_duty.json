@@ -1,0 +1,343 @@
+[
+  {
+    "id": "office-duty-leader",
+    "weight": 8,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}处理掌门位相关事务，直至夜深。",
+    "officeRankAny": [
+      "leader"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "office-duty-honor",
+    "weight": 8,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}处理名号位的风评，直至夜深。",
+    "officeRankAny": [
+      "honor"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "office-duty-hall",
+    "weight": 8,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}处理堂主司主职司，直至夜深。",
+    "officeRankAny": [
+      "hall"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "office-duty-elder",
+    "weight": 8,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}处理长老议事，直至夜深。",
+    "officeRankAny": [
+      "elder"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "office-duty-trueDisciple",
+    "weight": 8,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}处理真传弟子课业，直至夜深。",
+    "officeRankAny": [
+      "trueDisciple"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "office-duty-steward",
+    "weight": 8,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}处理执事杂务，直至夜深。",
+    "officeRankAny": [
+      "steward"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "office-duty-inner",
+    "weight": 8,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}处理内门修习，直至夜深。",
+    "officeRankAny": [
+      "inner"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "office-duty-outer",
+    "weight": 8,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}处理外门勤务，直至夜深。",
+    "officeRankAny": [
+      "outer"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "sect-taixuan-sword-2",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}于演武堂主持剑试，{loc}人声鼎沸。",
+    "officeSlotAny": [
+      "hall-yanwu"
+    ],
+    "sectAny": [
+      "taixuan-sword"
+    ]
+  },
+  {
+    "id": "sect-baicao-valley-3",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}把打磨好的器胚交给{b}试手，对方愣了一下，还是收下了。",
+    "officeSlotAny": [
+      "hall-dan"
+    ],
+    "sectAny": [
+      "baicao-valley"
+    ]
+  },
+  {
+    "id": "sect-tiangong-pavilion-3",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}与{b}在{loc}一边饲灵一边闲聊兽性，顺便八卦近日见闻。",
+    "officeSlotAny": [
+      "hall-forge"
+    ],
+    "sectAny": [
+      "tiangong-pavilion"
+    ]
+  },
+  {
+    "id": "sect-spirit-beast-mountain-3",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}与{b}在{loc}抚琴闲谈，顺带八卦近日见闻。",
+    "officeSlotAny": [
+      "hall-beast"
+    ],
+    "sectAny": [
+      "spirit-beast-mountain"
+    ]
+  },
+  {
+    "id": "sect-qingyin-palace-3",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}以剑换酒，与{b}对酌论招，顺带打趣近日见闻。",
+    "officeSlotAny": [
+      "hall-talisman"
+    ],
+    "sectAny": [
+      "qingyin-palace"
+    ]
+  },
+  {
+    "id": "solo-extra-15",
+    "weight": 8,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}核对完名册，在{loc}盖上今日的印。"
+  },
+  {
+    "id": "solo-extra-16",
+    "weight": 8,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}处理完投诉，在{loc}长长舒了口气。"
+  },
+  {
+    "id": "office-line-leader-1",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}主持小会，敲定本月勤务。",
+    "officeRankAny": [
+      "leader"
+    ]
+  },
+  {
+    "id": "office-line-leader-2",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}签发一纸令，门中传阅。",
+    "officeRankAny": [
+      "leader"
+    ]
+  },
+  {
+    "id": "office-line-honor-1",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}现身{loc}片刻，便引来窃窃私语。",
+    "officeRankAny": [
+      "honor"
+    ]
+  },
+  {
+    "id": "office-line-honor-2",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "有人遥见{a}在{loc}独立，不敢上前打扰。",
+    "officeRankAny": [
+      "honor"
+    ]
+  },
+  {
+    "id": "office-line-hall-1",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}清点本堂物资，责令补缺。",
+    "officeRankAny": [
+      "hall"
+    ]
+  },
+  {
+    "id": "office-line-hall-2",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}训示属下，言简意赅。",
+    "officeRankAny": [
+      "hall"
+    ]
+  },
+  {
+    "id": "office-line-elder-1",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}与几位同辈长老议事，直至更鼓。",
+    "officeRankAny": [
+      "elder"
+    ]
+  },
+  {
+    "id": "office-line-elder-2",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}翻阅弟子功过册，朱笔圈点。",
+    "officeRankAny": [
+      "elder"
+    ]
+  },
+  {
+    "id": "office-line-trueDisciple-1",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}加练不辍，引来外门侧目。",
+    "officeRankAny": [
+      "trueDisciple"
+    ]
+  },
+  {
+    "id": "office-line-trueDisciple-2",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}代师传话，语气已经老练。",
+    "officeRankAny": [
+      "trueDisciple"
+    ]
+  },
+  {
+    "id": "office-line-steward-1",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}来回奔走，把杂务一件件勾掉。",
+    "officeRankAny": [
+      "steward"
+    ]
+  },
+  {
+    "id": "office-line-steward-2",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}调解两起口角，嗓子都哑了。",
+    "officeRankAny": [
+      "steward"
+    ]
+  },
+  {
+    "id": "office-line-inner-1",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}完成内门课业，交上功课石。",
+    "officeRankAny": [
+      "inner"
+    ]
+  },
+  {
+    "id": "office-line-inner-2",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}与同侪讨论即将到来的考核。",
+    "officeRankAny": [
+      "inner"
+    ]
+  },
+  {
+    "id": "office-line-outer-1",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}值守到丑时，换班时揉了揉眼。",
+    "officeRankAny": [
+      "outer"
+    ]
+  },
+  {
+    "id": "office-line-outer-2",
+    "weight": 9,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}搬运灵谷，背上湿了一片。",
+    "officeRankAny": [
+      "outer"
+    ]
+  },
+  {
+    "id": "office-duty-solo-2570",
+    "weight": 12,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}处理门中事务，文书沉闷。盖印时仍认真，像把心神也一并按稳。"
+  },
+  {
+    "id": "office-duty-solo-2571",
+    "weight": 11,
+    "type": "office_duty",
+    "actors": "solo",
+    "template": "{a}在{loc}值守一夜，灯花爆了两次，他才发觉自己又在发呆。"
+  }
+]

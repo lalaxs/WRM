@@ -1,0 +1,9 @@
+[
+  {
+    "id": "region-move-solo-2580",
+    "weight": 10,
+    "type": "region_move",
+    "actors": "solo",
+    "template": "{a}现身在{loc}，风尘还没落定，先辨认熟悉的方向。"
+  }
+]

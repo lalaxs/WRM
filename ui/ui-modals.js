@@ -472,9 +472,9 @@
     }
   }
 
-  function syncModals() {
+  function syncModals(appView) {
     const a = Ui.api();
-    const modalsView = a.queries.app().modals;
+    const modalsView = (appView && appView.modals) || a.queries.app().modals;
     const legacy = a.queries.legacyTransition
       ? a.queries.legacyTransition()
       : null;
@@ -533,15 +533,56 @@
         updateLegacyTransition
       );
     }
-    Ui.syncFarmPlotModal();
+    if (typeof Ui.syncFarmPlotModal === 'function') {
+      Ui.syncFarmPlotModal();
+    }
   }
 
   // ============================================================
-  // 主游戏渲染入口（每帧由 game.js 调用）
+  // 主游戏渲染入口（每帧由 game.js 调用；交互走 force 立刻刷新）
   // ============================================================
-  function renderGame() {
+  function renderGameNeedsHighFreq(app) {
+    const modals = app && app.modals;
+    if (modals && (modals.settlingOffline || modals.break || modals.offline)) {
+      return true;
+    }
+    if (app && (app.phase === 'create' || app.phase === 'edit')) {
+      return true;
+    }
+    return false;
+  }
+
+  function renderGameMinIntervalMs(app) {
+    if (renderGameNeedsHighFreq(app)) {
+      // 结算进度条约 20Hz 足够；突破/离线弹窗同频。
+      const modals = app && app.modals;
+      if (modals && (modals.settlingOffline || modals.break || modals.offline)) {
+        return 50;
+      }
+      return 0;
+    }
+    // 战斗进行中：显示 20Hz，sim 仍按 onlineAdvanceMinMs 推进。
+    const key = Ui.contentState && Ui.contentState.key;
+    if (key === 'combat') {
+      const battle = Ui.contentState.refs && Ui.contentState.refs.battle;
+      if (battle) return 50;
+    }
+    return 100;
+  }
+
+  function renderGame(force) {
     const a = Ui.api(); if (!a) return;
+    const now = Date.now();
+    // 先读轻量 app；高频场景 / 用户操作不节流。
     const app = a.queries.app();
+    const minMs = renderGameMinIntervalMs(app);
+    if (!force && minMs > 0 &&
+        Ui._lastRenderGameAt &&
+        (now - Ui._lastRenderGameAt) < minMs) {
+      return;
+    }
+    Ui._lastRenderGameAt = now;
+
     if (app.phase !== 'game') {
       if (Ui.shell.built) Ui.hideShell();
       if (app.phase === 'create' || app.phase === 'edit') {
@@ -588,7 +629,7 @@
           Ui.hideCreator();
           if (typeof Ui.updateTopbar === 'function') Ui.updateTopbar();
           if (typeof Ui.updateActionBar === 'function') Ui.updateActionBar();
-          syncModals();
+          syncModals(app);
         }
         Ui.updatePersistenceStatus();
         return;
@@ -601,11 +642,15 @@
     Ui.showShell();
     Ui.hideCreator();
     Ui.refreshAvatar();
-    Ui.updateTopbar();
+    // 顶栏资源变化较慢；行动条跟进度。强制刷新（点按钮）两者都更新。
+    if (force || !Ui._lastTopbarAt || (now - Ui._lastTopbarAt) >= 200) {
+      Ui._lastTopbarAt = now;
+      Ui.updateTopbar();
+    }
     Ui.updateActionBar();
     Ui.updateNavActive();
     Ui.updateContent();
-    syncModals();
+    syncModals(app);
     Ui.updatePersistenceStatus();
   }
 
@@ -651,6 +696,7 @@
     const selBox = document.createElement('div'); selBox.className = 'sel-box';
     for (const c of Ui.CATS) {
       const row = document.createElement('div'); row.className = 'sel-row';
+      row.setAttribute('data-part', c);
       const label = document.createElement('div'); label.className = 'sel-label'; label.textContent = Ui.CAT_LABEL[c];
       const left = document.createElement('button'); left.className = 'sel-arrow'; left.textContent = '‹';
       left.addEventListener('click', () => {
@@ -667,6 +713,8 @@
       Ui.creatorProgressControls.push(right);
       row.appendChild(label); row.appendChild(left); row.appendChild(idx); row.appendChild(right);
       selBox.appendChild(row); Ui.selIndexEls[c] = idx;
+      Ui.selRowEls = Ui.selRowEls || {};
+      Ui.selRowEls[c] = row;
     }
     Ui.card.appendChild(selBox);
     Ui.confirmBtn = document.createElement('button'); Ui.confirmBtn.className = 'btn btn-confirm';
@@ -688,8 +736,13 @@
   function refresh() {
     const a = Ui.api(); if (!a) return;
     Ui.updatePersistenceStatus();
-    const indices = a.queries.app().appearance.indices;
+    const appearance = a.queries.app().appearance;
+    const indices = appearance.indices || {};
+    const counts = appearance.counts || {};
     for (const c of Ui.CATS) {
+      const count = Number(counts[c]) || 0;
+      const row = Ui.selRowEls && Ui.selRowEls[c];
+      if (row) row.style.display = count > 0 ? '' : 'none';
       if (Ui.selIndexEls[c]) {
         Ui.selIndexEls[c].textContent = String((indices[c] || 0) + 1);
       }

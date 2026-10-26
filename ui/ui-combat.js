@@ -1054,10 +1054,18 @@
 
   function renderBattleLoot(battle, lootLog) {
     if (!battle.lootList) return;
-    const signature = JSON.stringify((lootLog || []).map(function (entry) {
-      return entry.enemyId + ':' + entry.createdAtMs + ':' +
-        JSON.stringify(entry.items) + ':' + (entry.currency || 0);
-    }));
+    const signature = (lootLog || []).map(function (entry) {
+      const items = entry && entry.items ? entry.items : {};
+      const keys = Object.keys(items);
+      let itemsSig = '';
+      for (let i = 0; i < keys.length; i++) {
+        const item = items[keys[i]];
+        itemsSig += keys[i] + ':' + (item && item.count || 0) + ',';
+      }
+      return String(entry && entry.enemyId || '') + '@' +
+        String(entry && entry.createdAtMs || 0) + '#' +
+        itemsSig + '$' + String(entry && entry.currency || 0);
+    }).join('|');
     if (battle.lootSignature === signature) return;
     battle.lootSignature = signature;
     battle.lootList.innerHTML = '';

@@ -1,0 +1,87 @@
+[
+  {
+    "id": "debate-0038",
+    "weight": 10,
+    "type": "debate",
+    "actors": "pair",
+    "template": "{a}在{loc}见到老朋友{b}，握了下手，先寒暄近况，再把手头难处对了个大概。",
+    "affinityMin": -10
+  },
+  {
+    "id": "debate-0039",
+    "weight": 10,
+    "type": "debate",
+    "actors": "pair",
+    "template": "{a}在{loc}与{b}争论剑法和符法哪个更重要，最后彼此笑了笑。",
+    "affinityMin": -10
+  },
+  {
+    "id": "debate-0040",
+    "weight": 10,
+    "type": "debate",
+    "actors": "pair",
+    "template": "{a}同{b}在{loc}推演阵基，石桌上画满粉笔印。",
+    "affinityMin": -10
+  },
+  {
+    "id": "debate-0041",
+    "weight": 10,
+    "type": "debate",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}争论丹火文武，引来旁人驻足。",
+    "affinityMin": -10
+  },
+  {
+    "id": "debate-0042",
+    "weight": 10,
+    "type": "debate",
+    "actors": "pair",
+    "template": "{a}在{loc}向{b}请教一处关窍，二人反复比划。",
+    "affinityMin": -10
+  },
+  {
+    "id": "sect-tiangong-pavilion-1",
+    "weight": 12,
+    "type": "debate",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}对着阵盘争论节点排布。",
+    "sectAny": [
+      "tiangong-pavilion"
+    ],
+    "sameSect": true
+  },
+  {
+    "id": "pair-persona-3",
+    "weight": 10,
+    "type": "debate",
+    "actors": "pair",
+    "template": "{a}说随缘，{b}说必须有定数，两人在{loc}辩到日落。",
+    "personalityA": [
+      "shuaituo"
+    ],
+    "personalityB": [
+      "zhizhuo"
+    ]
+  },
+  {
+    "id": "generic-debate-1",
+    "weight": 8,
+    "type": "debate",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}争论「先固本还是先破境」。"
+  },
+  {
+    "id": "generic-debate-2",
+    "weight": 8,
+    "type": "debate",
+    "actors": "pair",
+    "template": "{a}在{loc}画地为图，与{b}推演败局三种解法。"
+  },
+  {
+    "id": "generic-debate-3",
+    "weight": 8,
+    "type": "debate",
+    "actors": "pair",
+    "template": "{a}同{b}就一本残卷真伪在{loc}辩了半个时间。"
+  }
+]

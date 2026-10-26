@@ -53,7 +53,11 @@ function safeResolve(urlPath) {
 function createServer() {
   return http.createServer(function (req, res) {
     const requestUrl = new URL(req.url || '/', 'http://' + HOST);
-    const filePath = safeResolve(requestUrl.pathname);
+    let pathname = requestUrl.pathname;
+    if (pathname === '/favicon.ico') {
+      pathname = '/favicon.svg';
+    }
+    const filePath = safeResolve(pathname);
     if (!filePath) {
       res.writeHead(403);
       res.end('Forbidden');

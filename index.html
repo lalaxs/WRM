@@ -6,6 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
   <title>我在修仙界万人迷</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="styles-shell.css?v=20260816-css1">
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: linear-gradient(180deg,#FBF9FF,#E3D6F7); width: 100%; height: 100%; }
@@ -67,6 +68,7 @@
 
   <!-- 素材清单（UMD：浏览器环境挂到 window.NIE_MANIFEST） -->
   <script src="nie-manifest.js"></script>
+  <script src="nie-hair-rules.js"></script>
   <!-- 桥接层：标准 Web API 实现 canvas / touch / network / storage / login / ad -->
   <script src="platform.js"></script>
   <!-- 广告管理：只走 Platform 桥接（折中态：已建桥，未接入游戏内入口/奖励） -->
@@ -115,7 +117,14 @@
   <script src="core/sect-missions.js"></script>
   <script src="core/sect-pavilion.js?v=20260815-unify1"></script>
   <script src="core/world-event-picker.js?v=20260815-retjob2"></script>
-  <script src="core/stage4-state.js?v=20260816-struct1"></script>
+  <script src="core/stage4-state-util.js?v=20260904-pair1"></script>
+  <script src="core/stage4-state-npc.js?v=20260903-p1"></script>
+  <script src="core/stage4-state-relationships.js?v=20260904-pair1"></script>
+  <script src="core/stage4-state-events.js?v=20260903-p1"></script>
+  <script src="core/stage4-state-sects.js?v=20260904-pair1"></script>
+  <script src="core/stage4-state-world.js?v=20260903-p1"></script>
+  <script src="core/stage4-state-lineage.js?v=20260903-p1"></script>
+  <script src="core/stage4-state.js?v=20260903-p1"></script>
   <script src="core/relationships.js?v=20260815-parity9"></script>
   <script src="core/person-graph.js?v=20260815-tables2"></script>
   <script src="core/event-core.js?v=20260815-parity3"></script>
@@ -162,15 +171,23 @@
   <!-- 大型对标表延迟加载：不进入首屏同步脚本链 -->
   <script src="core/lazy-content.js?v=20260819-tpl2"></script>
   <!-- 游戏逻辑：只调 Platform.*，禁止 tap.* / 沙箱 API；只画游戏世界，不画 UI -->
-  <script src="game.js?v=20260815-lg1"></script>
-  <script src="game-queries.js?v=20260815-lg1"></script>
+  <script src="game.js?v=20260903-appear1"></script>
+  <script src="game-appearance.js?v=20260903-appear1"></script>
+  <script src="game-persist.js?v=20260903-appear1"></script>
+  <script src="game-runtime.js?v=20260903-appear1"></script>
+  <script src="game-queries.js?v=20260903-appear1"></script>
   <script src="game-queries-social.js?v=20260816-month1"></script>
   <script src="game-queries-combat.js?v=20260815-lg1"></script>
-  <script src="game-commands.js?v=20260815-lg1"></script>
+  <script src="game-commands.js?v=20260903-p1"></script>
+  <script src="game-commands-combat.js?v=20260903-p1"></script>
+  <script src="game-commands-homestead.js?v=20260903-p1"></script>
+  <script src="game-commands-social.js?v=20260903-p1"></script>
+  <script src="game-commands-sect.js?v=20260903-p1"></script>
+  <script src="game-commands-legacy.js?v=20260903-p1"></script>
   <script src="game-api.js?v=20260815-lg1"></script>
   <!-- DOM UI：首屏仅 core + modals（创建/外壳）；页面模块进游戏后再懒加载 -->
   <script src="ui/ui-core.js?v=20260816-nowith1"></script>
-  <script src="ui/ui-modals.js?v=20260816-nowith1"></script>
+  <script src="ui/ui-modals.js?v=20260904-farmguard1"></script>
   <script src="ui.js?v=20260816-nowith1"></script>
 </body>
 </html>

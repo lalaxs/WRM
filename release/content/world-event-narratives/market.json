@@ -1,0 +1,16 @@
+[
+  {
+    "id": "market-0180",
+    "weight": 9,
+    "type": "market",
+    "actors": "pair",
+    "template": "{a}与{b}在{loc}琳琅摊前议价，最终拍板成交。"
+  },
+  {
+    "id": "market-0181",
+    "weight": 8,
+    "type": "market",
+    "actors": "solo",
+    "template": "{a}在{loc}采购一批符纸与矿粉，账房记了一笔。"
+  }
+]

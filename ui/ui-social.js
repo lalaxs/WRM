@@ -980,10 +980,18 @@
     }
     // 按捏脸特征种子绘制，保证列表/弹窗/事件点名同一形象。
     const appearance = render.randomNieParts(seed, person.gender);
+    const paintOpts = options ? Object.assign({}, options) : {};
+    // 列表卡固定 76×76，避免读 clientWidth 触发布局。
+    if (!Number.isFinite(paintOpts.cssWidth) || paintOpts.cssWidth <= 0) {
+      paintOpts.cssWidth = 76;
+    }
+    if (!Number.isFinite(paintOpts.cssHeight) || paintOpts.cssHeight <= 0) {
+      paintOpts.cssHeight = 76;
+    }
     const painted = render.drawCharacterAppearance(
       canvas,
       appearance,
-      options || null
+      paintOpts
     );
     canvas.setAttribute('data-portrait-key', key);
     // 贴图未齐或弹窗尚未完成布局时先显示局部，下一帧补绘。
@@ -991,8 +999,11 @@
       'data-portrait-ok',
       painted === true ? '1' : '0'
     );
-    const retry = !(options && options.skipRetry);
-    if (painted !== true && retry && typeof requestAnimationFrame === 'function') {
+    // 未完成时由外层 scheduleRelationshipPortraits 统一补绘，避免与内层 rAF 双重重试。
+    if (painted === true) {
+      canvas.removeAttribute('data-portrait-retry');
+    } else if (!(options && options.skipRetry) && options && options.allowSelfRetry &&
+        typeof requestAnimationFrame === 'function') {
       const retries = Number(canvas.getAttribute('data-portrait-retry') || 0);
       if (retries < 8) {
         canvas.setAttribute('data-portrait-retry', String(retries + 1));
@@ -1000,8 +1011,6 @@
           paintPersonPortrait(canvas, person, options);
         });
       }
-    } else if (painted === true) {
-      canvas.removeAttribute('data-portrait-retry');
     }
     return painted === true;
   }
@@ -1065,6 +1074,11 @@
     return card;
   }
 
+  var PERSON_CARD_COLS = 2;
+  var PERSON_CARD_ROW_EST = 100;
+  var PERSON_CARD_OVERSCAN_ROWS = 3;
+  var PERSON_CARD_POOL_CAP = 48;
+
   function scheduleRelationshipPortraits(pending, generation) {
     const refs = Ui.contentState.refs;
     if (refs.relationshipPortraitTimer) {
@@ -1076,14 +1090,32 @@
     function paintBatch() {
       refs.relationshipPortraitTimer = null;
       if (refs.relationshipPortraitGen !== generation) return;
-      const end = Math.min(cursor + 6, pending.length);
+      const end = Math.min(cursor + 3, pending.length);
+      const retryLater = [];
       for (; cursor < end; cursor++) {
         const entry = pending[cursor];
         if (entry.canvas &&
             entry.person &&
             entry.canvas.isConnected) {
-          paintPersonPortrait(entry.canvas, entry.person);
+          const ok = paintPersonPortrait(entry.canvas, entry.person, {
+            skipRetry: true
+          });
+          if (!ok) {
+            const retries = Number(
+              entry.canvas.getAttribute('data-portrait-retry') || 0
+            );
+            if (retries < 8) {
+              entry.canvas.setAttribute(
+                'data-portrait-retry',
+                String(retries + 1)
+              );
+              retryLater.push(entry);
+            }
+          }
         }
+      }
+      if (retryLater.length) {
+        pending.push.apply(pending, retryLater);
       }
       if (cursor < pending.length) {
         if (typeof requestAnimationFrame === 'function') {
@@ -1100,6 +1132,271 @@
     }
   }
 
+  function ensurePersonListScrollBinding() {
+    const refs = Ui.contentState.refs;
+    if (refs.personListScrollBound) return;
+    const root = Ui.shell && Ui.shell.content;
+    if (!root || !root.addEventListener) return;
+    refs.personListScrollBound = true;
+    if (!refs.personListVirtualHosts) refs.personListVirtualHosts = [];
+    root.addEventListener('scroll', function () {
+      const hosts = refs.personListVirtualHosts || [];
+      let write = 0;
+      for (let i = 0; i < hosts.length; i++) {
+        const host = hosts[i];
+        if (!host || !host.isConnected) continue;
+        hosts[write++] = host;
+        schedulePersonListWindow(host);
+      }
+      hosts.length = write;
+    }, { passive: true });
+  }
+
+  function registerPersonListVirtualHost(listHost) {
+    const refs = Ui.contentState.refs;
+    ensurePersonListScrollBinding();
+    if (!refs.personListVirtualHosts) refs.personListVirtualHosts = [];
+    if (refs.personListVirtualHosts.indexOf(listHost) < 0) {
+      refs.personListVirtualHosts.push(listHost);
+    }
+  }
+
+  function resetPersonListVirtualHost(listHost) {
+    if (!listHost) return;
+    listHost._virtReady = false;
+    listHost._virtGrid = null;
+    listHost._virtPeople = null;
+    listHost._virtCardPool = null;
+    listHost._virtRangeKey = null;
+    listHost._virtRowH = 0;
+    listHost._virtWindowRaf = 0;
+    listHost.style.height = '';
+    listHost.style.minHeight = '';
+  }
+
+  function ensureVirtualPersonList(listHost) {
+    if (listHost._virtReady &&
+        listHost._virtGrid &&
+        listHost._virtGrid.parentNode === listHost) {
+      registerPersonListVirtualHost(listHost);
+      return listHost._virtGrid;
+    }
+    const keepWorld = listHost.classList.contains('world-people');
+    const grid = document.createElement('div');
+    grid.className = 'person-card-grid';
+    while (listHost.firstChild) {
+      grid.appendChild(listHost.firstChild);
+    }
+    listHost.className = 'person-card-virtual' +
+      (keepWorld ? ' world-people' : '');
+    listHost.setAttribute('data-virtual', '1');
+    listHost.appendChild(grid);
+    listHost._virtGrid = grid;
+    listHost._virtReady = true;
+    listHost._virtCardPool = listHost._virtCardPool || Object.create(null);
+    listHost._virtRowH = listHost._virtRowH || PERSON_CARD_ROW_EST;
+    registerPersonListVirtualHost(listHost);
+    return grid;
+  }
+
+  function measurePersonCardRowHeight(listHost, card) {
+    if (!card || !card.getBoundingClientRect) return PERSON_CARD_ROW_EST;
+    const grid = listHost._virtGrid;
+    let gap = 8;
+    if (grid && typeof getComputedStyle === 'function') {
+      const styles = getComputedStyle(grid);
+      const raw = parseFloat(styles.rowGap || styles.gap);
+      if (Number.isFinite(raw) && raw >= 0) gap = raw;
+    }
+    const height = card.getBoundingClientRect().height;
+    if (!(height > 0)) return PERSON_CARD_ROW_EST;
+    return Math.max(72, Math.ceil(height + gap));
+  }
+
+  function computeVisiblePersonRange(listHost, peopleCount) {
+    const cols = PERSON_CARD_COLS;
+    const rowH = listHost._virtRowH || PERSON_CARD_ROW_EST;
+    const totalRows = Math.max(1, Math.ceil(peopleCount / cols));
+    const totalHeight = totalRows * rowH;
+    listHost.style.height = totalHeight + 'px';
+    if (peopleCount <= 0) {
+      return { start: 0, end: 0, offsetY: 0 };
+    }
+    const root = Ui.shell && Ui.shell.content;
+    if (!root || !listHost.getBoundingClientRect) {
+      const fallbackEnd = Math.min(peopleCount, cols * 8);
+      return { start: 0, end: fallbackEnd, offsetY: 0 };
+    }
+    const hostRect = listHost.getBoundingClientRect();
+    const rootRect = root.getBoundingClientRect();
+    const visibleTop = Math.max(0, rootRect.top - hostRect.top);
+    const visibleBottom = Math.min(
+      hostRect.height,
+      rootRect.bottom - hostRect.top
+    );
+    if (!(visibleBottom > visibleTop)) {
+      const windowCount = cols * (PERSON_CARD_OVERSCAN_ROWS * 2 + 4);
+      if (hostRect.bottom <= rootRect.top) {
+        const end = peopleCount;
+        const start = Math.max(0, end - windowCount);
+        return {
+          start: start,
+          end: end,
+          offsetY: Math.floor(start / cols) * rowH
+        };
+      }
+      const end = Math.min(peopleCount, windowCount);
+      return { start: 0, end: end, offsetY: 0 };
+    }
+    let startRow = Math.floor(visibleTop / rowH) - PERSON_CARD_OVERSCAN_ROWS;
+    let endRow = Math.ceil(visibleBottom / rowH) + PERSON_CARD_OVERSCAN_ROWS;
+    if (!Number.isFinite(startRow) || startRow < 0) startRow = 0;
+    if (!Number.isFinite(endRow) || endRow < startRow) endRow = startRow + 1;
+    if (endRow > totalRows) endRow = totalRows;
+    return {
+      start: startRow * cols,
+      end: Math.min(peopleCount, endRow * cols),
+      offsetY: startRow * rowH
+    };
+  }
+
+  function prunePersonCardPool(listHost, listIds) {
+    const pool = listHost._virtCardPool;
+    if (!pool) return;
+    const ids = Object.keys(pool);
+    for (let i = 0; i < ids.length; i++) {
+      if (!listIds[ids[i]]) {
+        const card = pool[ids[i]];
+        if (card && card.parentNode) card.parentNode.removeChild(card);
+        delete pool[ids[i]];
+      }
+    }
+    const remaining = Object.keys(pool);
+    if (remaining.length <= PERSON_CARD_POOL_CAP) return;
+    const mounted = Object.create(null);
+    const grid = listHost._virtGrid;
+    if (grid) {
+      Array.prototype.forEach.call(
+        grid.querySelectorAll('.person-card[data-npc-id]'),
+        function (card) {
+          mounted[card.getAttribute('data-npc-id')] = true;
+        }
+      );
+    }
+    let extra = remaining.length - PERSON_CARD_POOL_CAP;
+    for (let i = 0; i < remaining.length && extra > 0; i++) {
+      const id = remaining[i];
+      if (mounted[id]) continue;
+      const card = pool[id];
+      if (card && card.parentNode) card.parentNode.removeChild(card);
+      delete pool[id];
+      extra -= 1;
+    }
+  }
+
+  function syncPersonListWindow(listHost) {
+    const people = listHost._virtPeople;
+    const grid = listHost._virtGrid;
+    if (!people || !grid) return;
+    const refs = Ui.contentState.refs;
+    const range = computeVisiblePersonRange(listHost, people.length);
+    const rangeKey = range.start + ':' + range.end + ':' + range.offsetY +
+      ':' + people.length + ':' + (listHost._virtRowH || 0);
+    const dataSig = listHost._virtDataSig || '';
+    if (rangeKey === listHost._virtRangeKey &&
+        dataSig === listHost._virtAppliedDataSig) {
+      return;
+    }
+    listHost._virtRangeKey = rangeKey;
+    listHost._virtAppliedDataSig = dataSig;
+    grid.style.transform = 'translateY(' + range.offsetY + 'px)';
+
+    if (refs.relationshipPortraitTimer) {
+      if (typeof cancelAnimationFrame === 'function') {
+        cancelAnimationFrame(refs.relationshipPortraitTimer);
+      }
+      clearTimeout(refs.relationshipPortraitTimer);
+      refs.relationshipPortraitTimer = null;
+    }
+
+    const pool = listHost._virtCardPool ||
+      (listHost._virtCardPool = Object.create(null));
+    const listIds = Object.create(null);
+    for (let i = 0; i < people.length; i++) {
+      if (people[i] && people[i].npcId) listIds[people[i].npcId] = true;
+    }
+    const pending = [];
+    const generation = (refs.relationshipPortraitGen || 0) + 1;
+    refs.relationshipPortraitGen = generation;
+    let firstCard = null;
+    let mountIndex = 0;
+    for (let index = range.start; index < range.end; index++) {
+      const person = people[index];
+      if (!person || !person.npcId) continue;
+      let card = pool[person.npcId];
+      if (!card) {
+        card = createPersonCard(person);
+        pool[person.npcId] = card;
+      } else {
+        updatePersonCardContent(card, person);
+      }
+      if (!firstCard) firstCard = card;
+      if (card.parentNode !== grid || grid.children[mountIndex] !== card) {
+        if (mountIndex >= grid.children.length) {
+          grid.appendChild(card);
+        } else {
+          grid.insertBefore(card, grid.children[mountIndex]);
+        }
+      }
+      mountIndex += 1;
+      const canvas = card.querySelector('.person-card-canvas');
+      if (!canvas) continue;
+      // 好感/境界刷新不改形象；已绘成的跳过，避免反复排队合成。
+      if (canvas.getAttribute('data-portrait-ok') === '1') continue;
+      // 可视区前几张同步；其余分帧，滚动时不卡死。
+      if (index < range.start + 8) {
+        if (!paintPersonPortrait(canvas, person)) {
+          pending.push({ canvas: canvas, person: person, index: index });
+        }
+      } else {
+        pending.push({ canvas: canvas, person: person, index: index });
+      }
+    }
+    while (grid.children.length > mountIndex) {
+      grid.removeChild(grid.lastChild);
+    }
+    prunePersonCardPool(listHost, listIds);
+    if (firstCard) {
+      const measured = measurePersonCardRowHeight(listHost, firstCard);
+      if (measured && Math.abs(measured - (listHost._virtRowH || 0)) >= 2) {
+        const prev = listHost._virtRowH || PERSON_CARD_ROW_EST;
+        listHost._virtRowH = measured;
+        if (!listHost._virtRemeasured && Math.abs(measured - prev) >= 2) {
+          listHost._virtRemeasured = true;
+          listHost._virtRangeKey = null;
+          syncPersonListWindow(listHost);
+          return;
+        }
+      }
+    }
+    scheduleRelationshipPortraits(pending, generation);
+  }
+
+  function schedulePersonListWindow(listHost) {
+    if (!listHost || !listHost._virtReady) return;
+    if (listHost._virtWindowRaf) return;
+    const run = function () {
+      listHost._virtWindowRaf = 0;
+      if (!listHost.isConnected) return;
+      syncPersonListWindow(listHost);
+    };
+    if (typeof requestAnimationFrame === 'function') {
+      listHost._virtWindowRaf = requestAnimationFrame(run);
+    } else {
+      listHost._virtWindowRaf = setTimeout(run, 16);
+    }
+  }
+
   function renderRelationshipList(listHost, list) {
     const refs = Ui.contentState.refs;
     if (refs.relationshipPortraitTimer) {
@@ -1109,57 +1406,37 @@
       clearTimeout(refs.relationshipPortraitTimer);
       refs.relationshipPortraitTimer = null;
     }
-    if (!list.people.length) {
+    if (!list || !list.people || !list.people.length) {
+      resetPersonListVirtualHost(listHost);
+      listHost.className = listHost.classList.contains('world-people')
+        ? 'person-card-grid world-people'
+        : 'person-card-grid';
+      listHost.removeAttribute('data-virtual');
       listHost.innerHTML = '';
-      Ui.el('div', 'placeholder', listHost, '没有找到人物');
+      Ui.el(
+        'div',
+        'placeholder',
+        listHost,
+        listHost.classList.contains('world-people')
+          ? '这处暂时没有人活动'
+          : '没有找到人物'
+      );
       return;
     }
-    const existing = {};
-    Array.prototype.forEach.call(
-      listHost.querySelectorAll('.person-card[data-npc-id]'),
-      function (card) {
-        existing[card.getAttribute('data-npc-id')] = card;
-      }
-    );
-    const pending = [];
-    const generation = (refs.relationshipPortraitGen || 0) + 1;
-    refs.relationshipPortraitGen = generation;
-    const keep = {};
-    list.people.forEach(function (person, index) {
-      keep[person.npcId] = true;
-      let card = existing[person.npcId];
-      if (!card) {
-        card = createPersonCard(person);
-      } else {
-        updatePersonCardContent(card, person);
-      }
-      if (card.parentNode !== listHost ||
-          listHost.children[index] !== card) {
-        if (index >= listHost.children.length) {
-          listHost.appendChild(card);
-        } else {
-          listHost.insertBefore(card, listHost.children[index]);
-        }
-      }
-      const canvas = card.querySelector('.person-card-canvas');
-      if (!canvas) return;
-      // First screenful paints sync; the rest yield to rAF so open stays snappy.
-      if (index < 8) {
-        if (!paintPersonPortrait(canvas, person)) {
-          pending.push({ canvas: canvas, person: person, index: index });
-        }
-      } else {
-        pending.push({ canvas: canvas, person: person, index: index });
-      }
-    });
-    Object.keys(existing).forEach(function (npcId) {
-      if (!keep[npcId] && existing[npcId].parentNode) {
-        existing[npcId].parentNode.removeChild(existing[npcId]);
-      }
-    });
+    const grid = ensureVirtualPersonList(listHost);
     const placeholder = listHost.querySelector('.placeholder');
-    if (placeholder) listHost.removeChild(placeholder);
-    scheduleRelationshipPortraits(pending, generation);
+    if (placeholder && placeholder.parentNode === listHost) {
+      listHost.removeChild(placeholder);
+    }
+    if (placeholder && placeholder.parentNode === grid) {
+      grid.removeChild(placeholder);
+    }
+    listHost._virtPeople = list.people;
+    listHost._virtDataSig = relationshipListSignature(list);
+    listHost._virtRangeKey = null;
+    listHost._virtAppliedDataSig = null;
+    listHost._virtRemeasured = false;
+    syncPersonListWindow(listHost);
   }
 
   function socialDetailSignature(social, npcId, interactionId) {
@@ -1329,19 +1606,26 @@
     const portraitCol = Ui.el('div', 'person-modal-portrait-col', head);
     const portrait = Ui.el('div', 'person-modal-portrait', portraitCol);
     const canvas = Ui.el('canvas', 'person-modal-canvas', portrait);
-    // 立绘放到下一帧，并带上已知尺寸，避免等 layout / 反复重试。
+    // 立绘放到下一帧，等 layout 后再按容器实际正方形尺寸绘制，避免比例被硬编码压扁。
     if (typeof requestAnimationFrame === 'function') {
       requestAnimationFrame(function () {
         if (!canvas.isConnected) return;
+        const box = portrait.getBoundingClientRect();
+        const side = Math.max(
+          1,
+          Math.round(Math.min(box.width || 0, box.height || 0) || 132)
+        );
         paintPersonPortrait(canvas, detail, {
-          cssWidth: 132,
-          cssHeight: 168
+          cssWidth: side,
+          cssHeight: side,
+          allowSelfRetry: true
         });
       });
     } else {
       paintPersonPortrait(canvas, detail, {
         cssWidth: 132,
-        cssHeight: 168
+        cssHeight: 132,
+        allowSelfRetry: true
       });
     }
     renderPersonPortraitTags(portraitCol, detail);
@@ -2951,7 +3235,7 @@
     renderRelationshipList(peopleList, { people: view.people });
   }
 
-  function worldPageSignature(view) {
+  function worldStructureSignature(view) {
     if (!view) return 'null';
     const parts = [
       Ui.worldUiState.view,
@@ -2971,6 +3255,17 @@
     parts.push('p' + people.length);
     for (let i = 0; i < people.length; i++) {
       const person = people[i];
+      parts.push(person.id || person.npcId || '');
+    }
+    return parts.join('|');
+  }
+
+  function worldPeopleLiveSignature(view) {
+    if (!view) return 'null';
+    const people = view.people || [];
+    const parts = ['p' + people.length];
+    for (let i = 0; i < people.length; i++) {
+      const person = people[i];
       parts.push(
         (person.id || person.npcId || '') + ':' +
           (person.affection || 0) + ':' +
@@ -2978,6 +3273,10 @@
       );
     }
     return parts.join('|');
+  }
+
+  function worldPageSignature(view) {
+    return worldStructureSignature(view) + '#' + worldPeopleLiveSignature(view);
   }
 
   function eventPageSignature(view) {
@@ -3001,9 +3300,23 @@
       ? { regionId: Ui.worldUiState.regionId }
       : {};
     const view = Ui.api().queries.world(queryInput);
-    const signature = worldPageSignature(view);
-    if (refs.worldSignature === signature) return;
-    refs.worldSignature = signature;
+    const structSig = worldStructureSignature(view);
+    const liveSig = worldPeopleLiveSignature(view);
+    // 结构未变时只局部刷新人物卡（好感/境界），避免整页拆掉重绘立绘。
+    if (refs.worldStructSignature === structSig) {
+      if (refs.worldLiveSignature === liveSig) return;
+      refs.worldLiveSignature = liveSig;
+      if (Ui.worldUiState.view === 'detail' &&
+          refs.worldPeopleHost &&
+          view.people &&
+          view.people.length) {
+        renderRelationshipList(refs.worldPeopleHost, { people: view.people });
+      }
+      return;
+    }
+    refs.worldStructSignature = structSig;
+    refs.worldLiveSignature = liveSig;
+    refs.worldSignature = worldPageSignature(view);
     refs.worldHost.innerHTML = '';
     refs.worldPeopleHost = null;
     if (Ui.worldUiState.view === 'detail') {

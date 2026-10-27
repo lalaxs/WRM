@@ -6,6 +6,20 @@ const EMPTY_SECT_CONTEXT = Object.freeze({
   favoredTags: Object.freeze([])
 });
 
+// Read-only combat operations need player/loadout data and homestead effects,
+// not the entire NPC pool, relationship graph, chronicles or combat telemetry.
+function combatReadModel(model) {
+  const combat = model.systems && model.systems.combat;
+  const session = combat && combat.session;
+  return {
+    player: model.player,
+    systems: {
+      combat: { session: session ? { loadoutId: session.loadoutId } : null },
+      homestead: model.systems && model.systems.homestead
+    }
+  };
+}
+
 function combatBasicAttackApi() {
   if (basicAttackContentApi) return basicAttackContentApi;
   if (typeof BasicAttackContent !== 'undefined') return BasicAttackContent;
@@ -16,7 +30,7 @@ function combatActiveWeaponName(model) {
   try {
     if (stage3Bootstrap.CombatLoadouts &&
         typeof stage3Bootstrap.CombatLoadouts.query === 'function') {
-      const viewed = stage3Bootstrap.CombatLoadouts.query(model);
+      const viewed = stage3Bootstrap.CombatLoadouts.query(combatReadModel(model));
       const loadoutId = model && model.player && model.player.combat
         ? model.player.combat.activeLoadoutId
         : null;
@@ -754,7 +768,7 @@ function combatDungeonViewRows(rows) {
 }
 
 function queryCombat(input) {
-  if (!useStage3Runtime) return readonlyQuery(null);
+
   if (!useStage3CombatRuntime) {
     kickEnsureCombatRuntime();
     return readonlyQuery(null);
@@ -878,25 +892,6 @@ function combatConditionOptionsView(available) {
   };
 }
 
-function validEnumeratedCombatCondition(condition) {
-  try {
-    if (!condition || typeof condition !== 'object') return true;
-    const type = condition.type;
-    if (type !== 'enemyHasStatus' && type !== 'enemyMissingStatus' &&
-        type !== 'selfMissingBuff') {
-      return true;
-    }
-    const field = type === 'selfMissingBuff' ? 'buffId' : 'statusId';
-    const options = STAGE3_CONDITION_OPTIONS[type] || [];
-    const value = condition[field];
-    return options.some(function (row) {
-      return row.id === value;
-    });
-  } catch (error) {
-    return false;
-  }
-}
-
 function combatLoadoutPlans(model, plans) {
   let inventory;
   try {
@@ -991,7 +986,7 @@ function combatLoadoutPlans(model, plans) {
         option.instanceId === selected;
     })) {
       try {
-        if (useEquipmentRuntime && equipmentBootstrap.Equipment) {
+        if (equipmentBootstrap.Equipment) {
           const instance = equipmentInstance(model, selected);
           const resolved = instance
             ? equipmentBootstrap.Equipment.resolve(instance)
@@ -1085,23 +1080,12 @@ function combatLoadoutPlans(model, plans) {
 }
 
 function queryCombatLoadouts() {
-  if (!useStage3Runtime) {
-    return readonlyQuery({
-      activeLoadoutId: null,
-      activeSessionLoadoutId: null,
-      maxLoadouts: 5,
-      canCreate: false,
-      tabs: [],
-      plans: [],
-      conditionOptions: combatConditionOptionsView(false),
-      currentDerivedStats: null
-    });
-  }
+
   if (!useStage3CombatRuntime) {
     kickEnsureCombatRuntime();
   }
   let model = stage2QueryModel();
-  let view = stage3Bootstrap.CombatLoadouts.query(model);
+  let view = stage3Bootstrap.CombatLoadouts.query(combatReadModel(model));
   // queryView 热路径偶发无法通过 Loadouts 严检时，回退一次规范化模型，避免装备页空白。
   if ((!view || !Array.isArray(view.tabs) || view.tabs.length === 0) &&
       state.player &&
@@ -1110,7 +1094,7 @@ function queryCombatLoadouts() {
       state.player.combat.loadouts.length > 0 &&
       typeof StateModel.fromRuntime === 'function') {
     model = StateModel.fromRuntime(state, state.processedThroughMs);
-    view = stage3Bootstrap.CombatLoadouts.query(model);
+    view = stage3Bootstrap.CombatLoadouts.query(combatReadModel(model));
   }
   const plans = combatLoadoutPlans(model, view.loadouts);
   return readonlyQuery({
@@ -1125,7 +1109,7 @@ function queryCombatLoadouts() {
     unlockedPassiveSlots: unlockedPassiveSlotCount(model),
     currentDerivedStats: view.activeLoadoutId &&
       stage3Bootstrap.CombatStats
-      ? stage3Bootstrap.CombatStats.derive(model, view.activeLoadoutId)
+      ? stage3Bootstrap.CombatStats.derive(combatReadModel(model), view.activeLoadoutId)
       : null
   });
 }
@@ -1331,13 +1315,7 @@ function stage3TechniqueViewRow(row) {
 }
 
 function queryTechniques() {
-  if (!useStage3Runtime) {
-    return readonlyQuery({
-      learned: [],
-      unlearned: [],
-      techniques: []
-    });
-  }
+
   const view = stage3Bootstrap.Techniques.queryLibrary(
     stage2QueryModel(),
     EMPTY_SECT_CONTEXT

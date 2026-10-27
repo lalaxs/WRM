@@ -1944,7 +1944,31 @@
         };
       }
 
+      return Object.assign(
+        advanceFishStocksInPlace(stateParts.gathering, elapsedSeconds, bonuses),
+        { state: stateParts.state }
+      );
+    }
+
+    // Trusted runtime lane accepts just the gathering subtree. No NPC, combat,
+    // inventory or world-history data is traversed or copied here.
+    function advanceFishStocksInPlace(gathering, elapsedSeconds, bonuses) {
+      const fishStocks = ownDataValue(gathering, 'fishStocks');
       const speciesIds = Object.keys(content.fishing.species);
+      if (!isFiniteNonNegative(elapsedSeconds) ||
+          !isPlainRecord(gathering) || !isPlainRecord(fishStocks) ||
+          !isFiniteNonNegative(ownDataValue(gathering, 'fishRecoverAcc')) ||
+          !fishTimePair(gathering).ok ||
+          Object.keys(fishStocks).length !== speciesIds.length ||
+          !speciesIds.every(function (id) {
+            const stock = ownDataValue(fishStocks, id);
+            return Number.isSafeInteger(stock) && stock >= 0 &&
+              stock <= content.fishing.species[id].maxStock;
+          })) {
+        return { ok: false, code: 'invalid_model', recovered: {} };
+      }
+      const stateParts = { gathering: gathering, fishStocks: fishStocks };
+
       let maximumDeficit = 0;
       speciesIds.forEach(function (speciesId) {
         maximumDeficit = Math.max(
@@ -1958,7 +1982,6 @@
         return {
           ok: true,
           code: 'ok',
-          state: stateParts.state,
           recovered: {}
         };
       }
@@ -1966,7 +1989,6 @@
         return {
           ok: true,
           code: 'ok',
-          state: stateParts.state,
           recovered: {}
         };
       }
@@ -2020,7 +2042,6 @@
       return {
         ok: true,
         code: 'ok',
-        state: stateParts.state,
         recovered
       };
     }
@@ -2029,7 +2050,8 @@
       explore,
       collect,
       fish,
-      advanceFishStocks
+      advanceFishStocks,
+      advanceFishStocksInPlace
     });
   }
 

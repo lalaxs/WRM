@@ -171,21 +171,21 @@ exact(Object.keys(Rewards), [
     source: { type: 'enemy', id: 'thornHare' },
     items: { brokenFang: 1, grilledCarp: 1 },
     currency: 0,
-    rngState: 67634689
+    rngState: 2647435461
   }, 'normal loot consumes quantity then chance in content order');
   ok(deeplyFrozen(hitLow), 'rolled enemy loot is deeply frozen');
 
   const miss = Rewards.rollEnemyLoot('thornHare', 10);
   exact(miss.items, { brokenFang: 1 },
     'a missed optional row grants no item');
-  ok(miss.rngState === 671267850,
-    'a missed fixed-quantity row consumes exactly one chance draw');
+  ok(miss.rngState === 2415639211,
+    'misses consume the food and technique-book chance draws');
 
   const hitHigh = Rewards.rollEnemyLoot('thornHare', 8192);
   exact(hitHigh.items, { brokenFang: 2, grilledCarp: 1 },
     'inclusive quantity draw reaches the guaranteed maximum');
-  ok(hitHigh.rngState === 13148770,
-    'guaranteed quantity and optional chance consume exactly two draws');
+  ok(hitHigh.rngState === 2216291360,
+    'normal loot consumes quantity plus two optional-row draws');
 }
 
 // Optional item pools reuse their row chance draw. No hidden pool draw may
@@ -200,7 +200,7 @@ exact(Object.keys(Rewards), [
   const secondBook = Rewards.rollEnemyLoot('caveWarden', 21);
   exact(secondBook.items, {
     brokenFang: 2,
-    'techniqueBook:returningWindSlash': 1
+    'techniqueBook:steadyBreath': 1
   }, 'the book pool selection is deterministic and content ordered');
   ok(secondBook.rngState === 121328405,
     'a pool hit consumes no extra item-selection draw');
@@ -209,7 +209,7 @@ exact(Object.keys(Rewards), [
   exact(boss.items, {
     brokenFang: 5,
     cloudwoodSword: 1,
-    'techniqueBook:cloudPiercingSword': 1
+    'techniqueBook:returningWindSlash': 1
   }, 'fixed guaranteed boss quantity consumes no draw before chance rows');
   ok(boss.rngState === 67634689,
     'boss fixed quantity plus two optional rows consume two draws');
@@ -230,7 +230,7 @@ exact(Object.keys(Rewards), [
     source: { type: 'dungeon-first-clear', id: 'breathCave' },
     items: {
       breathJade: 1,
-      'techniqueBook:cloudPiercingSword': 1
+      'techniqueBook:stoneBreakingFist': 1
     },
     currency: 0,
     rngState: 42
@@ -464,7 +464,7 @@ exact(Object.keys(Rewards), [
     source: { type: 'dungeon-first-clear', id: 'breathCave' },
     items: {
       breathJade: 1,
-      'techniqueBook:cloudPiercingSword': 1
+      'techniqueBook:stoneBreakingFist': 1
     },
     currency: 0,
     createdAtMs: 70
@@ -475,7 +475,7 @@ exact(Object.keys(Rewards), [
     'claim succeeds when the whole pending batch fits');
   exact(claimed.state.player.inventory.stacks, {
     breathJade: 1,
-    'techniqueBook:cloudPiercingSword': 1
+    'techniqueBook:stoneBreakingFist': 1
   }, 'claim grants every pending item once');
   ok(claimed.state.player.lingshi === 5 &&
     claimed.state.systems.combat.pendingLoot === null &&
@@ -484,7 +484,7 @@ exact(Object.keys(Rewards), [
   exact(claimed.result, {
     items: {
       breathJade: 1,
-      'techniqueBook:cloudPiercingSword': 1
+      'techniqueBook:stoneBreakingFist': 1
     },
     currency: 0,
     pendingLootId: null

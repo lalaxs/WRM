@@ -7,8 +7,7 @@
 function commandConsumeTechniqueBook(input) {
   const fields = safeInputFields(input, ['itemId']);
   if (!fields) return invalidStage3Argument('功法书参数无效');
-  const definition = useStage3Runtime &&
-    typeof fields.itemId === 'string'
+  const definition = typeof fields.itemId === 'string'
     ? stage3Bootstrap.TechniqueContent.getByBookItemId(fields.itemId)
     : null;
   return stage3ModelCommand({
@@ -164,7 +163,7 @@ function commandEquipEquipment(input) {
     ['instanceId', 'loadoutId'],
     ['instanceId']
   );
-  if (!useEquipmentRuntime || !fields ||
+  if (!fields ||
       typeof fields.instanceId !== 'string') {
     return equipmentCommandFailure('invalid_equipment');
   }
@@ -209,7 +208,7 @@ function commandUnequipEquipment(input) {
     ['slot', 'loadoutId'],
     ['slot']
   );
-  if (!useEquipmentRuntime || !fields ||
+  if (!fields ||
       equipmentBootstrap.EquipmentContent.SLOTS.indexOf(fields.slot) < 0) {
     return equipmentCommandFailure('invalid_equipment');
   }
@@ -252,7 +251,7 @@ function commandEnhanceEquipment(input) {
     ['instanceId', 'useProtection'],
     ['instanceId']
   );
-  if (!useEquipmentRuntime || !fields ||
+  if (!fields ||
       typeof fields.instanceId !== 'string' ||
       (
         typeof fields.useProtection !== 'undefined' &&
@@ -320,7 +319,7 @@ function commandReforgeEquipment(input) {
     ['instanceId', 'lockedAffixIndex'],
     ['instanceId']
   );
-  if (!useEquipmentRuntime || !fields ||
+  if (!fields ||
       typeof fields.instanceId !== 'string') {
     return equipmentCommandFailure('invalid_equipment');
   }
@@ -369,7 +368,7 @@ function commandSetEquipmentFavorite(input) {
     ['instanceId', 'favorite'],
     ['instanceId', 'favorite']
   );
-  if (!useEquipmentRuntime || !fields ||
+  if (!fields ||
       typeof fields.instanceId !== 'string' ||
       typeof fields.favorite !== 'boolean') {
     return equipmentCommandFailure('invalid_equipment');
@@ -418,7 +417,7 @@ function commandSellEquipment(input) {
     ['instanceId'],
     ['instanceId']
   );
-  if (!useEquipmentRuntime || !fields ||
+  if (!fields ||
       typeof fields.instanceId !== 'string') {
     return equipmentCommandFailure('invalid_equipment');
   }
@@ -459,7 +458,7 @@ function commandSalvageEquipment(input) {
     ['instanceIds'],
     ['instanceIds']
   );
-  if (!useEquipmentRuntime || !fields ||
+  if (!fields ||
       !Array.isArray(fields.instanceIds) ||
       fields.instanceIds.length < 1) {
     return equipmentCommandFailure('invalid_equipment');
@@ -709,7 +708,7 @@ function queryCombatParty() {
   return readonlyQuery(stage4Bootstrap.CombatParty.query(model));
 }
 function commandSetCombatCompanion(input) {
-  if (!useStage4Runtime || !stage4Bootstrap.CombatParty) {
+  if (!stage4Bootstrap.CombatParty) {
     return stage4Failure('interaction_locked', '人物世界尚未开放');
   }
   const fields = safeInputFields(input, ['slotIndex', 'npcId']);

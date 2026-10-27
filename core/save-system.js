@@ -41,6 +41,9 @@
     typeof Stage4State.snapshotJsonData === 'function';
   // 未上线：只认当前 schema，不做跨版本迁移。
   const ACTIVE_SCHEMA_VERSION = SCHEMA_VERSION;
+  // A signature certifies only bytes previously committed by this adapter.
+  // External edits still go through full acceptance; no mutable tree is cached.
+  const committedSignatures = new WeakMap();
 
   function own(value, key) {
     return Object.prototype.hasOwnProperty.call(value, key);
@@ -1077,8 +1080,8 @@
     return createSnapshot(raw, finiteNumber(raw.savedAt, now, 0));
   }
 
-  function acceptSnapshot(raw, now) {
-    raw = snapshotRecord(raw);
+  function acceptSnapshot(raw, now, detached) {
+    raw = detached ? raw : snapshotRecord(raw);
     if (!raw) return null;
     if (raw.schemaVersion !== SCHEMA_VERSION) return null;
     if (!validV5Snapshot(raw)) return null;
@@ -1179,20 +1182,62 @@
     return emptyLoadResult(now);
   }
 
-  function save(adapter, input, now) {
+  function createRuntimeSnapshot(input, now) {
+    const base = {
+      schemaVersion: SCHEMA_VERSION,
+      savedAt: finiteNumber(now, Date.now(), 0),
+      modelVersion: MODEL_VERSION,
+      created: !!input.created,
+      appearance: input.appearance,
+      player: input.player,
+      current: input.current,
+      rngState: input.rngState,
+      offlineLimitSeconds: input.offlineLimitSeconds,
+      systems: input.systems,
+      pendingOfflineReport: normalizeStage2PendingEnvelope(input, now),
+      reportArchive: input.reportArchive || [],
+      processedThroughMs: input.processedThroughMs,
+      lastActionStop: input.lastActionStop || null
+    };
+    const records = base.systems && base.systems.npcs && base.systems.npcs.records;
+    return Stage4State.normalize(records && Object.keys(records).length > 0
+      ? base : Stage4State.ensureWorldPopulation(base));
+  }
+
+  function commit(adapter, input, now, runtimeOwned) {
     const previous = safeLoad(adapter, SNAPSHOT_KEY);
     const previousBackup = safeLoad(adapter, BACKUP_KEY);
     if (futureSchemaVersion(previous) != null ||
         futureSchemaVersion(previousBackup) != null) {
-      return false;
+      return null;
     }
-    const snapshot = createSnapshot(input, now);
-    const previousResult = acceptSnapshot(previous, now);
+    const snapshot = runtimeOwned
+      ? createRuntimeSnapshot(input, now) : createSnapshot(input, now);
+    const previousData = snapshotRecord(previous);
+    const canCache = adapter !== null &&
+      (typeof adapter === 'object' || typeof adapter === 'function');
+    const signature = canCache ? committedSignatures.get(adapter) : null;
+    const previousResult = signature && previousData &&
+      JSON.stringify(previousData) === signature
+      ? { snapshot: previousData }
+      : acceptSnapshot(previousData, now, true);
     if (previousResult &&
         !safeSave(adapter, BACKUP_KEY, previousResult.snapshot)) {
-      return false;
+      return null;
     }
-    return safeSave(adapter, SNAPSHOT_KEY, snapshot);
+    if (!safeSave(adapter, SNAPSHOT_KEY, snapshot)) return null;
+    if (canCache) committedSignatures.set(adapter, JSON.stringify(snapshotRecord(snapshot)));
+    // Keep the persisted envelope intact even for adapters holding references.
+    return loadView(Object.assign({}, snapshot));
+  }
+
+  function save(adapter, input, now) {
+    return commit(adapter, input, now) !== null;
+  }
+
+  // Called only with a detached runtime transaction, never an imported save.
+  function commitRuntime(adapter, model, now) {
+    return commit(adapter, model, now, true);
   }
 
   return Object.freeze({
@@ -1201,6 +1246,8 @@
     BACKUP_KEY,
     normalizeAction,
     createSnapshot,
+    commit,
+    commitRuntime,
     load,
     save
   });

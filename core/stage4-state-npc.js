@@ -546,6 +546,13 @@
         const slot = SectOfficeContent.getSlot(sectId, slotId);
         return slot ? slot.id : null;
       })(),
+      job: (function () {
+        const sectId = validId(dataValue(source, 'sectId'), sectIds(), null);
+        const slotId = dataValue(source, 'officeSlotId');
+        const slot = sectId && typeof slotId === 'string' && SectOfficeContent
+          ? SectOfficeContent.getSlot(sectId, slotId) : null;
+        return slot ? finiteInteger(dataValue(slot, 'job'), 0, 0, 4) : 0;
+      })(),
       rogueTitleId: (function () {
         const sectId = validId(
           dataValue(source, 'sectId'),

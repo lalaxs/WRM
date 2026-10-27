@@ -24,6 +24,11 @@ function readUiSource() {
   ).join('\n');
 }
 
+function readStylesSource() {
+  return ['styles-shell.css', 'styles-game.css']
+    .map(file => fs.readFileSync(path.join(ROOT, file), 'utf8')).join('\n');
+}
+
 function loadUiScripts(vm, sandbox, options) {
   const opts = options || {};
   UI_SCRIPT_FILES.forEach((rel) => {
@@ -40,5 +45,6 @@ module.exports = {
   UI_PAGE_SCRIPT_FILES,
   uiScriptPaths,
   readUiSource,
+  readStylesSource,
   loadUiScripts
 };

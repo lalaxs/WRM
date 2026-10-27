@@ -1,6 +1,6 @@
 /*
  * original-event-texts.js —— 原版事件文案碎片（APK af 的 eventt{id}{variant}）
- * 仅构建 / 自测使用：tools/_build_event_slots.js → slots → event-templates。
+ * 仅构建 / 自测使用：scripts/build-event-slots.js → slots → event-templates。
  * 游戏运行时不加载；见闻文案走 content/event-templates.js。
  * 数据在 original-event-texts.json；Node 同步加载。
  */

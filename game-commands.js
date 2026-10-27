@@ -3,7 +3,6 @@
 // game-commands.js — command 基座（appearance / action / inventory / shared helpers）
 // Domain files load after this: combat / homestead / social / sect / legacy
 
-
 function commandRandomizeAppearance() {
   if (isPersistenceLocked()) {
     return commandResult(
@@ -205,7 +204,7 @@ function commandCloseBreak() {
 }
 
 function commandAttemptBreak() {
-  if (useStage3Runtime) {
+  {
     const result = commandAttemptBreakthrough({
       pillItemId: null,
       quantity: 0
@@ -218,76 +217,7 @@ function commandAttemptBreak() {
     }
     return result;
   }
-  const result = commitModel(function (candidate) {
-    const player = candidate.player;
-    if (!candidate.created || !player) {
-      return commandResult(
-        false,
-        'not_created',
-        false,
-        '尚未创建角色',
-        null
-      );
-    }
-    const stage = player.realmStage || 0;
-    const currentRealm = REALM_TABLE[stage];
-    if (!currentRealm || stage >= REALM_TABLE.length - 1) {
-      return commandResult(
-        true,
-        'no_change',
-        false,
-        '已是最高境界',
-        null
-      );
-    }
-    if (player.xiwei < currentRealm.need) {
-      return commandResult(
-        false,
-        'requirements_missing',
-        false,
-        '修为不足，需 ' + currentRealm.need,
-        null
-      );
-    }
-    if (currentRealm.dan &&
-        (player.inventory.stacks[currentRealm.dan] || 0) < 1) {
-      return commandResult(
-        false,
-        'requirements_missing',
-        false,
-        '需' + (DAN_NAME[currentRealm.dan] || '突破丹') + '×1',
-        null
-      );
-    }
 
-    let succeeded = true;
-    if (currentRealm.tier === 'major') {
-      const nextRandom = GameRandom.next(candidate.rngState);
-      candidate.rngState = nextRandom.seed;
-      succeeded = nextRandom.value < breakthroughRate(player, stage);
-    }
-    player.xiwei = 0;
-    if (succeeded) {
-      if (currentRealm.dan) player.inventory.stacks[currentRealm.dan] -= 1;
-      player.realmStage = stage + 1;
-      applyRealm(player);
-      player.jingqi = Math.min(200, player.jingqi + 30);
-    }
-    return commandResult(true, 'ok', true, succeeded
-      ? '突破成功 → ' + REALM_TABLE[stage + 1].name + '！'
-      : '渡劫失败，修为散尽', {
-        succeeded,
-        realm: player.realm
-      });
-  }, Date.now(), {
-    kind: 'save',
-    message: '突破结果保存失败，请重试'
-  });
-  if (result.ok && result.changed) {
-    state.showBreak = false;
-    toast(result.message);
-  }
-  return result;
 }
 
 function startActionFailureMessage(code, key) {
@@ -327,7 +257,7 @@ function candidateStartAction(candidate, key, now) {
       null
     );
   }
-  if (useStage2Runtime) {
+  {
     const started = simulationRuntime.rules.start(candidate, key, now);
     if (!started.ok) {
       const code = started.code || 'requirements_invalid';
@@ -357,124 +287,7 @@ function candidateStartAction(candidate, key, now) {
       { key }
     );
   }
-  let nextAction;
-  let label;
-  if (key.indexOf('gather:') === 0) {
-    const parsed = parseGatherKey(key);
-    const data = GATHERING_DATA[parsed.skill];
-    if (!data) {
-      return commandResult(
-        false,
-        'invalid_action',
-        false,
-        '未知行动',
-        null
-      );
-    }
-    if (parsed.mode === 'explore') {
-      if (!data.explore) {
-        return commandResult(
-          false,
-          'invalid_action',
-          false,
-          '未知行动',
-          null
-        );
-      }
-      nextAction = finiteAction(key, 1);
-      label = data.explore.name;
-    } else {
-      const entry = data.entries.find(function (item) {
-        return item.id === parsed.entryId;
-      });
-      if (!entry) {
-        return commandResult(
-          false,
-          'invalid_action',
-          false,
-          '未知行动',
-          null
-        );
-      }
-      const skillKey = GATHER_SKILL_KEY[parsed.skill];
-      const level = (candidate.player.skills[skillKey] || { lv: 1 }).lv;
-      if (entry.unlockLv > level) {
-        return commandResult(
-          false,
-          'requirements_missing',
-          false,
-          '需 ' + GATHER_TITLE[parsed.skill] + ' Lv' + entry.unlockLv,
-          null
-        );
-      }
-      if (parsed.skill !== 'fishing') {
-        const spot = candidate.systems.gathering.spots[parsed.skill];
-        if (!spot || spot.id !== entry.id) {
-          return commandResult(
-            false,
-            'requirements_missing',
-            false,
-            '请先探索 ' + entry.name,
-            null
-          );
-        }
-      }
-      nextAction = repeatAction(key);
-      label = entry.name;
-    }
-  } else {
-    const action = ACTIONS[key];
-    if (!action) {
-      return commandResult(
-        false,
-        'invalid_action',
-        false,
-        '未知行动',
-        null
-      );
-    }
-    const skill = candidate.player.skills[action.skill] || { lv: 1 };
-    if (action.needLv && skill.lv < action.needLv) {
-      return commandResult(
-        false,
-        'requirements_missing',
-        false,
-        '需 ' + (SKILL_TITLE[action.skill] || action.skill) +
-          ' Lv' + action.needLv + ' 解锁',
-        null
-      );
-    }
-    nextAction = repeatAction(key);
-    label = action.name;
-  }
 
-  const previous = candidate.current;
-  if (previous && previous.key === key &&
-      previous.mode === nextAction.mode) {
-    return commandResult(true, 'no_change', false, null, {
-      key,
-      label
-    });
-  }
-  if (previous) {
-    candidate.lastActionStop = {
-      key: previous.key,
-      reason: 'switched',
-      atMs: now
-    };
-    // 修复：从战斗切换到其它行动时，必须同步清空战斗会话。
-    // 否则同样会留下「悬空 session」，导致下次启动误弹离线结算弹窗。
-    if (typeof previous.key === 'string' &&
-        previous.key.indexOf('combat:') === 0 &&
-        candidate.systems && candidate.systems.combat) {
-      candidate.systems.combat.session = null;
-    }
-  }
-  candidate.current = nextAction;
-  return commandResult(true, 'ok', true, '开始：' + label, {
-    key,
-    label
-  });
 }
 
 function commandStartAction(input) {
@@ -488,11 +301,7 @@ function commandStartAction(input) {
       null
     );
   }
-  const actionKey = useStage3Runtime
-    ? (stage3Bootstrap.Stage3State.normalizeActionKey(key) || key)
-    : useStage2Runtime
-      ? (stage2Bootstrap.Stage2State.normalizeActionKey(key) || key)
-    : key;
+  const actionKey = stage3Bootstrap.Stage3State.normalizeActionKey(key) || key;
   if (typeof actionKey === 'string' &&
       actionKey.indexOf('combat:') === 0 &&
       !requireStage3CombatRuntime()) {
@@ -543,26 +352,6 @@ function commandStopAction() {
   return result;
 }
 
-function stage2UnavailableCommand() {
-  return commandResult(
-    false,
-    'stage2_unavailable',
-    false,
-    '当前版本暂不支持该操作',
-    null
-  );
-}
-
-function stage3UnavailableCommand() {
-  return commandResult(
-    false,
-    'stage3_unavailable',
-    false,
-    '当前版本暂不支持该操作',
-    null
-  );
-}
-
 function stage3CombatRuntimePendingCommand() {
   kickEnsureCombatRuntime();
   return commandResult(
@@ -591,7 +380,7 @@ function invalidStage3Argument(message) {
 }
 
 function stage3ModelCommand(options) {
-  if (!useStage3Runtime) return stage3UnavailableCommand();
+
   const now = Date.now();
   const result = commitModel(function (candidate) {
     const seedBefore = candidate.rngState;
@@ -663,9 +452,8 @@ function stage3ModelCommand(options) {
   return result;
 }
 
-
 function commandSellItem(input) {
-  if (!useStage2Runtime) return stage2UnavailableCommand();
+
   const itemId = input && input.itemId;
   const quantity = input && input.quantity;
   if (typeof itemId !== 'string' ||
@@ -691,7 +479,7 @@ function commandSellItem(input) {
         null
       );
     }
-    if (useStage3Runtime) {
+    {
       const minimum = stage3Bootstrap.CombatLoadouts
         .minimumSellRemainder(candidate, itemId);
       const stacks = candidate.player.inventory &&
@@ -774,29 +562,13 @@ function commandUseItem(input) {
 
   // 功法书：研读领悟
   if (category === 'technique') {
-    if (!useStage3Runtime) {
-      return commandResult(
-        false,
-        'unavailable',
-        true,
-        '功法书请在「装备」界面研读',
-        null
-      );
-    }
+
     return commandConsumeTechniqueBook({ itemId: itemId });
   }
 
   // 消耗品：背包内直接消耗 1 个
   if (category === 'consumable') {
-    if (!useStage2Runtime) {
-      return commandResult(
-        false,
-        'unavailable',
-        true,
-        '当前版本暂不支持直接使用该道具',
-        null
-      );
-    }
+
     const now = Date.now();
     return commitModel(function (candidate) {
       const inv = candidate.player && candidate.player.inventory;
@@ -927,7 +699,7 @@ function commandUseItem(input) {
 }
 
 function commandExpandInventory(input) {
-  if (!useStage2Runtime) return stage2UnavailableCommand();
+
   const fields = safeInputFields(input, ['amount', 'cost']);
   if (!fields ||
       !Number.isSafeInteger(fields.amount) ||
@@ -990,7 +762,6 @@ function commandExpandInventory(input) {
   return result;
 }
 
-
 function goToNavigationLabel(label) {
   const navigation = queryNavigation();
   const index = navigation.items.findIndex(function (item) {
@@ -999,8 +770,11 @@ function goToNavigationLabel(label) {
   if (index >= 0) commandSwitchNav({ index: index });
 }
 
-
 function commandRetryPersistence() {
+  if (typeof state._startupRetry === 'function') {
+    state._startupRetry();
+    return commandResult(true, 'loading', true, '正在重新加载游戏数据…', null);
+  }
   if (!isPersistenceLocked()) {
     return commandResult(true, 'no_change', false, null, null);
   }

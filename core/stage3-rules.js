@@ -852,7 +852,9 @@
     try {
       baseRuntime = trustedCreateStage2(deps);
     } catch (error) {
-      throw new TypeError('Stage 2 runtime creation failed');
+      const failure = new TypeError('Stage 2 runtime creation failed: ' + error.message);
+      failure.cause = error;
+      throw failure;
     }
     if (!plainRecord(baseRuntime) ||
         !plainRecord(dataValue(baseRuntime, 'rules')) ||
@@ -976,12 +978,21 @@
     }
 
     function combatTimeBoundary(state, helpers) {
-      const first = Math.max(
-        0,
-        TICK_SECONDS - finite(state.current.elapsed, 0)
-      );
+      const elapsed = Math.max(0, finite(state.current.elapsed, 0));
+      const first = Math.max(0, TICK_SECONDS - elapsed);
       if (!isOfflineSource(helpers)) return first;
-      return first + (OFFLINE_COMBAT_BATCH_TICKS - 1) * TICK_SECONDS;
+      // Flush debt from older saves immediately. Otherwise batch only complete
+      // ticks within this slice and before another lane can change the world.
+      if (elapsed >= TICK_SECONDS) return 0;
+      const horizon = Math.max(0, Math.min(
+        OFFLINE_COMBAT_BATCH_TICKS * TICK_SECONDS - elapsed,
+        finite(helpers.remainingSeconds, Infinity),
+        finite(helpers.mainRemainingSeconds, Infinity),
+        finite(helpers.nextLaneBoundarySeconds, Infinity)
+      ));
+      const ticks = Math.min(OFFLINE_COMBAT_BATCH_TICKS,
+        Math.floor((elapsed + horizon) / TICK_SECONDS));
+      return ticks > 0 ? Math.max(0, ticks * TICK_SECONDS - elapsed) : first;
     }
 
     function elapseCombat(state, seconds) {

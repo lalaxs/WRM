@@ -115,11 +115,10 @@ assets/resource-icons/50/
 建议运行：
 
 ```bash
-node selftest_item_icon_transparency.js
-node selftest_item_tips.js
-node selftest_latest_material_outputs.js
-node scripts/sync-release.js
-node selftest_release_sync.js
+node tests/selftest_item_icon_transparency.js
+node tests/selftest_latest_material_outputs.js
+npm test
+npm run package:h5
 ```
 
 ## 当前参考来源

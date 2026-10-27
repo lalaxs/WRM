@@ -31,7 +31,7 @@ function fixture() {
     player: {
       flags: { completedFirstAction: false },
       realmStage: 1,
-      spiritualRootId: 'single',
+      spiritualRootId: 'metal',
       skills: {
         herb: { level: 3, xp: 2 },
         caiyao: { lv: 3, xp: 2 },

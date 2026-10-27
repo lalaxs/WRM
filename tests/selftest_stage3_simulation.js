@@ -329,12 +329,13 @@ equal(runtime.lanes.map(function (lane) { return lane.id; }), [
   ok(stage2.ok &&
      stage2.state.current.key === 'gather:explore:mining',
   'Stage 2 action parsing and start behavior are preserved');
-  const completed = advance(runtime, stage2.state, 2, {
+  const completed = advance(runtime, stage2.state,
+    runtime.rules.getAction(stage2.state).duration, {
     source: 'online',
     fromMs: 20
   });
   ok(completed.report.action.completed === 1 &&
-     completed.state.current === null,
+     completed.state.current.mode === 'repeat' && completed.state.current.done === 1,
   'noncombat completion still delegates to the Stage 2 runtime');
 }
 
@@ -1134,6 +1135,21 @@ function parityAfterReload(initial, beforeSeconds, afterSeconds, mutate) {
     batch.state,
     'multi-seed online/offline parity holds for seed ' + seed
   );
+});
+
+// A short slice or a passive-lane boundary must not postpone an entire batch.
+[0.125, 0.375, 1.375, 60, 120, 121].forEach(function (seconds) {
+  const initial = makeEndlessRegion(runtime, 31);
+  const batch = advance(runtime, initial, seconds, {
+    source: 'offline', fromMs: 0, limit: 43200
+  });
+  equal(batch.report.combat.ticks, Math.floor(seconds * 4),
+    seconds + 's offline resolves every due combat tick before returning');
+  const resumed = advance(runtime, batch.state, 0.25, {
+    source: 'online', fromMs: seconds * 1000
+  });
+  equal(resumed.report.combat.ticks, 1,
+    seconds + 's offline leaves no combat backlog for the next online frame');
 });
 
 {

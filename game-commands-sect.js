@@ -12,7 +12,7 @@ function stage4SectMissionDeps() {
 }
 
 function commandAcceptSectMission(input) {
-  if (!useStage4Runtime || !stage4Bootstrap.SectMissions) {
+  if (!stage4Bootstrap.SectMissions) {
     return stage4Failure('invalid_state');
   }
   const fields = safeInputFields(input, ['missionId']);
@@ -49,7 +49,7 @@ function commandAcceptSectMission(input) {
 }
 
 function commandRefreshSectMissionBoard() {
-  if (!useStage4Runtime || !stage4Bootstrap.SectMissions) {
+  if (!stage4Bootstrap.SectMissions) {
     return stage4Failure('invalid_state');
   }
   const now = Date.now() / 1000;
@@ -71,7 +71,7 @@ function commandRefreshSectMissionBoard() {
 }
 
 function commandClaimSectMission() {
-  if (!useStage4Runtime || !stage4Bootstrap.SectMissions) {
+  if (!stage4Bootstrap.SectMissions) {
     return stage4Failure('invalid_state');
   }
   const now = Date.now() / 1000;
@@ -115,7 +115,7 @@ function stage4SectPavilionDeps() {
 }
 
 function commandExchangeSectTechnique(input) {
-  if (!useStage4Runtime || !stage4Bootstrap.SectPavilion) {
+  if (!stage4Bootstrap.SectPavilion) {
     return stage4Failure('invalid_state');
   }
   const fields = safeInputFields(input, ['techniqueId']);
@@ -154,7 +154,7 @@ function commandExchangeSectTechnique(input) {
 }
 
 function commandPromoteSectDisciple() {
-  if (!useStage4Runtime || !stage4Bootstrap.SectPavilion) {
+  if (!stage4Bootstrap.SectPavilion) {
     return stage4Failure('invalid_state');
   }
   const result = commitModel(function (candidate) {
@@ -182,7 +182,7 @@ function commandPromoteSectDisciple() {
 }
 
 function commandStartSectMissionCombat() {
-  if (!useStage4Runtime || !stage4Bootstrap.SectMissions) {
+  if (!stage4Bootstrap.SectMissions) {
     return stage4Failure('invalid_state');
   }
   let actionKey = null;

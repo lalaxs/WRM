@@ -14,7 +14,6 @@ const stage4ReadState = {
   world: new Set()
 };
 
-
 function stage4Person(model, npcId) {
   return model && model.systems && model.systems.npcs &&
     model.systems.npcs.records &&
@@ -263,16 +262,6 @@ function stage4ElaborateChronicleMeta(model, meta) {
     calendarLabel: stage4LabelFromAbsoluteMonth(absoluteMonth),
     at: absoluteMonth,
     options: null
-  });
-}
-
-function stage4EventRows(model, options) {
-  const metas = stage4ChronicleMetas(model);
-  const limit = options && Number.isFinite(options.elaborateLimit)
-    ? Math.max(0, Math.floor(options.elaborateLimit))
-    : metas.length;
-  return metas.slice(0, limit).map(function (meta) {
-    return stage4ElaborateChronicleMeta(model, meta);
   });
 }
 
@@ -1216,22 +1205,6 @@ function stage4SpiritualRootName(rootId) {
   }
   const root = stage4Bootstrap.NpcGenerationContent.getSpiritualRoot(rootId);
   return root && root.name ? root.name : (rootId || '未知灵根');
-}
-
-function stage4StackLabel(stackId) {
-  return ({
-    yaocai: '药材',
-    lingkuang: '灵矿',
-    muliao: '木料',
-    shicai: '食材',
-    faqi: '法器',
-    hujia: '护甲',
-    shanshi: '膳食',
-    fu: '符箓',
-    caiqing: '才情',
-    tupo: '筑基丹',
-    heal: '疗伤丹'
-  })[stackId] || stackId;
 }
 
 function stage4SectOfficeGroups(model, sectId, record) {

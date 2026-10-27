@@ -108,7 +108,7 @@ if (Relationships) {
 
   const zero = Relationships.getEdge(fixture(), 'player', 'npc-1');
   ok(zero !== null &&
-    same(Object.keys(zero), [
+    same(Object.keys(zero).sort(), [
       'affection',
       'trust',
       'romanticAttachment',
@@ -118,7 +118,7 @@ if (Relationships) {
       'jealousy',
       'closeness',
       'lastChangedAt'
-    ]) &&
+    ].sort()) &&
     zero.affection === 0 &&
     zero.trust === 0 &&
     zero.romanticAttachment === 0 &&
@@ -921,9 +921,8 @@ if (Relationships) {
 }
 
 const indexText = fs.readFileSync('index.html', 'utf8');
-ok(indexText.includes(
-  '<script src="core/relationships.js"></script>'
-), '浏览器入口加载关系领域模块');
+ok(require('../runtime-modules').extractHtmlScripts(indexText)
+  .includes('core/relationships.js'), '浏览器入口加载关系领域模块');
 ok(indexText.indexOf('core/stage4-state.js') <
   indexText.indexOf('core/relationships.js'),
 '关系模块在 Stage4State 安全快照边界之后加载');

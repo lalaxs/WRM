@@ -4,12 +4,14 @@
   "scripts": {
     "dev": "node scripts/preview.js",
     "preview": "node scripts/preview.js",
-    "build:event-slots": "node tools/_build_event_slots.js",
-    "build:event-templates": "node tools/_build_event_slots.js && node tools/_build_event_templates.js",
+    "build:event-slots": "node scripts/build-event-slots.js",
+    "build:event-templates": "node scripts/build-event-slots.js && node scripts/build-event-templates.js",
     "test": "node tests/selftest_all.js",
     "test:runtime": "node tests/selftest_runtime_modules.js",
+    "test:browser": "node scripts/smoke-browser.js",
+    "benchmark": "node scripts/benchmark-runtime.js",
     "crop:nie": "python scripts/crop-nie-portraits.py",
-    "sync-release": "node scripts/sync-release.js",
-    "package:h5": "node scripts/package-h5.js"
+    "package:h5": "node scripts/package-h5.js",
+    "clean": "node scripts/clean.js"
   }
 }

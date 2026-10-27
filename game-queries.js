@@ -65,27 +65,7 @@ function queryHome() {
 }
 
 function queryInventory(options) {
-  if (!useStage2Runtime) {
-    return readonlyQuery({
-      capacity: getInventoryList().length,
-      used: getInventoryList().length,
-      free: 0,
-      categories: ['all'],
-      selectedCategory: 'all',
-      search: '',
-      items: getInventoryList().map(function (item) {
-        return {
-          itemId: item.k,
-          name: item.n,
-          category: 'all',
-          quantity: item.v,
-          bound: 0,
-          available: item.v,
-          sellValue: 0
-        };
-      })
-    });
-  }
+
   const model = stage2QueryModel();
   return readonlyQuery(stage2Bootstrap.Inventory.query(
     model.player && model.player.inventory,
@@ -185,7 +165,7 @@ function equipmentReferences(model, instanceId) {
 }
 
 function equipmentInstance(model, instanceId) {
-  return useEquipmentRuntime && model && model.player
+  return model && model.player
     ? stage2Bootstrap.Inventory.findEquipment(
       model.player.inventory,
       instanceId
@@ -212,7 +192,7 @@ function queryEquipmentInfo(input) {
     ['instanceId', 'loadoutId'],
     ['instanceId']
   );
-  if (!useEquipmentRuntime || !fields ||
+  if (!fields ||
       typeof fields.instanceId !== 'string') {
     return readonlyQuery(null);
   }
@@ -276,7 +256,7 @@ function querySkillPage(navName) {
       LazyContent && typeof LazyContent.ensureHerblore === 'function') {
     LazyContent.ensureHerblore();
   }
-  if (useStage2Runtime) {
+  {
     const page = STAGE2_PRODUCTION_PAGES[navName];
     if (!page) return readonlyQuery(null);
     const model = stage2QueryModel();
@@ -320,11 +300,11 @@ function querySkillPage(navName) {
       })
     });
   }
-  return readonlyQuery(getSkillPageInfo(navName));
+
 }
 
 function queryGatherPage(navName) {
-  if (useStage2Runtime) {
+  {
     const skillId = STAGE2_GATHER_PAGES[navName];
     const content = skillId &&
       stage2Bootstrap.GatheringContent.GATHERING[skillId];
@@ -642,13 +622,11 @@ function queryGatherPage(navName) {
       noSpotHint: skillId !== 'fishing' && resources.length === 0
     });
   }
-  return readonlyQuery(getGatherPageInfo(navName));
+
 }
 
 function queryHomestead(moduleId) {
-  if (!useStage2Runtime) {
-    return readonlyQuery({ implemented: false });
-  }
+
   const model = stage2QueryModel();
   if (moduleId === 'farm') {
     return readonlyQuery(stage2Bootstrap.Farm.query(model));
@@ -726,7 +704,7 @@ function queryHomestead(moduleId) {
 }
 
 function queryInheritanceHall(input) {
-  const model = useStage5Runtime ? stage4Model() : null;
+  const model = stage4Model();
   if (!model) return readonlyQuery({ implemented: false });
   // 防御：传承殿依赖 npc 档案 / 血脉 / 角色生命周期；老存档或新档未初始化这些
   // 子系统时不应抛错（否则每帧 renderGame 崩溃、主循环卡死）。缺失则视为未实装。
@@ -782,7 +760,7 @@ function queryInheritanceHall(input) {
 }
 
 function queryLegacyTransition() {
-  const model = useStage5Runtime ? stage4Model() : null;
+  const model = stage4Model();
   return readonlyQuery(model
     ? Object.assign(
       { implemented: true },
@@ -792,18 +770,7 @@ function queryLegacyTransition() {
 }
 
 function queryCharm() {
-  if (!useStage2Runtime) {
-    return readonlyQuery({
-      level: 1,
-      xp: 0,
-      nextXp: skillXpNeed(1),
-      benefits: {
-        positiveRelationMultiplier: 1,
-        misunderstandingReduction: 0
-      },
-      text: '通过社交互动自然提升'
-    });
-  }
+
   const model = stage2QueryModel();
   const progress = stage2Progress(model.player, 'charm');
   return readonlyQuery({
@@ -820,7 +787,7 @@ function queryCharm() {
 }
 
 function queryOffline() {
-  const model = useStage2Runtime ? stage2QueryModel() : null;
+  const model = stage2QueryModel();
   const reports = state.pendingOfflineReports
     .map(function (report) { return reportView(report, model); })
     .filter(Boolean);
@@ -839,7 +806,7 @@ function queryOffline() {
 }
 
 function stage4Model() {
-  return useStage4Runtime ? stage2QueryModel() : null;
+  return stage2QueryModel();
 }
 
 function queryPersistence() {
@@ -888,12 +855,7 @@ function breakthroughGateProgress(model, view) {
 }
 
 function queryBreakthrough(input) {
-  if (!useStage3Runtime) {
-    return readonlyQuery({
-      ok: false,
-      code: 'stage3_unavailable'
-    });
-  }
+
   try {
     const model = stage2QueryModel();
     let selected = [];

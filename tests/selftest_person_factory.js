@@ -99,6 +99,7 @@ model.player.kin.frs.forEach(function (id) {
   ok(person && person.realmStage <= 1, '开局友人境界压在炼气');
   ok(!person.officeSlotId ||
     person.officeSlotId === 'outer' ||
+    person.officeSlotId === 'disciple' ||
     person.officeSlotId === 'inner',
     '开局友人不当真传/长老/堂主');
   ok(!person.officeSlotId || !HIGH_OFFICES[person.officeSlotId],

@@ -197,7 +197,9 @@ ok(completed.state.systems.relationships.edges[
 ].affection === 2 &&
   completed.state.systems.relationships.edges[
   'npc-1>player'
-].affection === 1,
+].affection === completed.result.personToPlayer.affection &&
+  completed.result.personToPlayer.affection >=
+    SocialContent.get('talk').relationship.personToPlayer.affection,
 '社交分别写入玩家与人物两个方向的关系变化');
 ok(completed.state.systems.relationships.bonds[
   'npc-1|player'

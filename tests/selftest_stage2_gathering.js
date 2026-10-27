@@ -117,7 +117,7 @@ function cloneContent() {
 const frozenRules = Gathering.create(Object.freeze(realDeps()));
 ok(Object.isFrozen(frozenRules), 'created gathering rules are frozen');
 exact(Object.keys(frozenRules).sort(), [
-  'advanceFishStocks', 'collect', 'explore', 'fish'
+  'advanceFishStocks', 'advanceFishStocksInPlace', 'collect', 'explore', 'fish'
 ], 'gathering rules expose exploration, collection, and fishing');
 
 const exploreCases = [

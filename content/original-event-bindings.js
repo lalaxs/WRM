@@ -1,6 +1,6 @@
 /*
  * original-event-bindings.js —— H5 action → 原版 eventId 池 + 轻量效果
- * 由 tools/_build_event_bindings.py 从 af-extracted.json 生成。
+ * 由 scripts/build-event-bindings.py 从 original-event-texts.json 生成。
  *
  * 完全还原约定（本阶段）：
  *   - 世界日事件优先原版 eventt；无池动作走 ACTION_ALIASES
@@ -456,6 +456,10 @@
   },
   "73": {
     "tag": "dao-companion"
+  },
+  "417": {
+    "breakthrough_delta": 0.05,
+    "buff": "breakthrough_up"
   },
   "84": {
     "breakthrough_delta": 0.05,

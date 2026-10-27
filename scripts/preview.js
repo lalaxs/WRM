@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * 可选的本地预览：只服务本仓库根目录源码，不经过 release/。
+ * 本地预览：直接服务仓库根目录源码。
  * 用法：npm run dev
  *
  * 默认从 5288 起找空闲端口（避免误用其它项目常用端口，如 4173）。
@@ -77,7 +77,7 @@ function createServer() {
         res.writeHead(200, {
           'Content-Type': contentType(target),
           'Cache-Control': 'no-store',
-          'X-Xiuxian-Root': ROOT
+          'X-Xiuxian-Root': encodeURIComponent(ROOT)
         });
         res.end(data);
       });
@@ -103,7 +103,7 @@ function listen(port, attempt) {
     console.log('本仓库开发预览（根目录源码）');
     console.log('  URL : http://' + HOST + ':' + actualPort + '/');
     console.log('  目录: ' + ROOT);
-    console.log('  说明: 日常请预览根目录；release/ 仅打包时同步。');
+    console.log('  说明: 日常预览根目录源码；发行包由 package:h5 生成。');
     if (actualPort !== PREFERRED_PORT) {
       console.log(
         '  提示: 端口 ' + PREFERRED_PORT +
@@ -113,4 +113,6 @@ function listen(port, attempt) {
   });
 }
 
-listen(PREFERRED_PORT, 0);
+if (require.main === module) listen(PREFERRED_PORT, 0);
+
+module.exports = { createServer };

@@ -626,6 +626,10 @@
         : null;
       if (!item || item.category !== 'equipment') return;
       const quantity = finiteInteger(stacks[itemId], 0, 0);
+      // Formation items share the equipment category but remain stack items.
+      // Only consume stacks when a combat-equipment migration exists.
+      if (!Equipment || typeof Equipment.legacyInstance !== 'function' ||
+          !Equipment.legacyInstance(itemId, 1)) return;
       for (let ordinal = 1; ordinal <= quantity; ordinal += 1) {
         if (!Equipment || typeof Equipment.legacyInstance !== 'function') {
           break;

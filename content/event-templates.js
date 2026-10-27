@@ -1,6 +1,6 @@
 /*
  * event-templates.js —— 统一事件文案模板（运行时只填占位符）
- * 由 tools/_build_event_templates.js 生成。
+ * 由 scripts/build-event-templates.js 生成。
  *   - 原版：从 original-event-texts + original-event-slots 编译
  *   - 自研：编辑 content/h5-event-templates.json 后重新生成
  *

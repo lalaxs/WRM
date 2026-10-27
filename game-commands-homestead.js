@@ -5,7 +5,7 @@
 // Classic script globals; no IIFE.
 
 function commandPlant(input) {
-  if (!useStage2Runtime) return stage2UnavailableCommand();
+
   const plotId = input && input.plotId;
   const cropId = input && input.cropId;
   if (typeof plotId !== 'string' || typeof cropId !== 'string') {
@@ -87,7 +87,7 @@ function mergeItemCosts(target, costs) {
 }
 
 function commandPlantAll(input) {
-  if (!useStage2Runtime) return stage2UnavailableCommand();
+
   const assignments = bulkPlantAssignments(input);
   if (!assignments) {
     return commandResult(
@@ -153,7 +153,7 @@ function commandPlantAll(input) {
 }
 
 function commandHarvest(input) {
-  if (!useStage2Runtime) return stage2UnavailableCommand();
+
   const plotId = input && input.plotId;
   if (typeof plotId !== 'string') {
     return commandResult(
@@ -232,7 +232,7 @@ function resolveFormationByItemId(itemId) {
 }
 
 function commandEquipFormation(input) {
-  if (!useStage2Runtime) return stage2UnavailableCommand();
+
   const slotIndex = input && input.slotIndex;
   const itemId = input && input.itemId;
   if (typeof slotIndex !== 'number' ||
@@ -297,7 +297,7 @@ function commandEquipFormation(input) {
 }
 
 function commandUnequipFormation(input) {
-  if (!useStage2Runtime) return stage2UnavailableCommand();
+
   const slotIndex = input && input.slotIndex;
   if (typeof slotIndex !== 'number' ||
       !Number.isSafeInteger(slotIndex) ||
@@ -354,7 +354,7 @@ function commandUnequipFormation(input) {
 }
 
 function commandSetActiveBeast(input) {
-  if (!useStage2Runtime) return stage2UnavailableCommand();
+
   if (!input || !Object.prototype.hasOwnProperty.call(input, 'beastId')) {
     return commandResult(
       false,

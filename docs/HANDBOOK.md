@@ -1,6 +1,6 @@
 # 修仙放置 H5 · 项目手册（权威）
 
-**状态**：现行权威入口（2026-08-16）  
+**状态**：现行权威入口（2026-10-27）
 **冲突处理**：系统细则与本手册冲突时，以**当前源码与 `content/*` 数据**为准，并回写本手册。
 
 早期 `docs/superpowers/specs/` 过程规格已删除；需查阅时从 Git 历史恢复。
@@ -10,9 +10,8 @@
 ## 1. 日常开发
 
 - **唯一源码与日常预览入口：仓库根目录**（打开根目录 `index.html`）。
-- **不要**用 `release/` 做日常调试；改完源码却打开 `release/` 会看到旧内容。
 - 可选：`npm run dev`（默认尝试 `5288`，占用则换端口）。
-- 发行：`npm run sync-release` 或 `npm run package:h5`（打包前会同步生成 `release/`）。
+- 发行：`npm run package:h5` 直接从运行时清单构建 `dist/`；`npm run clean` 删除构建和检查产物。
 - 存档：**只认 `schemaVersion === 5`**；旧档忽略为空档。不做跨版本迁移。同版本仍走 `normalize`；转世玩法走 `LegacyTransition`（与存档迁移无关）。
 
 ---
@@ -35,10 +34,12 @@
 
 ### 2.2 加载约定
 
-- 首屏脚本顺序与 `BOOT_SCRIPTS` 一致（可带 `?v=`）。
+- 源码首屏脚本带 `defer`，顺序与 `BOOT_SCRIPTS` 一致（可带 `?v=`）。
 - 延后只经 `LazyContent`：草药大表、UI 分页、战斗引擎、`styles-game.css`。
 - 改加载链：先改 `runtime-modules.js` → 再改 `index.html` → `npm run test:runtime`。
 - Cursor 规则：`.cursor/rules/runtime-contract.mdc`。
+- 发行包将同一清单合并为带内容哈希的 boot / pages / combat 三组 JS；`asset-manifest.json` 与 `window.__H5_ASSETS__` 负责懒加载映射，同组脚本只执行一次。仓库只维护根目录源码；发行包只保留对应哈希 bundle，不再携带同一批原始 JS/CSS。
+- 懒加载脚本失败最多重试 3 次；失败 Promise 与脚本节点会清除，页面可显式重试。关键草药表或恢复所需战斗引擎加载失败时锁定进度和写档，重试成功后才继续启动。
 
 ---
 
@@ -63,7 +64,7 @@
 
 | 结论 | 代码锚点 |
 |------|---------|
-| 配置总表 `Dns` | `core/dns.js`（含 `famiAct1day`、`act4day`、月事件软帽等） |
+| 配置总表 `GameConfig` / `Dns` | `content/game-config.js`（含 `famiAct1day`、`act4day`、月事件软帽等）；`core/dns.js` 仅兼容别名 |
 | Person / 关系网 | `core/person-factory.js`、`core/person-graph.js`（`getpe` / `cans` / 当日配额） |
 | 世界事件只刷「与玩家有关系且 cans」的人 | `core/world-month.js` + `world-event-gen.js` 等 |
 | 推进入口仍是「月」 | `WorldMonth.advanceOneMonth`；内部对标 dayevent（`resetDaily` → 池化 → doevent）+ `waittime0` |
@@ -113,14 +114,42 @@
 - 洞府页**不**显示境界卡、**不**显示当前行动卡。
 - 会客厅：仍占位。传承殿：已实现（寿元、传承计划、后嗣、前世等；`ui-home.js` + `queries.inheritanceHall`）。
 - 当前行动：全局顶栏下方 `.action-bar`（空闲 / 行动名 + 进度）。
-- 离线：切后台再回前台**不**结算；仅**重新加载页面**时按存档 `processedThroughMs` 结算（`game.js` `handleVisibilityChange` 只恢复运行）。
+- 切后台后恢复继续按在线规则追算，不产生重载专用的离线收益弹窗。超过 1.5 秒的帧间隔在独立候选模型上分片恢复，完成并成功落盘后统一提交；追算期间锁定修改命令。仅**重新加载页面**按存档 `processedThroughMs` 做离线结算。
 - 长离线启动：先出游戏壳与「正在结算离线收益」提示（**不依赖**导航页模块就绪），再**分帧**追算并显示进度；世界见闻全量月数封顶 `OFFLINE_MONTH_CAP`（超额只推日历/年龄）；战斗离线加大同规则批处理；离线 NPC 年龄/修为按 `ACTIVE_STEP` 合并推进，避免短周期主行动每微步扫全表。
 - 离线弹窗：仅当报告有意义（主行动完成 / 战斗结果 / 社交完成 / 时钟回拨）才写入 `pendingOfflineReports`；空闲长离线只推进水位线，不弹空窗。
 - 离线见闻降频：在 cap 内约 `OFFLINE_EVENT_MONTH_CHANCE`（1/4）的月份出见闻，且每月最多 `OFFLINE_EVENT_MONTHLY_CAP`（1）条；在线仍为约 1～2 条/月。
 - 见闻保留上限 `WORLD_EVENT_RETENTION`（400）；在线 tick 跳过整树 JSON 守卫与 apply 全量 normalize，避免长离线后操作卡顿。
-- 命令热路径：`captureRuntime` 深拷贝即可；全量 normalize 只在存档边界 `toSnapshotInput`（读档/离线结算仍完整 normalize）。
+- 命令热路径：`captureRuntime` 对可信运行态做一次 JSON 脱离；`commitRuntime` 在落盘边界执行一次完整规范化。外部输入仍执行完整校验，主档/备份的未来版本保护保留；保存不会提前推进尚未模拟的水位线。
 
-## 6.1 美术
+### 6.2 模块所有权
+
+- `game.js`：组成根、规则组合、共享状态、启动；`game-api.js`：初始化服务，再暴露冻结的查询/命令/绘制接口。
+- `game-runtime.js`：通过 `GameRuntime.create(deps)` 持有调度、后台计时器、离线和长间隔恢复任务。
+- `game-persist.js`：通过 `GamePersist.create(deps)` 持有提交、失败候选、显式重试；失败候选不会直接变成已提交状态。
+- `game-appearance.js`：通过 `GameAppearance.create(deps)` 持有外观绘制和缓存。三者通过显式依赖接入组成根。
+- 在线 farm / fish 被动推进只修改各自子树，不复制 NPC、关系、历史或背包；对外领域接口仍返回脱离的结果。
+- 查询只脱离和冻结返回 DTO，不能把运行态引用交给 UI。战斗方案查询只投影所需玩家和系统字段。
+- `tests/selftest_dependency_layers.js` 检查运行时相对模块依赖，防止 content 再反向引用 core；UI 隔离门禁继续由 RuntimeModules 维护。静态检查不等于消除了所有跨文件共享绑定，后续新增功能继续沿现有工厂/API 边界组织。
+
+内部领域模型按已规范化的 JSON 数据处理，不探测 Proxy、访问器或跨 realm 原型；外部存档、命令参数和业务约束继续在各自边界校验。测试复用生产加载清单，重点覆盖经济事务、时间推进、存档恢复和实际页面交互。
+
+### 6.3 验证与发布
+
+使用 Node.js 24；游戏运行时与常规测试不需要 npm 依赖。
+
+```text
+npm test
+npm run package:h5
+npm run benchmark
+```
+
+Windows PowerShell 若阻止 `npm.ps1`，使用 `npm.cmd`。ZIP 输出为 `dist/h5/xiuxian-idle-h5.zip`，由 Node 内置压缩库生成；不依赖系统 zip 命令。打包检查资源引用、包体积、ZIP 条目与内容，并验证重复构建一致性。
+
+浏览器检查需开发工具 Playwright 与 Chrome（也可通过 `BROWSER_CHANNEL` 指定已安装的浏览器）；执行 `npm run test:browser`。可用 `PLAYWRIGHT_MODULE` 指向已有的 Playwright 安装目录。脚本同时检查源码与打包版的角色创建、全部导航、技能启动/停止、保存重开、移动视口和关键数据加载失败后的保护/重试；截图和结果写入 `dist/qa/`。CI 工作流在 Windows/Linux 跑常规门禁，并在 Chromium 跑浏览器检查。
+
+性能脚本使用固定种子、5/120/500 NPC、Node VM 和内存 JSON 存储，输出当次运行的中位数与 P95。大存档仍同步规范化与写入，扩大世界前应评估 Worker/异步存储。尚未验证真实 iOS/Android WebView、云存档桥接与广告 SDK。
+
+## 6.4 美术
 
 | 文档 | 用途 |
 |------|------|

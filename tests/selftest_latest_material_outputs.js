@@ -67,7 +67,7 @@ assert.strictEqual(
   '旧采药行动 key 迁移到第一阶新药草圃'
 );
 assert.strictEqual(
-  migratedLegacyHerb.systems.gathering.spots.herb.entryId,
+  migratedLegacyHerb.systems.gathering.spots.herb[0].entryId,
   'parityHerb1',
   '旧采药点存档迁移到第一阶新药草圃'
 );

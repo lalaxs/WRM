@@ -1,18 +1,23 @@
 (function (root, factory) {
   'use strict';
   if (typeof module === 'object' && module.exports) {
-    let proxyDetector = null;
-    try { proxyDetector = require('node:util').types.isProxy; } catch (error) {}
     module.exports = factory(
-      require('../content/homestead.js'), require('./inventory.js'),
-      require('./skill-progression.js'), require('./random.js'), proxyDetector
+      require('../content/homestead.js'),
+      require('./inventory.js'),
+      require('./skill-progression.js'),
+      require('./random.js')
     );
   } else if (root) {
-    root.SpiritBeasts = factory(root.HomesteadContent, root.Inventory,
-      root.SkillProgression, root.GameRandom, null);
+    root.SpiritBeasts = factory(root.HomesteadContent,
+      root.Inventory,
+      root.SkillProgression,
+      root.GameRandom);
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (
-  HomesteadContent, Inventory, SkillProgression, GameRandom, proxyDetector
+  HomesteadContent,
+  Inventory,
+  SkillProgression,
+  GameRandom
 ) {
   'use strict';
 
@@ -25,77 +30,12 @@
 
   function own(value, key) { return Object.prototype.hasOwnProperty.call(value, key); }
   function define(target, key, value) { Object.defineProperty(target, key, { value, enumerable: true, configurable: true, writable: true }); }
-  function isProxy(value) { try { return typeof proxyDetector === 'function' && proxyDetector(value); } catch (error) { return true; } }
-  function record(value) {
-    try {
-      if (!value || typeof value !== 'object' || Array.isArray(value) || isProxy(value)) return false;
-      const proto = Object.getPrototypeOf(value);
-      if (proto === null || proto === Object.prototype) return true;
-      const descriptor = Object.getOwnPropertyDescriptor(proto, 'constructor');
-      return !!descriptor && own(descriptor, 'value') &&
-        typeof descriptor.value === 'function' &&
-        descriptor.value.name === 'Object' &&
-        Object.getPrototypeOf(proto) === null;
-    } catch (error) { return false; }
-  }
-  function data(value, key) {
-    try {
-      if (!record(value) || !own(value, key)) return undefined;
-      const descriptor = Object.getOwnPropertyDescriptor(value, key);
-      return descriptor && own(descriptor, 'value') ? descriptor.value : undefined;
-    } catch (error) { return undefined; }
-  }
-  function strictArray(value) {
-    if (!Array.isArray(value) || isProxy(value)) return null;
-    const result = [];
-    for (let index = 0; index < value.length; index++) {
-      if (!own(value, String(index))) return null;
-      const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
-      if (!descriptor || !own(descriptor, 'value')) return null;
-      result.push(descriptor.value);
-    }
-    return result;
-  }
-  function clone(value, seen) {
-    const ancestors = seen || new Set();
-    if (value === null || typeof value === 'string' || typeof value === 'boolean') return { ok: true, value };
-    if (typeof value === 'number') return Number.isFinite(value) ? { ok: true, value } : { ok: false };
-    if (typeof value !== 'object' || isProxy(value) || ancestors.has(value)) return { ok: false };
-    const nextSeen = new Set(ancestors); nextSeen.add(value);
-    if (Array.isArray(value)) {
-      const raw = strictArray(value); if (!raw) return { ok: false };
-      const result = [];
-      for (let index = 0; index < raw.length; index++) { const copied = clone(raw[index], nextSeen); if (!copied.ok) return copied; result.push(copied.value); }
-      return { ok: true, value: result };
-    }
-    if (!record(value)) return { ok: false };
-    const result = {};
-    let keys;
-    try { keys = Reflect.ownKeys(value); } catch (error) { return { ok: false }; }
-    for (let index = 0; index < keys.length; index++) {
-      const key = keys[index]; if (typeof key !== 'string') return { ok: false };
-      const descriptor = Object.getOwnPropertyDescriptor(value, key);
-      if (!descriptor || descriptor.enumerable !== true || !own(descriptor, 'value')) return { ok: false };
-      const copied = clone(descriptor.value, nextSeen); if (!copied.ok) return copied;
-      define(result, key, copied.value);
-    }
-    return { ok: true, value: result };
-  }
-  function cloneModel(model) {
-    if (!record(model)) return { ok: false };
-    const result = {};
-    let keys;
-    try { keys = Reflect.ownKeys(model); } catch (error) { return { ok: false }; }
-    for (let index = 0; index < keys.length; index++) {
-      const key = keys[index]; if (typeof key !== 'string') return { ok: false };
-      const descriptor = Object.getOwnPropertyDescriptor(model, key);
-      if (!descriptor || descriptor.enumerable !== true || !own(descriptor, 'value')) return { ok: false };
-      if (ACTION_KEYS.indexOf(key) >= 0) { define(result, key, descriptor.value); continue; }
-      const copied = clone(descriptor.value); if (!copied.ok) return copied;
-      define(result, key, copied.value);
-    }
-    return { ok: true, value: result };
-  }
+
+  function record(value) { return !!value && typeof value === 'object' && !Array.isArray(value); }
+  function data(value, key) { return value && own(value, key) ? value[key] : undefined; }
+  function strictArray(value) { return Array.isArray(value) ? value : null; }
+  function clone(value) { return { ok: true, value: value === undefined ? undefined : JSON.parse(JSON.stringify(value)) }; }
+  function cloneModel(model) { return record(model) ? clone(model) : { ok: false }; }
   function freeze(value) { if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value; Object.freeze(value); Object.keys(value).forEach((key) => freeze(value[key])); return value; }
   function safe(value, minimum) { return Number.isSafeInteger(value) && value >= (minimum == null ? 0 : minimum); }
   function validRng(value) { return Number.isInteger(value) && value > 0 && value <= MAX_RNG_STATE; }
@@ -103,7 +43,7 @@
   function canAddProgress(value, amount) { return validProgress(value) && (data(value, 'level') >= MAX_LEVEL || safe(data(value, 'xp') + amount, 0)); }
   function failure(code, state, rngState) { return { ok: false, code, state, rngState }; }
   function success(state, rngState, code, gains) { const result = { ok: true, code: code || 'ok', state, rngState }; if (gains) result.gains = gains; return result; }
-  function dependencyValue(target, key) { try { const descriptor = target && Object.getOwnPropertyDescriptor(target, key); return descriptor && own(descriptor, 'value') ? descriptor.value : null; } catch (error) { return null; } }
+  function dependencyValue(value, key) { return value ? value[key] : undefined; }
 
   function snapshotContent(content) {
     const rawBeasts = dependencyValue(content, 'BEASTS');

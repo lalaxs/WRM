@@ -7,11 +7,12 @@
   'use strict';
 
   function resolveDns() {
+    if (typeof globalThis !== 'undefined' && globalThis.GameConfig) return globalThis.GameConfig;
     if (typeof globalThis !== 'undefined' && globalThis.Dns) {
       return globalThis.Dns;
     }
     if (typeof require === 'function') {
-      try { return require('../core/dns.js'); } catch (e) { /* ignore */ }
+      try { return require('./game-config.js'); } catch (e) { /* ignore */ }
     }
     return null;
   }

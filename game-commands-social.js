@@ -93,7 +93,7 @@ function commandEnterLegacyRebirth() {
 }
 
 function commandTravelToRegion(input) {
-  if (!useStage4Runtime || !stage4Bootstrap.WorldMonth) {
+  if (!stage4Bootstrap.WorldMonth) {
     return stage4Failure('interaction_locked', '人物世界尚未开放');
   }
   let regionId;
@@ -149,9 +149,7 @@ function commandTravelToRegion(input) {
 }
 
 function commandStartSocial(input) {
-  if (!useStage4Runtime) {
-    return stage4Failure('interaction_locked', '人物世界尚未开放');
-  }
+
   let npcId;
   let interactionId;
   let itemId = null;
@@ -213,7 +211,7 @@ function commandChooseEvent() {
   );
 }
 function commandChooseSect(input) {
-  if (!useStage4Runtime || !stage4Bootstrap.SectSimulation) {
+  if (!stage4Bootstrap.SectSimulation) {
     return stage4Failure('invalid_state');
   }
   let sectId;

@@ -34,46 +34,7 @@ function stubCanvas() {
   };
 }
 
-const files = [
-  'content/herblore-parity.js',
-  'content/materials.js',
-  'content/item-art.js',
-  'content/combat-lexicon.js',
-  'content/equipment.js',
-  'content/items.js',
-  'content/life-skills.js',
-  'content/gathering.js',
-  'content/recipes.js',
-  'content/homestead.js',
-  'content/combat.js',
-  'content/techniques.js',
-  'content/realms.js',
-  'core/random.js',
-  'core/equipment.js',
-  'core/stage2-state.js',
-  'core/stage3-state.js',
-  'core/inventory.js',
-  'core/skill-progression.js',
-  'core/gathering.js',
-  'core/production.js',
-  'core/farm.js',
-  'core/formations.js',
-  'core/spirit-beasts.js',
-  'core/combat-loadouts.js',
-  'core/techniques.js',
-  'core/combat-stats.js',
-  'core/combat-engine.js',
-  'core/combat-rewards.js',
-  'core/combat-progress.js',
-  'core/breakthrough.js',
-  'core/save-system.js',
-  'core/simulation-report.js',
-  'core/state-model.js',
-  'core/simulation.js',
-  'core/game-rules.js',
-  'core/stage2-rules.js',
-  'core/stage3-rules.js'
-];
+const files = require('./runtime-scripts').DEPENDENCIES;
 
 const canvas = stubCanvas();
 const store = {};
@@ -158,40 +119,9 @@ sandbox.window = {
 };
 sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
+require('./runtime-scripts').loadHerblore(vm, sandbox);
 vm.runInContext(fs.readFileSync('nie-manifest.js', 'utf8'), sandbox);
-// SaveSystem 需要 Stage4；主沙箱故意不挂 Stage4 以免触发 game.js 全量 Stage4 bootstrap。
-const saveSandbox = {
-  Stage2State: require('../core/stage2-state.js'),
-  Stage3State: require('../core/stage3-state.js'),
-  Stage4State: require('../core/stage4-state.js'),
-  console: sandbox.console,
-  Math: sandbox.Math,
-  Date: sandbox.Date,
-  JSON: JSON,
-  Object: Object,
-  Array: Array,
-  Number: Number,
-  String: String,
-  Boolean: Boolean,
-  Error: Error,
-  Set: Set,
-  Infinity: Infinity,
-  NaN: NaN,
-  isFinite: isFinite,
-  isNaN: isNaN,
-  parseInt: parseInt,
-  parseFloat: parseFloat
-};
-saveSandbox.globalThis = saveSandbox;
-vm.createContext(saveSandbox);
-vm.runInContext(
-  fs.readFileSync('core/save-system.js', 'utf8'),
-  saveSandbox,
-  { filename: 'core/save-system.js' }
-);
-sandbox.SaveSystem = saveSandbox.SaveSystem;
 files.forEach((file) => {
-  if (file === 'core/save-system.js') return;
   vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, {
     filename: file
   });

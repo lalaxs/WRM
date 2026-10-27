@@ -109,20 +109,20 @@ ok(session.teams.enemies.length === 2, 'two enemies in enemies');
 ok(session.teams.allies[0].sourceType === 'player', 'first ally is player');
 ok(session.teams.allies[1].sourceType === 'npc', 'second ally is npc');
 const playerTechnique = session.teams.allies[0].techniques[0];
-ok(playerTechnique.effect.multiplier === 1.428,
+ok(playerTechnique.effect.multiplier === 1.7065,
   'player technique effect is scaled for level 2');
 ok(session.teams.allies[1].techniques[0].techniqueId === 'clearHeartArt',
   'npc fixed technique copied');
 const npcTechnique = session.teams.allies[1].techniques[0];
-ok(npcTechnique.effect.maxHpRatio === 0.204,
+ok(npcTechnique.effect.maxHpRatio === 0.0803,
   'npc technique effect is scaled for level 2');
 playerTechnique.effect.multiplier = 999;
 npcTechnique.effect.maxHpRatio = 999;
-ok(Techniques.scaledEffect('cloudPiercingSword', 2).multiplier === 1.428 &&
-   TechniqueContent.get('cloudPiercingSword').effect.multiplier === 1.4,
+ok(Techniques.scaledEffect('cloudPiercingSword', 2).multiplier === 1.7065 &&
+   TechniqueContent.get('cloudPiercingSword').effect.multiplier === 1.7,
   'player session effect is detached from scaled and content effects');
-ok(Techniques.scaledEffect('clearHeartArt', 2).maxHpRatio === 0.204 &&
-   TechniqueContent.get('clearHeartArt').effect.maxHpRatio === 0.2,
+ok(Techniques.scaledEffect('clearHeartArt', 2).maxHpRatio === 0.0803 &&
+   TechniqueContent.get('clearHeartArt').effect.maxHpRatio === 0.08,
   'npc session effect is detached from scaled and content effects');
 ok(session.teams.allies[1].cooperation > 1, 'npc cooperation included');
 ok(session.teams.enemies.every(function (unit) {

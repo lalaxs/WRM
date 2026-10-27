@@ -1,0 +1,37 @@
+'use strict';
+
+// Independent expected recipe transactions used by production tests.
+module.exports = { recipes: [
+  ["alchemy:healingPill","alchemy","alchemy:healingPill","疗伤丹",1,8,{"lingzhi":2},[],{"itemId":"healingPill","quantity":1}],
+  ["alchemy:qiGatheringPill","alchemy","alchemy:qiGatheringPill","聚气丹",5,10,{"qiGatheringGrass":2,"spiritHoney":1},[],{"itemId":"qiGatheringPill","quantity":1}],
+  ["alchemy:foundationPill","alchemy","alchemy:foundationPill","筑基丹",15,16,{"ironhideGrass":3,"skySilk":1,"spiritHoney":1},[],{"itemId":"foundationPill","quantity":1}],
+  ["alchemy:goldCorePill","alchemy","alchemy:goldCorePill","结金丹",35,24,{"dragonSalivaGrass":3,"moonSpiritGrass":2,"goldOre":1},[],{"itemId":"goldCorePill","quantity":1}],
+  ["alchemy:nascentSoulPill","alchemy","alchemy:nascentSoulPill","化婴丹",50,36,{"starGrass":3,"goldenLingzhi":1,"jadeShard":1},[],{"itemId":"nascentSoulPill","quantity":1}],
+  ["alchemy:spiritTransformationPill","alchemy","alchemy:spiritTransformationPill","化神丹",65,50,{"thunderSpiritGrass":3,"goldenLingzhi":2,"crystalOre":1},[],{"itemId":"spiritTransformationPill","quantity":1}],
+  ["alchemy:voidRefiningPill","alchemy","alchemy:voidRefiningPill","炼虚丹",75,64,{"bloodSpiritGrass":3,"millenniumVine":1,"darkCrystal":1},[],{"itemId":"voidRefiningPill","quantity":1}],
+  ["alchemy:bodyIntegrationPill","alchemy","alchemy:bodyIntegrationPill","合体丹",85,80,{"goldenLingzhi":3,"dragonFish":1,"adamantOre":2},[],{"itemId":"bodyIntegrationPill","quantity":1}],
+  ["alchemy:mahayanaPill","alchemy","alchemy:mahayanaPill","大乘丹",95,100,{"goldenLingzhi":5,"dragonFish":2,"darkCrystal":2},[],{"itemId":"mahayanaPill","quantity":1}],
+  ["forging:copperSword","forging","forging:copperSword","赤铜剑",1,10,{"copperOre":3,"willowWood":1},[],{"itemId":"copperSword","quantity":1}],
+  ["forging:ironSword","forging","forging:ironSword","玄铁剑",10,16,{"ironOre":5,"pineWood":2},[],{"itemId":"ironSword","quantity":1}],
+  ["forging:silverArmor","forging","forging:silverArmor","银鳞甲",20,24,{"silverOre":8,"beastHide":2},[],{"itemId":"silverArmor","quantity":1}],
+  ["forging:spiritStaff","forging","forging:spiritStaff","灵木杖",35,32,{"spiritWood":5,"jadeShard":2},[],{"itemId":"spiritStaff","quantity":1}],
+  ["forging:darkIronBlade","forging","forging:darkIronBlade","玄铁刃",55,45,{"darkIronOre":8,"thunderWood":2},[],{"itemId":"darkIronBlade","quantity":1}],
+  ["forging:formationBase","forging","forging:formationBase","阵基",20,20,{"jadeShard":3,"spiritWood":3},[],{"itemId":"formationBase","quantity":1}],
+  ["cooking:grilledCarp","cooking","cooking:grilledCarp","烤灵鲤",1,6,{"spiritCarp":2},[],{"itemId":"grilledCarp","quantity":1}],
+  ["cooking:troutFeast","cooking","cooking:troutFeast","银鳟宴",12,8,{"silverTrout":2},[],{"itemId":"troutFeast","quantity":1}],
+  ["cooking:lobsterBanquet","cooking","cooking:lobsterBanquet","灵龙虾宴",40,14,{"spiritLobster":2},[],{"itemId":"lobsterBanquet","quantity":1}],
+  ["cooking:dragonFishBanquet","cooking","cooking:dragonFishBanquet","龙鱼宴",70,22,{"dragonFish":2},[],{"itemId":"dragonFishBanquet","quantity":1}],
+  ["cooking:spiritRiceMeal","cooking","cooking:spiritRiceMeal","灵米饭",10,10,{"spiritRice":3,"spiritHoney":1},[],{"itemId":"spiritRiceMeal","quantity":1}],
+  ["cooking:beastFeed","cooking","cooking:beastFeed","灵兽口粮",12,10,{"spiritRice":2},[{"quantity":1,"itemIds":["spiritCarp"]}],{"itemId":"beastFeed","quantity":2}],
+  ["talisman:talismanPaper","talisman","talisman:talismanPaper","空白符纸",1,8,{"willowWood":2},[],{"itemId":"talismanPaper","quantity":4}],
+  ["talisman:gatheringTalisman","talisman","talisman:gatheringTalisman","采灵符",5,10,{"talismanPaper":1,"lingzhi":1},[],{"itemId":"gatheringTalisman","quantity":1}],
+  ["talisman:hasteTalisman","talisman","talisman:hasteTalisman","疾行符",20,16,{"talismanPaper":1,"thunderHerb":1},[],{"itemId":"hasteTalisman","quantity":1}],
+  ["talisman:wardTalisman","talisman","talisman:wardTalisman","护身符",15,14,{"talismanPaper":1,"ironOre":1},[],{"itemId":"wardTalisman","quantity":1}],
+  ["talisman:healingTalisman","talisman","talisman:healingTalisman","回春符",25,18,{"talismanPaper":1,"heartClearGrass":1},[],{"itemId":"healingTalisman","quantity":1}],
+  ["talisman:beastLureTalisman","talisman","talisman:beastLureTalisman","引兽符",30,22,{"talismanPaper":1,"spiritFruit":1},[],{"itemId":"beastLureTalisman","quantity":1}],
+  ["formation:gatheringFormation","formation","formation:gatheringFormation","聚材阵",20,40,{"formationBase":1,"spiritWood":3,"qiGatheringGrass":2},[],{"itemId":"gatheringFormation","quantity":1}],
+  ["formation:farmlandFormation","formation","formation:farmlandFormation","丰壤阵",25,45,{"formationBase":1,"spiritRice":5,"moonSpiritGrass":2},[],{"itemId":"farmlandFormation","quantity":1}],
+  ["formation:fishingFormation","formation","formation:fishingFormation","回澜阵",30,50,{"formationBase":1,"jadeShard":2,"spiritCarp":5},[],{"itemId":"fishingFormation","quantity":1}],
+  ["formation:craftingFormation","formation","formation:craftingFormation","百工阵",40,60,{"formationBase":1,"darkIronOre":2,"starGrass":2},[],{"itemId":"craftingFormation","quantity":1}],
+  ["formation:beastFormation","formation","formation:beastFormation","御灵阵",45,70,{"formationBase":1,"beastHide":2,"spiritEgg":2},[],{"itemId":"beastFormation","quantity":1}]
+] };

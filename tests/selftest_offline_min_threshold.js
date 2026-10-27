@@ -49,42 +49,7 @@ function fixedDate(now) {
   };
 }
 
-const SCRIPT_ORDER = [
-  'content/herblore-parity.js',
-  'content/materials.js',
-  'content/items.js',
-  'content/life-skills.js',
-  'content/gathering.js',
-  'content/recipes.js',
-  'content/homestead.js',
-  'content/combat.js',
-  'content/techniques.js',
-  'content/realms.js',
-  'core/stage2-state.js',
-  'core/stage3-state.js',
-  'core/random.js',
-  'core/inventory.js',
-  'core/skill-progression.js',
-  'core/gathering.js',
-  'core/production.js',
-  'core/farm.js',
-  'core/formations.js',
-  'core/spirit-beasts.js',
-  'core/combat-loadouts.js',
-  'core/techniques.js',
-  'core/combat-stats.js',
-  'core/combat-engine.js',
-  'core/combat-rewards.js',
-  'core/combat-progress.js',
-  'core/breakthrough.js',
-  'core/save-system.js',
-  'core/simulation-report.js',
-  'core/state-model.js',
-  'core/simulation.js',
-  'core/game-rules.js',
-  'core/stage2-rules.js',
-  'core/stage3-rules.js'
-];
+const SCRIPT_ORDER = require('./runtime-scripts').DEPENDENCIES;
 
 const NOW = 1700000000000;
 
@@ -145,6 +110,7 @@ function createRuntime(options) {
   sandbox.window = { addEventListener() {}, NIE_ASSET_BASE: '', devicePixelRatio: 1 };
   sandbox.globalThis = sandbox;
   vm.createContext(sandbox);
+require('./runtime-scripts').loadHerblore(vm, sandbox);
   vm.runInContext(fs.readFileSync('nie-manifest.js', 'utf8'), sandbox, { filename: 'nie-manifest.js' });
   SCRIPT_ORDER.forEach((file) => {
     vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, { filename: file });

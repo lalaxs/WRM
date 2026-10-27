@@ -613,7 +613,15 @@
       return emptyCompleted(state);
     }
 
+    return { state: state, completed: advancePlots(plots, elapsedSeconds) };
+  }
+
+  // Runtime-owned plot lane: only visits farm data. The public model-level
+  // advance() retains its detached-input contract for external callers.
+  function advancePlots(plots, elapsedSeconds) {
     const completed = [];
+    if (!Array.isArray(plots) || isDetectedProxy(plots) ||
+        !Number.isFinite(elapsedSeconds) || elapsedSeconds <= 0) return completed;
     for (let index = 0; index < plots.length; index++) {
       const plot = ownArrayDataValue(plots, index);
       if (!isPlainRecord(plot) ||
@@ -655,7 +663,7 @@
         plot.remainingBaseSeconds = baseSeconds;
       }
     }
-    return { state: state, completed: completed };
+    return completed;
   }
 
   function harvestFailure(code, state, rngState) {
@@ -982,6 +990,7 @@
   return Object.freeze({
     plant: plant,
     advance: advance,
+    advancePlots: advancePlots,
     harvest: harvest,
     query: query
   });

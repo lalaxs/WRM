@@ -597,7 +597,7 @@
       const pagesPresent = !!(Ui.getPage && Ui.getPage('home') && Ui.getPage('combat'));
       if (pagesPresent) {
         Ui.__pagesReady = true;
-      } else if (!Ui.__pagesLoading) {
+      } else if (!Ui.__pagesLoading && !Ui.__pagesError) {
         Ui.__pagesLoading = true;
         const ready = (typeof LazyContent !== 'undefined' &&
           LazyContent && typeof LazyContent.ensureUiPages === 'function')
@@ -606,27 +606,36 @@
         ready.then(function () {
           Ui.__pagesReady = true;
           Ui.__pagesLoading = false;
+          Ui.__pagesError = false;
         }, function (error) {
           Ui.__pagesLoading = false;
+          Ui.__pagesError = true;
           console.warn('[ui] page modules failed to load', error);
         });
       }
       if (!Ui.__pagesReady) {
         // 离线结算 / 持久化锁期间仍要画出壳与弹窗，否则长追算会白屏。
-        const modals = app.modals || {};
-        const persistence = a.queries.persistence
-          ? a.queries.persistence()
-          : null;
-        const needShell = !!(
-          modals.settlingOffline ||
-          modals.offline ||
-          (persistence && persistence.locked)
-        );
-        if (needShell) {
+        {
           ensureGameStylesLazy();
           if (!Ui.shell.built) Ui.buildShell();
           Ui.showShell();
           Ui.hideCreator();
+          if (!Ui.__pageLoadingNotice) {
+            const notice = Ui.el('div', 'page-loading-notice', Ui.shell.content);
+            const label = Ui.el('p', '', notice);
+            const retry = Ui.el('button', '', notice, '重新加载');
+            retry.type = 'button';
+            retry.addEventListener('click', function () {
+              Ui.__pagesError = false;
+              Ui.renderGame(true);
+            });
+            Ui.__pageLoadingNotice = { root: notice, label: label, retry: retry };
+          }
+          const notice = Ui.__pageLoadingNotice;
+          notice.root.style.display = '';
+          notice.label.textContent = Ui.__pagesError
+            ? '页面加载失败，请检查网络后重试。' : '正在加载游戏页面…';
+          notice.retry.style.display = Ui.__pagesError ? '' : 'none';
           if (typeof Ui.updateTopbar === 'function') Ui.updateTopbar();
           if (typeof Ui.updateActionBar === 'function') Ui.updateActionBar();
           syncModals(app);
@@ -637,6 +646,8 @@
     }
 
     ensureGameStylesLazy();
+
+    if (Ui.__pageLoadingNotice) Ui.__pageLoadingNotice.root.style.display = 'none';
 
     if (!Ui.shell.built) Ui.buildShell();
     Ui.showShell();

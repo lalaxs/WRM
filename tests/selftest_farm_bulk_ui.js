@@ -298,7 +298,7 @@ sandbox.globalThis = sandbox;
 vm.createContext(sandbox);
 require('./ui_scripts').loadUiScripts(vm, sandbox);
 
-const styleSource = fs.readFileSync('styles.css', 'utf8');
+const styleSource = require('./ui_scripts').readStylesSource();
 const farmFieldCss = cssBlock(styleSource, '.farm-field');
 const farmFieldHexes = Array.from(
   farmFieldCss.matchAll(/#[0-9a-f]{6}/ig),
@@ -403,7 +403,8 @@ ok(
 
 farm.plantableCrops[0].seedOwned = 0;
 farm.plantableCrops[1].seedOwned = 0;
-sandbox.UI.renderGame();
+sandbox.XiuxianUi.contentLiveAt.home = 0;
+sandbox.UI.renderGame(true);
 const insufficientBefore = calls.length;
 ok(
   firstClass(root, 'farm-plan-summary').textContent ===

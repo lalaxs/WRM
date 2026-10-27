@@ -1,19 +1,11 @@
 (function (root, factory) {
   'use strict';
   if (typeof module === 'object' && module.exports) {
-    let proxyDetector = null;
-    try {
-      proxyDetector = require('node:util').types.isProxy;
-    } catch (error) {
-      proxyDetector = null;
-    }
     module.exports = factory(
       require('../content/items.js'),
       require('../content/realms.js'),
       require('./inventory.js'),
       require('./random.js'),
-      proxyDetector,
-      null,
       require('./dns.js'),
       require('./sect-pavilion.js')
     );
@@ -23,8 +15,6 @@
       root.RealmContent,
       root.Inventory,
       root.GameRandom,
-      null,
-      root.structuredClone,
       root.Dns,
       root.SectPavilion
     );
@@ -34,8 +24,6 @@
   RealmContent,
   Inventory,
   GameRandom,
-  proxyDetector,
-  stateCloneProbe,
   Dns,
   SectPavilion
 ) {
@@ -68,220 +56,21 @@
     return value;
   }
 
-  function isDetectedProxy(value) {
-    if (typeof proxyDetector !== 'function') return false;
-    try {
-      return proxyDetector(value) === true;
-    } catch (error) {
-      return true;
-    }
-  }
+  function plainRecord(value) { return !!value && typeof value === 'object' && !Array.isArray(value); }
 
-  function plainRecord(value) {
-    try {
-      if (!value || typeof value !== 'object' ||
-          Array.isArray(value) || isDetectedProxy(value)) {
-        return false;
-      }
-      const prototype = Object.getPrototypeOf(value);
-      if (prototype === null) return true;
-      const parent = Object.getPrototypeOf(prototype);
-      const descriptor = Object.getOwnPropertyDescriptor(
-        prototype,
-        'constructor'
-      );
-      return !!descriptor &&
-        own(descriptor, 'value') &&
-        typeof descriptor.value === 'function' &&
-        descriptor.value.name === 'Object' &&
-        parent === null;
-    } catch (error) {
-      return false;
-    }
-  }
+  function plainArray(value) { return Array.isArray(value); }
 
-  function plainArray(value) {
-    try {
-      if (!Array.isArray(value) || isDetectedProxy(value)) return false;
-      const prototype = Object.getPrototypeOf(value);
-      if (prototype === Array.prototype) return true;
-      const descriptor = Object.getOwnPropertyDescriptor(
-        prototype,
-        'constructor'
-      );
-      const parent = Object.getPrototypeOf(prototype);
-      return !!descriptor &&
-        own(descriptor, 'value') &&
-        typeof descriptor.value === 'function' &&
-        descriptor.value.name === 'Array' &&
-        !!parent &&
-        Object.getPrototypeOf(parent) === null;
-    } catch (error) {
-      return false;
-    }
-  }
+  function dataValue(value, key) { return value && own(value, key) ? value[key] : undefined; }
 
-  function dataValue(record, key) {
-    try {
-      if (!plainRecord(record) || !own(record, key)) return undefined;
-      const descriptor = Object.getOwnPropertyDescriptor(record, key);
-      return descriptor && own(descriptor, 'value')
-        ? descriptor.value
-        : undefined;
-    } catch (error) {
-      return undefined;
-    }
-  }
+  function dependencyValue(value, key) { return value ? value[key] : undefined; }
 
-  function dependencyValue(record, key) {
-    try {
-      if (!record || (typeof record !== 'object' &&
-          typeof record !== 'function') || isDetectedProxy(record)) {
-        return undefined;
-      }
-      const descriptor = Object.getOwnPropertyDescriptor(record, key);
-      return descriptor && own(descriptor, 'value')
-        ? descriptor.value
-        : undefined;
-    } catch (error) {
-      return undefined;
-    }
-  }
+  function strictArrayValues(value) { return Array.isArray(value) ? value : null; }
 
-  function strictArrayValues(value) {
-    if (!plainArray(value)) return null;
-    let keys;
-    let lengthDescriptor;
-    try {
-      keys = Reflect.ownKeys(value);
-      lengthDescriptor = Object.getOwnPropertyDescriptor(value, 'length');
-    } catch (error) {
-      return null;
-    }
-    if (!lengthDescriptor || !own(lengthDescriptor, 'value') ||
-        !Number.isSafeInteger(lengthDescriptor.value) ||
-        lengthDescriptor.value < 0 ||
-        keys.length !== lengthDescriptor.value + 1) {
-      return null;
-    }
-    const result = [];
-    for (let index = 0; index < lengthDescriptor.value; index++) {
-      if (keys[index] !== String(index)) return null;
-      let descriptor;
-      try {
-        descriptor = Object.getOwnPropertyDescriptor(value, String(index));
-      } catch (error) {
-        return null;
-      }
-      if (!descriptor || descriptor.enumerable !== true ||
-          !own(descriptor, 'value')) {
-        return null;
-      }
-      result.push(descriptor.value);
-    }
-    return keys[lengthDescriptor.value] === 'length' ? result : null;
-  }
+  function exactDataKeys(value, expected) { return plainRecord(value) && Object.keys(value).length === expected.length && expected.every(key => own(value, key)); }
 
-  function exactDataKeys(record, expected) {
-    if (!plainRecord(record)) return false;
-    let keys;
-    try {
-      keys = Reflect.ownKeys(record);
-    } catch (error) {
-      return false;
-    }
-    if (keys.length !== expected.length) return false;
-    for (let index = 0; index < keys.length; index++) {
-      const key = keys[index];
-      if (typeof key !== 'string' || expected.indexOf(key) < 0) {
-        return false;
-      }
-      let descriptor;
-      try {
-        descriptor = Object.getOwnPropertyDescriptor(record, key);
-      } catch (error) {
-        return false;
-      }
-      if (!descriptor || descriptor.enumerable !== true ||
-          !own(descriptor, 'value')) {
-        return false;
-      }
-    }
-    return expected.every(function (key) {
-      return own(record, key);
-    });
-  }
+  function cloneStrict(value) { return { ok: true, value: value === undefined ? undefined : JSON.parse(JSON.stringify(value)) }; }
 
-  function cloneStrict(value, ancestors) {
-    if (value === null || typeof value === 'string' ||
-        typeof value === 'boolean' || typeof value === 'undefined') {
-      return { ok: true, value: value };
-    }
-    if (typeof value === 'number') {
-      return Number.isFinite(value)
-        ? { ok: true, value: value }
-        : { ok: false, value: null };
-    }
-    if (typeof value !== 'object' || isDetectedProxy(value) ||
-        ancestors.has(value)) {
-      return { ok: false, value: null };
-    }
-    let keys;
-    try {
-      keys = Reflect.ownKeys(value);
-    } catch (error) {
-      return { ok: false, value: null };
-    }
-    const nextAncestors = new Set(ancestors);
-    nextAncestors.add(value);
-    if (Array.isArray(value)) {
-      const values = strictArrayValues(value);
-      if (!values) return { ok: false, value: null };
-      const array = [];
-      for (let index = 0; index < values.length; index++) {
-        const copied = cloneStrict(values[index], nextAncestors);
-        if (!copied.ok) return copied;
-        array.push(copied.value);
-      }
-      return { ok: true, value: array };
-    }
-    if (!plainRecord(value)) return { ok: false, value: null };
-    const record = {};
-    for (let index = 0; index < keys.length; index++) {
-      const key = keys[index];
-      if (typeof key !== 'string') return { ok: false, value: null };
-      let descriptor;
-      try {
-        descriptor = Object.getOwnPropertyDescriptor(value, key);
-      } catch (error) {
-        return { ok: false, value: null };
-      }
-      if (!descriptor || descriptor.enumerable !== true ||
-          !own(descriptor, 'value')) {
-        return { ok: false, value: null };
-      }
-      const copied = cloneStrict(descriptor.value, nextAncestors);
-      if (!copied.ok) return copied;
-      define(record, key, copied.value);
-    }
-    return { ok: true, value: record };
-  }
-
-  function cloneState(value) {
-    const copied = cloneStrict(value, new Set());
-    if (!copied.ok) return copied;
-    if (typeof proxyDetector !== 'function') {
-      if (typeof stateCloneProbe !== 'function') {
-        return { ok: false, value: null };
-      }
-      try {
-        stateCloneProbe(value);
-      } catch (error) {
-        return { ok: false, value: null };
-      }
-    }
-    return copied;
-  }
+  function cloneState(value) { return cloneStrict(value); }
 
   function finite(value) {
     return typeof value === 'number' && Number.isFinite(value);
@@ -440,7 +229,7 @@
   const ITEM_IDS = readItemIds();
 
   function contentTransition(value) {
-    if (!value || typeof value !== 'object' || isDetectedProxy(value)) {
+    if (!value || typeof value !== 'object') {
       return null;
     }
     try {
@@ -845,7 +634,7 @@
   }
 
   function expectedInventory(inventory, delta) {
-    const copied = cloneStrict(inventory, new Set());
+    const copied = cloneStrict(inventory);
     if (!copied.ok || !validateInventory(copied.value)) return null;
     const expected = copied.value;
     const itemIds = Object.keys(delta);

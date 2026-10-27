@@ -1,5 +1,7 @@
 'use strict';
 
+initializeGameServices();
+
 const queries = Object.freeze({
   app: queryApp,
   navigation: queryNavigation,
@@ -115,26 +117,11 @@ if (runtimeRoot &&
     runtimeRoot.window !== runtimeRoot &&
     runtimeRoot.__GAME_TEST_HARNESS_REQUEST__ === true) {
   runtimeRoot.__GameTestHarness = Object.freeze({
-    ACTIONS,
-    SKILL_PAGES,
     NAV,
-    GATHERING_DATA,
     defaultPlayer,
-    ensurePlayer,
-    setCurrent,
     closeOffline,
-    addSkillXp,
-    skillXpNeed,
-    resName,
     state,
-    REALM_TABLE,
-    breakthroughRate,
     tryBreakthrough,
-    enterLunhui,
-    confirmCreate,
-    randomize,
-    stepPart,
-    navIndexOfAction,
     persist,
     save,
     queries: Object.freeze({
@@ -145,11 +132,9 @@ if (runtimeRoot &&
       stopAction: commandStopAction,
       startAction: commandStartAction
     }),
-    gameRandom,
     simulationRuntime,
     getLastSimulationReport,
     getToastMessage: function () { return toastMsg; },
-    getRegions: function () { return regions; },
     setShowBreak: function (value) { state.showBreak = value; },
     getShowBreak: function () { return state.showBreak; },
     __test: Object.freeze({
@@ -167,6 +152,7 @@ if (runtimeRoot &&
       acknowledgeOffline,
       runRuntimeFrame,
       handleVisibilityChange,
+      stepCatchup,
       flushLifecycle,
       publishGainTipsFromReport,
       recoverySnapshot: function () {
@@ -175,3 +161,5 @@ if (runtimeRoot &&
     })
   });
 }
+
+bootGame();

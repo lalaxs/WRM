@@ -1,6 +1,6 @@
 ---
 description: H5 运行时依赖方向与模块清单约定
-globs: "{index.html,runtime-modules.js,core/**/*.js,content/**/*.js,ui/**/*.js,game*.js,scripts/sync-release.js}"
+globs: "{index.html,runtime-modules.js,core/**/*.js,content/**/*.js,ui/**/*.js,game*.js,scripts/package-h5.js}"
 alwaysApply: false
 ---
 

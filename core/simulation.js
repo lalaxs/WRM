@@ -657,7 +657,7 @@
     while (remaining > 0) {
       if (wallStartedAt != null &&
           timeBudgetMs != null &&
-          (transitions & 15) === 0 &&
+          (remaining < elapsedSeconds || timeBudgetMs === 0) &&
           Date.now() - wallStartedAt >= timeBudgetMs) {
         budgetExhausted = true;
         break;
@@ -734,6 +734,12 @@
           'lane "' + lane.id + '".nextBoundary'
         );
       });
+
+      // Batched actions must finish their due work before a passive boundary,
+      // the main-action cap, or the end of this slice. Expose the horizon rather
+      // than letting each domain guess how much simulation time is available.
+      helpers.mainRemainingSeconds = mainRemaining;
+      helpers.nextLaneBoundarySeconds = Math.min.apply(null, laneBoundaries);
 
       let actionBoundary = Infinity;
       if (descriptor && inspection.status === 'ready' && mainRemaining > 0) {
@@ -911,6 +917,7 @@
         ? state
         : cloneJsonValue(state),
       report: cloneJsonValue(report),
+      offlineMonthBudgetRemaining: helpers.offlineMonthBudget,
       remainingSeconds: remaining,
       done: !(remaining > 0)
     };

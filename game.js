@@ -2,7 +2,6 @@
 
 const runtimeRoot = typeof globalThis !== 'undefined' ? globalThis : this;
 
-
 // ============================================================
 // 云隐小师妹 · 角色创建流程 + 主界面骨架（TapTap H5 小游戏 · 原生 JS + Canvas2D）
 // 设计目标：验证「选部件 → 离屏合成 → 缓存位图 → 每帧只 blit」链路
@@ -28,67 +27,10 @@ const ASSET_BASE = (typeof window !== 'undefined' && window.NIE_ASSET_BASE)
 const CATS = [
   'hair_hou', 'cloth', 'body', 'mouth', 'nose', 'eyes', 'hair_qian', 'deco'
 ];
-const CAT_LABEL = {
-  hair_hou: '后发', cloth: '衣服', body: '脸型', mouth: '嘴',
-  nose: '鼻子', eyes: '眼睛', hair_qian: '前发', deco: '装饰'
-};
-
-function migrateLegacyParts(raw) {
-  const source = raw && typeof raw === 'object' && !Array.isArray(raw)
-    ? Object.assign({}, raw)
-    : {};
-  if (Object.prototype.hasOwnProperty.call(source, 'hair') &&
-      !Object.prototype.hasOwnProperty.call(source, 'hair_hou')) {
-    source.hair_hou = source.hair;
-    source.hair_qian = source.hair;
-  }
-  delete source.eyebrush;
-  delete source.hair;
-  return source;
-}
-
-function normalizeParts(raw, gender) {
-  const g = gender === 'b' ? 'b' : 'g';
-  const source = migrateLegacyParts(raw);
-  const catalog = NIE && NIE[g] ? NIE[g] : null;
-  const normalized = {};
-  for (const cat of CATS) {
-    const list = catalog && Array.isArray(catalog[cat]) ? catalog[cat] : [];
-    const numeric = Number(source[cat]);
-    const index = Number.isFinite(numeric) ? Math.floor(numeric) : 0;
-    normalized[cat] = list.length > 0
-      ? (index >= 0 && index < list.length ? index : 0)
-      : 0;
-  }
-  if (HairRules && typeof HairRules.normalizeHairParts === 'function') {
-    return HairRules.normalizeHairParts(g, normalized);
-  }
-  return normalized;
-}
-
-function appearanceIndices() {
-  const indices = normalizeParts(state.parts, state.gender);
-  if (HairRules && typeof HairRules.styleIndex === 'function') {
-    indices.hair_style = HairRules.styleIndex(state.gender, indices);
-  }
-  return indices;
-}
-
-function appearanceCounts() {
-  const gender = state.gender === 'b' ? 'b' : 'g';
-  const catalog = NIE && NIE[gender] ? NIE[gender] : null;
-  const counts = {};
-  for (let index = 0; index < CATS.length; index++) {
-    const cat = CATS[index];
-    const list = catalog && Array.isArray(catalog[cat]) ? catalog[cat] : [];
-    counts[cat] = list.length;
-  }
-  return counts;
-}
 
 // 0.5 主题配色
 // 改色只需动这里一处。详见《云隐小师妹_美术UI规范.md》。
-// 背景天空渐变 —— 单一真相取自 styles.css 的 --sky-top / --sky-bottom，
+// 背景天空渐变 —— 单一真相取自 styles-shell.css 的 --sky-top / --sky-bottom，
 // 与 DOM UI 的 :root 调色板同源，避免"双调色板"色差。
 function readSkyColors() {
   try {
@@ -108,8 +50,7 @@ const ctx = Platform.ctx;
 let W = 420, H = 820, dpr = 1, scale = 1, safeTop = 20, S = 1;
 let bgGrad = null, bgGradH = 0;   // 背景渐变缓存（尺寸变化时重建）
 
-// Stage 2 production composition is all-or-none. The old VM harness loads
-// none of these extensions and intentionally keeps the Stage 1B fallback.
+// Production and tests share the complete topology in RuntimeModules.
 const stage2Bootstrap = {
   Stage2State: typeof Stage2State === 'undefined' ? null : Stage2State,
   Stage2Rules: typeof Stage2Rules === 'undefined' ? null : Stage2Rules,
@@ -136,28 +77,9 @@ const stage2Bootstrap = {
     : SkillProgression,
   GameRandom: typeof GameRandom === 'undefined' ? null : GameRandom
 };
-const stage2ExtensionNames = [
-  'Stage2State',
-  'Stage2Rules',
-  'Gathering',
-  'Production',
-  'Farm',
-  'Formations',
-  'SpiritBeasts',
-  'GatheringContent',
-  'ItemContent',
-  'LifeSkillContent',
-  'RecipeContent',
-  'HomesteadContent',
-  'Inventory',
-  'SkillProgression'
-];
-const useStage2Runtime = stage2ExtensionNames.some(function (name) {
-  return stage2Bootstrap[name] !== null;
-});
-const requiredBootstrapNames = useStage2Runtime
-  ? Object.keys(stage2Bootstrap)
-  : ['GameRules', 'GameRandom'];
+
+const useStage2Runtime = true;
+const requiredBootstrapNames = Object.keys(stage2Bootstrap);
 const missingBootstrapGlobals = requiredBootstrapNames.filter(
   function (name) {
     return stage2Bootstrap[name] === null;
@@ -213,12 +135,7 @@ const equipmentBootstrap = {
     : EquipmentContent,
   Equipment: typeof Equipment === 'undefined' ? null : Equipment
 };
-const useEquipmentRuntime = !!(
-  equipmentBootstrap.EquipmentContent &&
-  equipmentBootstrap.Equipment &&
-  stage2Bootstrap.Inventory &&
-  stage3Bootstrap.CombatLoadouts
-);
+
 const stage3ContentNames = Object.freeze([
   'Stage3State',
   'CombatContent',
@@ -235,14 +152,10 @@ const stage3CombatRuntimeNames = Object.freeze([
   'CombatRewards',
   'CombatProgress'
 ]);
-const useStage3Runtime = stage3ContentNames.some(function (name) {
-  return stage3Bootstrap[name] !== null;
-});
-const missingStage3Content = useStage3Runtime
-  ? stage3ContentNames.filter(function (name) {
+
+const missingStage3Content = stage3ContentNames.filter(function (name) {
     return stage3Bootstrap[name] === null;
-  })
-  : [];
+  });
 if (missingStage3Content.length > 0) {
   throw new Error(
     'Incomplete Stage 3 bootstrap: missing ' +
@@ -251,8 +164,7 @@ if (missingStage3Content.length > 0) {
 }
 let useStage3CombatRuntime = false;
 
-// Stage 4 character-world composition is all-or-none. Older VM harnesses load
-// none of these globals; the browser loads the complete topology from index.
+// Character-world modules are required at boot.
 const stage4Bootstrap = {
   Stage4State: typeof Stage4State === 'undefined' ? null : Stage4State,
   Stage4Rules: typeof Stage4Rules === 'undefined' ? null : Stage4Rules,
@@ -295,14 +207,10 @@ const stage4Bootstrap = {
   WorldMonth: typeof WorldMonth === 'undefined' ? null : WorldMonth
 };
 const stage4ExtensionNames = Object.keys(stage4Bootstrap);
-const useStage4Runtime = stage4ExtensionNames.some(function (name) {
-  return stage4Bootstrap[name] !== null;
-});
-const missingStage4Globals = useStage4Runtime
-  ? stage4ExtensionNames.filter(function (name) {
+
+const missingStage4Globals = stage4ExtensionNames.filter(function (name) {
     return stage4Bootstrap[name] === null;
-  })
-  : [];
+  });
 if (missingStage4Globals.length > 0) {
   throw new Error(
     'Incomplete Stage 4 bootstrap: missing ' +
@@ -324,14 +232,10 @@ const stage5Bootstrap = {
   Stage5Rules: typeof Stage5Rules === 'undefined' ? null : Stage5Rules
 };
 const stage5ExtensionNames = Object.keys(stage5Bootstrap);
-const useStage5Runtime = stage5ExtensionNames.some(function (name) {
-  return stage5Bootstrap[name] !== null;
-});
-const missingStage5Globals = useStage5Runtime
-  ? stage5ExtensionNames.filter(function (name) {
+
+const missingStage5Globals = stage5ExtensionNames.filter(function (name) {
     return stage5Bootstrap[name] === null;
-  })
-  : [];
+  });
 if (missingStage5Globals.length > 0) {
   throw new Error(
     'Incomplete Stage 5 bootstrap: missing ' +
@@ -520,16 +424,8 @@ const ACTIONS = {
 
 // ── M2 采集系数据表（采矿 / 伐木 / 钓鱼 / 采药）──
 // 设计来源：《云隐小师妹_采集系设计案.md》；每个条目独立精通（上限 99）。
-const GATHER_SKILLS = ['mining', 'woodcutting', 'fishing', 'herb'];
+
 const GATHER_SKILL_KEY = { mining: 'caiju', woodcutting: 'famu', fishing: 'diaoyu', herb: 'caiyao' };
-const GATHER_TITLE = { mining: '采矿', woodcutting: '伐木', fishing: '钓鱼', herb: '采药' };
-const GATHER_ICON = { mining: '矿', woodcutting: '木', fishing: '鱼', herb: '药' };
-const GATHER_DESC = {
-  mining: '探索灵矿脉，采集灵矿与宝石',
-  woodcutting: '探索灵木林地，采集灵木与副产物',
-  fishing: '选取灵泽钓点，垂钓灵鱼、杂物与特殊掉落',
-  herb: '探索野外药田，采集灵草与药材'
-};
 
 // ── 采集系全局常量（数值写死，对齐《采集系设计文档（定稿）》）──
 const FISH_MAX = 30;            // 钓鱼：每个钓点满库存 = 30 次
@@ -538,35 +434,6 @@ const MOOD_MAX = 100;           // 心情：满值 100
 const MOOD_REGEN_PER_SEC = 1 / 30; // 心情：每 30 秒自然恢复 1 点（社交事件未来会使其下降）
 
 // 物品中文名（采集系产出）
-const ITEM_NAMES = {
-  // 矿石（低阶功能直名；高阶后缀统一为「矿」）
-  copperOre: '铜矿石', tinOre: '锡矿石', ironOre: '铁矿石', silverOre: '银矿石',
-  goldOre: '金矿石', mithrilOre: '秘银矿', adamantOre: '精金矿', jadeShard: '灵玉矿',
-  darkIronOre: '玄铁矿', crystalOre: '玄晶矿',
-  // 宝石（短名：宝 / 玉 / 钻 / 晶）
-  topaz: '黄玉', sapphire: '蓝宝', ruby: '红宝', emerald: '翠玉', diamond: '金钻', darkCrystal: '暗晶',
-  // 木材
-  willowWood: '杨柳木', pineWood: '松木', peachWood: '桃木', nanmuWood: '楠木',
-  phoenixWood: '梧桐木', spiritWood: '灵木', thunderWood: '雷击木', bloodSandalwood: '血檀',
-  ancientWood: '古木', millenniumVine: '千年藤',
-  // 灵植副产物
-  resin: '树脂', birdNest: '鸟巢', spiritPeach: '灵桃', spiritFruit: '灵果',
-  spiritEgg: '灵禽蛋', spiritWormSilk: '灵虫丝', beastHide: '兽皮', thunderHerb: '雷灵草', bloodHerb: '血灵草',
-  // 鱼类
-  spiritCarp: '灵鲤', spiritShrimp: '灵虾', silverTrout: '银鳟', greenBass: '青鲈',
-  darkCatfish: '玄鲶', sunsetSalmon: '霞鲑', thunderEel: '雷鳗', spiritLobster: '灵龙虾',
-  swordfish: '剑鱼', dragonFish: '龙鱼',
-  // 药草
-  lingzhi: '灵芝', spiritMushroom: '灵菇', skySilk: '天蚕丝', ironhideGrass: '铁皮草',
-  dragonSalivaGrass: '龙涎草', moonSpiritGrass: '月灵草', starGrass: '星辰草', bloodSpiritGrass: '血灵草',
-  thunderSpiritGrass: '雷灵草', goldenLingzhi: '金芝', qiGatheringGrass: '聚气草', heartClearGrass: '清心草',
-  // 食材 / 果实
-  spiritHoney: '灵蜜', spiritRice: '灵米', bloodGinsengFruit: '血参果', oldGinseng: '老山参',
-  // 种子（采药 / 伐木交叉副产物，按产地阶分层：凡 / 上品 / 极品灵种）
-  commonSeed: '凡灵种', fineSeed: '上品灵种', rareSeed: '极品灵种',
-  // 通用
-  lingshi: '灵石', fishBox: '鱼宝箱'
-};
 
 // 各技能条目、容量、产出权重
 // 有限发现制（mining/woodcutting/herb）带 capMin/capMax；钓鱼（fishing）无容量。
@@ -689,24 +556,8 @@ const GATHERING_DATA = {
 };
 
 // 钓鱼精通按「鱼种」追踪（同种鱼在多钓点钓到累加同一精通）；其余技能按条目（产地/矿脉/林地）
-function fishingSpeciesIds() {
-  const set = new Set();
-  for (const e of GATHERING_DATA.fishing.entries) {
-    for (const d of e.drops) { if (d.item !== 'fishBox') set.add(d.item); }
-  }
-  return [...set];
-}
 
 // 生成默认精通结构（每个条目 lv=1 xp=0 + 精通池 pool=0）
-function defaultMastery() {
-  const m = {};
-  for (const sk of GATHER_SKILLS) {
-    m[sk] = { pool: 0, entries: {} };
-    const ids = (sk === 'fishing') ? fishingSpeciesIds() : GATHERING_DATA[sk].entries.map(e => e.id);
-    for (const id of ids) m[sk].entries[id] = { lv: 1, xp: 0 };
-  }
-  return m;
-}
 
 // 根据技能等级返回可发现的条目（按解锁等级加权随机）
 function discoverableEntries(skill, lv) {
@@ -729,312 +580,18 @@ const SKILL_PAGES = {
 const SKILL_TITLE = {};
 for (const k in SKILL_PAGES) SKILL_TITLE[SKILL_PAGES[k].skill] = SKILL_PAGES[k].title;
 // 动作 key → 其所属技艺页在 NAV 中的索引（点首页快捷操作后跳到对应技艺页看进度条）
-function navIndexOfAction(key) {
-  const a = ACTIONS[key]; if (!a) return 0;
-  for (const n of NAV) { const sp = SKILL_PAGES[n]; if (sp && sp.skill === a.skill) return NAV.indexOf(n); }
-  return 0;
-}
+
 // 行为卡图标底色（按技艺主题浅彩，弱对比不抢文字）
-const ICON_TINT = {
-  caiyao: '#CDEBD7', caiju: '#CFE6F6', famu: '#FBEFC4', diaoyu: '#CFE6F6',
-  liandan: '#F7D6E4', lianqi: '#E7E0F7', fulu: '#F7D6E4'
-};
 
 // 3. 图片懒加载缓存（按需加载，不一次解码全部 153 张 → 守 iOS 内存红线）
-const imgCache = {};
-function nieAssetFolder(g) {
-  return g === 'b' ? 'boy' : 'girl';
-}
-
-function assetRel(g, c, i) {
-  const catalog = NIE && NIE[g] ? NIE[g] : null;
-  const list = catalog && Array.isArray(catalog[c]) ? catalog[c] : [];
-  if (!list.length) return null;
-  const name = list[i] || list[0];
-  if (!name) return null;
-  return 'NIE/' + nieAssetFolder(g) + '/' + name;
-}
-
-function assetPath(g, c, i) {
-  const rel = assetRel(g, c, i);
-  if (!rel) return '';
-  const segments = rel.split('/');
-  const fileName = segments.pop();
-  return ASSET_BASE + segments.join('/') + '/' + encodeURIComponent(fileName);
-}
-function loadImg(g, c, i) {
-  const key = g + '/' + c + '/' + i;
-  if (imgCache[key]) return imgCache[key];
-  const src = assetPath(g, c, i);
-  if (!src) return null;
-  const img = Platform.createImage();
-  img._ready = false;
-  img.onload = () => {
-    img._ready = true;
-    // 仅当加载的是玩家当前装备部件时才脏化玩家合成；
-    // NPC 立绘共用 loadImg，否则会在批量加载时每帧触发全量合成卡顿。
-    if (state.gender === g &&
-        state.parts &&
-        Number(state.parts[c]) === Number(i)) {
-      state.dirty = true;
-      try {
-        if (typeof XiuxianUi !== 'undefined' &&
-            XiuxianUi &&
-            XiuxianUi.shell) {
-          XiuxianUi.shell._avatarDirty = true;
-        }
-      } catch (error) { /* ignore */ }
-    }
-  };
-  img.onerror = () => { console.warn('[捏脸] 加载失败:', assetPath(g, c, i)); };
-  img.src = assetPath(g, c, i);
-  imgCache[key] = img;
-  return img;
-}
 
 // 4. 离屏合成（仅在 dirty 时执行一次；合成结果存进缓存位图）
-let off = null, offCtx = null;
-function ensureOff() {
-  if (offCtx) return;
-  off = Platform.createCanvas();  // 离屏画布（合成用，不挂 DOM）
-  off.width = 300; off.height = 300;
-  offCtx = off.getContext('2d');
-}
-function composite() {
-  ensureOff();
-  offCtx.clearRect(0, 0, 300, 300);
-  for (const c of CATS) {
-    const list = NIE[state.gender][c];
-    if (!Array.isArray(list) || list.length === 0) continue;
-    const i = state.parts[c];
-    const img = loadImg(state.gender, c, i);
-    if (img && (img._ready || img.complete)) {
-      offCtx.drawImage(img, 0, 0, 300, 300);
-    }
-  }
-  state.cache = off;            // 缓存整张合成结果
-  state.dirty = false;
-}
+
 // 供 ui.js 取合成缓存位图（DOM 预览用）；dirty 时先重合成一次
-function getCharCache() { if (state.dirty) composite(); return state.cache; }
-
-function hashSeed(text) {
-  const source = String(text || '');
-  let hash = 2166136261;
-  for (let index = 0; index < source.length; index++) {
-    hash ^= source.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
-function nieGenderForPerson(genderId) {
-  return genderId === 'male' ? 'b' : 'g';
-}
-
-function randomNieParts(seedText, genderId) {
-  const gender = nieGenderForPerson(genderId);
-  const catalog = NIE && NIE[gender] ? NIE[gender] : null;
-  const parts = {};
-  let cursor = hashSeed(seedText + ':' + gender);
-  CATS.forEach(function (cat) {
-    if (cat === 'hair_hou' || cat === 'hair_qian') return;
-    const list = catalog && Array.isArray(catalog[cat]) ? catalog[cat] : [];
-    const count = Math.max(1, list.length || 1);
-    cursor = (Math.imul(cursor, 1664525) + 1013904223) >>> 0;
-    parts[cat] = cursor % count;
-  });
-  parts.hair_hou = 0;
-  parts.hair_qian = 0;
-  if (HairRules && typeof HairRules.randomStyleIndex === 'function') {
-    cursor = (Math.imul(cursor, 1664525) + 1013904223) >>> 0;
-    const styled = HairRules.applyStyleIndex(
-      gender,
-      parts,
-      HairRules.randomStyleIndex(gender, cursor)
-    );
-    parts.hair_hou = styled.hair_hou;
-    parts.hair_qian = styled.hair_qian;
-  }
-  return { gender: gender, parts: parts };
-}
-
-const NIE_PORTRAIT_CACHE_LIMIT = 160;
-const niePortraitCache = Object.create(null);
-const niePortraitCacheOrder = [];
-
-function niePortraitCacheKey(appearance) {
-  if (!appearance || !appearance.parts) return '';
-  const gender = appearance.gender === 'b' ? 'b' : 'g';
-  const parts = appearance.parts;
-  let key = gender;
-  for (let index = 0; index < CATS.length; index++) {
-    const cat = CATS[index];
-    key += ':' + (Number.isFinite(parts[cat]) ? parts[cat] : 0);
-  }
-  return key;
-}
-
-function rememberNiePortrait(key, canvas) {
-  if (!key || !canvas) return;
-  if (!Object.prototype.hasOwnProperty.call(niePortraitCache, key)) {
-    niePortraitCacheOrder.push(key);
-    while (niePortraitCacheOrder.length > NIE_PORTRAIT_CACHE_LIMIT) {
-      const oldest = niePortraitCacheOrder.shift();
-      delete niePortraitCache[oldest];
-    }
-  }
-  niePortraitCache[key] = canvas;
-}
-
-function drawCharacterAppearance(targetCanvas, appearance, options) {
-  if (!targetCanvas || typeof targetCanvas.getContext !== 'function') {
-    return false;
-  }
-  if (!appearance || !appearance.parts) return false;
-  const gender = appearance.gender === 'b' ? 'b' : 'g';
-  const parts = appearance.parts;
-  const cacheKey = niePortraitCacheKey(appearance);
-  let scratch = cacheKey ? niePortraitCache[cacheKey] : null;
-  let complete = !!scratch;
-  if (!scratch) {
-    scratch = Platform.createCanvas();
-    scratch.width = 300;
-    scratch.height = 300;
-    const scratchCtx = scratch.getContext('2d');
-    if (!scratchCtx) return false;
-    scratchCtx.clearRect(0, 0, 300, 300);
-    let painted = 0;
-    let expected = 0;
-    for (let index = 0; index < CATS.length; index++) {
-      const cat = CATS[index];
-      const list = NIE[gender] && NIE[gender][cat];
-      if (!Array.isArray(list) || list.length === 0) continue;
-      expected++;
-      const partIndex = Number.isFinite(parts[cat]) ? parts[cat] : 0;
-      const img = loadImg(gender, cat, partIndex);
-      if (img && (img._ready || img.complete)) {
-        scratchCtx.drawImage(img, 0, 0, 300, 300);
-        painted++;
-      }
-    }
-    if (!painted) return false;
-    complete = painted === expected;
-    if (complete) rememberNiePortrait(cacheKey, scratch);
-  }
-  const target = targetCanvas.getContext('2d');
-  if (!target) return false;
-  const targetDpr = typeof window !== 'undefined' &&
-    Number.isFinite(Number(window.devicePixelRatio))
-    // 高 DPR 手机上 3x 立绘绘制成本过高；2x 观感足够。
-    ? Math.max(1, Math.min(2, Number(window.devicePixelRatio)))
-    : 1;
-  const hintedWidth = options && Number(options.cssWidth);
-  const hintedHeight = options && Number(options.cssHeight);
-  const cssWidth = Math.max(
-    1,
-    (Number.isFinite(hintedWidth) && hintedWidth > 0
-      ? hintedWidth
-      : 0) ||
-      Number(targetCanvas.clientWidth) ||
-      Number(targetCanvas.width) / targetDpr ||
-      1
-  );
-  const cssHeight = Math.max(
-    1,
-    (Number.isFinite(hintedHeight) && hintedHeight > 0
-      ? hintedHeight
-      : 0) ||
-      Number(targetCanvas.clientHeight) ||
-      Number(targetCanvas.height) / targetDpr ||
-      1
-  );
-  const physicalWidth = Math.max(1, Math.round(cssWidth * targetDpr));
-  const physicalHeight = Math.max(1, Math.round(cssHeight * targetDpr));
-  if (targetCanvas.width !== physicalWidth) targetCanvas.width = physicalWidth;
-  if (targetCanvas.height !== physicalHeight) {
-    targetCanvas.height = physicalHeight;
-  }
-  if (typeof target.setTransform === 'function') {
-    target.setTransform(targetDpr, 0, 0, targetDpr, 0, 0);
-  }
-  if (typeof target.clearRect === 'function') {
-    target.clearRect(0, 0, cssWidth, cssHeight);
-  }
-  const size = Math.min(cssWidth, cssHeight);
-  target.drawImage(
-    scratch,
-    (cssWidth - size) / 2,
-    (cssHeight - size) / 2,
-    size,
-    size
-  );
-  return complete ? true : 'partial';
-}
-
-function drawCharacter(targetCanvas) {
-  if (!targetCanvas || typeof targetCanvas.getContext !== 'function') {
-    return false;
-  }
-  const source = getCharCache();
-  if (!source) return false;
-  const target = targetCanvas.getContext('2d');
-  if (!target) return false;
-  const targetDpr = typeof window !== 'undefined' &&
-    Number.isFinite(Number(window.devicePixelRatio))
-    // 高 DPR 手机上 3x 立绘绘制成本过高；2x 观感足够。
-    ? Math.max(1, Math.min(2, Number(window.devicePixelRatio)))
-    : 1;
-  const cssWidth = Math.max(
-    1,
-    Number(targetCanvas.clientWidth) ||
-      Number(targetCanvas.width) / targetDpr ||
-      1
-  );
-  const cssHeight = Math.max(
-    1,
-    Number(targetCanvas.clientHeight) ||
-      Number(targetCanvas.height) / targetDpr ||
-      1
-  );
-  const physicalWidth = Math.max(1, Math.round(cssWidth * targetDpr));
-  const physicalHeight = Math.max(1, Math.round(cssHeight * targetDpr));
-  if (targetCanvas.width !== physicalWidth) targetCanvas.width = physicalWidth;
-  if (targetCanvas.height !== physicalHeight) targetCanvas.height = physicalHeight;
-  if (typeof target.setTransform === 'function') {
-    target.setTransform(targetDpr, 0, 0, targetDpr, 0, 0);
-  }
-  if (typeof target.clearRect === 'function') {
-    target.clearRect(0, 0, cssWidth, cssHeight);
-  }
-  const size = Math.min(cssWidth, cssHeight);
-  target.drawImage(
-    source,
-    (cssWidth - size) / 2,
-    (cssHeight - size) / 2,
-    size,
-    size
-  );
-  return true;
-}
 
 // 5. 绘制工具
-function roundRect(x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-}
-function hit(name, x, y, w, h) { regions.push({ name, x, y, w, h }); }
+
 // 竖直渐变（上浅下略深），用于按钮，弱化现代扁平感、添几分温润
-function vGrad(x, y, w, h, top, bottom) {
-  const g = ctx.createLinearGradient(x, y, x, y + h);
-  g.addColorStop(0, top); g.addColorStop(1, bottom);
-  return g;
-}
 
 // 6. 左侧导航（可拖动滚动列表：标签多时上下拖拽查看）
 // 古风浅紫少女风精修：竖向渐变侧栏 + 选中渐变 + 左选中条 + 右指向三角 + 仙珠装饰
@@ -1044,163 +601,34 @@ const NAV = [
   '符箓'
 ];
 const NAV_HOME = NAV.indexOf('洞府');   // 洞府为默认首页（不再依赖固定索引 0）
-let navScroll = 0;                    // 导航列表垂直偏移（设计坐标 px）
+                    // 导航列表垂直偏移（设计坐标 px）
 // ── 内容区滚动（技艺页 / 背包等长列表）──
-let contentScroll = 0;                // 右侧内容区当前垂直偏移（设计坐标 px）
-let contentMaxScroll = 0;             // 当前页可滚动最大值（0 = 一屏装得下）
-let contentArea = { top: 0, bottom: 0, x: 0, w: 0 };  // 当前可滚动裁剪区（触摸命中判定用）
-let contentDragStart = null;          // 内容区拖动起点
-let inScrollRegion = false;           // 当前是否处于可滚动裁剪区内（交互命中用）
-
+                // 右侧内容区当前垂直偏移（设计坐标 px）
+             // 当前页可滚动最大值（0 = 一屏装得下）
+  // 当前可滚动裁剪区（触摸命中判定用）
+          // 内容区拖动起点
+           // 当前是否处于可滚动裁剪区内（交互命中用）
 
 // 小菱形装饰（仙珠 / 少女心点缀）
 
-
 // 资源图标（矢量小图标，少女风柔和色；kind: mood/jingqi/lingshi/shengwang）
-
 
 // 轻量角色档案默认值（§10① 资源：心情/精气/灵石/声望；§5 修为可突破阈值；§5 寿元）
 function defaultPlayer() {
-  return {
-    name: '云隐弟子', realmStage: 0,
-    realm: REALM_TABLE[0].name, title: '练气',
-    spiritualRootId: 'single',
-    xiwei: 0, breakNeed: REALM_TABLE[0].need,
-    mood: MOOD_MAX, moodAnchorMs: null, moodBase: null,
-    jingqi: 100, lingshi: 100, shengwang: 0, lingyu: 0,  // 心情=社交属性；灵玉=付费货币（仅商城，数据预留）
-    inventory: {
-      stacks: {
-        yaocai: 0, lingkuang: 0, muliao: 0, shicai: 0,
-        faqi: 0, hujia: 0, shanshi: 0, fu: 0, caiqing: 0,
-        tupo: 0, heal: 0, jindan: 0, yuanying: 0, huashen: 0,
-        lianxu: 0, heti: 0, dasheng: 0
-      }
-    },
-    skills: { caiyao: { lv: 1, xp: 0 }, caiju: { lv: 1, xp: 0 }, famu: { lv: 1, xp: 0 }, diaoyu: { lv: 1, xp: 0 }, liandan: { lv: 1, xp: 0 }, lianqi: { lv: 1, xp: 0 }, chuyi: { lv: 1, xp: 0 }, fulu: { lv: 1, xp: 0 }, qinqishuhua: { lv: 1, xp: 0 }, tuna: { lv: 1, xp: 0 }, jianjue: { lv: 1, xp: 0 }, quanjiao: { lv: 1, xp: 0 }, shenfa: { lv: 1, xp: 0 } },
-    mastery: defaultMastery(), // 采集系精通（条目级 + 精通池）
-    shouyuan: REALM_TABLE[0].shou, shouMax: REALM_TABLE[0].shou,
-    // 寿元消耗采用可持久化的绝对时间锚点，保证帧分割和存读档不改变结果。
-    lifespanAnchorMs: null, lifespanBaseYears: null
-  };
+  const player = Object.assign(stage2Bootstrap.Stage2State.createDefaults().player, {
+    name: '云隐弟子', realmStage: 0, realm: REALM_TABLE[0].name, title: '练气',
+    spiritualRootId: 'single', xiwei: 0, breakNeed: REALM_TABLE[0].need,
+    mood: MOOD_MAX, jingqi: 100, lingshi: 100, shengwang: 0, lingyu: 0,
+    shouyuan: REALM_TABLE[0].shou, shouMax: REALM_TABLE[0].shou
+  });
+  return stage3Bootstrap.Stage3State.normalize({ player }).player;
 }
 
 // 防御性合并：用默认值填补存档中缺失的字段（避免 undefined 显示）
-function ensurePlayer(p) {
-  const d = defaultPlayer();
-  if (!p || typeof p !== 'object') return d;
-  const r = Object.assign({}, d, p);  // 保留 Stage 2 扩展字段，再补旧 UI 默认值
-  for (const k of Object.keys(d)) {   // 再用存档值覆盖存在的字段
-    if (p[k] !== undefined) {
-      if (k === 'skills') {
-        r[k] = Object.assign({}, d[k], p[k]);   // 子对象浅合并，缺失字段补默认
-      } else if (k === 'inventory') {
-        const incoming = p.inventory &&
-          p.inventory.stacks &&
-          typeof p.inventory.stacks === 'object'
-          ? p.inventory.stacks
-          : {};
-        r.inventory = Object.assign({}, p.inventory, {
-          stacks: Object.assign({}, d.inventory.stacks, incoming)
-        });
-        if (!r.inventory.bindings || typeof r.inventory.bindings !== 'object') {
-          r.inventory.bindings = {};
-        }
-        if (!r.inventory.equipment || typeof r.inventory.equipment !== 'object') {
-          r.inventory.equipment = { instances: [] };
-        } else if (!Array.isArray(r.inventory.equipment.instances)) {
-          r.inventory.equipment = Object.assign({}, r.inventory.equipment, {
-            instances: []
-          });
-        }
-      } else r[k] = p[k];
-    }
-  }
-  // 旧 UI 读取 pool/lv；在规范 poolXp/level 上补视图字段，不丢生产等其他精通。
-  const masteryDefaults = defaultMastery();
-  r.mastery = p.mastery && typeof p.mastery === 'object'
-    ? cloneRuntimeState(p.mastery)
-    : {};
-  for (const sk of GATHER_SKILLS) {
-    const source = p.mastery &&
-      p.mastery[sk] &&
-      typeof p.mastery[sk] === 'object'
-      ? p.mastery[sk]
-      : {};
-    const sourceEntries = source.entries &&
-      typeof source.entries === 'object'
-      ? source.entries
-      : {};
-    const canonicalEntryIds = Object.keys(source).filter(
-      function (entryId) {
-        return entryId !== 'pool' &&
-          entryId !== 'poolXp' &&
-          entryId !== 'entries' &&
-          Object.prototype.hasOwnProperty.call(
-            masteryDefaults[sk].entries,
-            entryId
-          ) &&
-          source[entryId] &&
-          typeof source[entryId] === 'object';
-      }
-    );
-    const bucket = canonicalEntryIds.length > 0
-      ? Object.assign({}, source)
-      : Object.assign({}, masteryDefaults[sk], source);
-    bucket.pool = typeof source.pool === 'number'
-      ? source.pool
-      : (typeof source.poolXp === 'number' ? source.poolXp : 0);
-    bucket.entries = canonicalEntryIds.length > 0
-      ? {}
-      : Object.assign({}, masteryDefaults[sk].entries);
-    const viewEntries = canonicalEntryIds.length > 0
-      ? canonicalEntryIds.reduce(function (entries, entryId) {
-          entries[entryId] = source[entryId];
-          return entries;
-        }, {})
-      : sourceEntries;
-    Object.keys(viewEntries).forEach(function (entryId) {
-      const entry = Object.assign(
-        {},
-        bucket.entries[entryId] || {},
-        viewEntries[entryId]
-      );
-      if (typeof entry.lv !== 'number' &&
-          typeof entry.level === 'number') {
-        entry.lv = entry.level;
-      }
-      bucket.entries[entryId] = entry;
-    });
-    r.mastery[sk] = bucket;
-  }
-  Object.keys(masteryDefaults).forEach(function (skillId) {
-    if (!r.mastery[skillId]) {
-      r.mastery[skillId] = masteryDefaults[skillId];
-    }
-  });
-  // 由 realmStage 推导 realm / breakNeed / shouMax（单一数据源，避免不同步）
-  const st = r.realmStage || 0;
-  const realm = REALM_TABLE[st] || REALM_TABLE[0];
-  r.realm = realm.name;
-  r.breakNeed = realm.need;
-  r.shouMax = realm.shou;
-  // null 表示飞升后寿元无尽；有限境界继续使用数值寿元。
-  if (realm.shou == null) {
-    r.shouyuan = null;
-  } else if (typeof r.shouyuan !== 'number' || !isFinite(r.shouyuan)) {
-    r.shouyuan = realm.shou;
-  }
-  return r;
-}
+function ensurePlayer(player) { return player || defaultPlayer(); }
 
 // ── M1 放置内核：队列 / 产出 / 突破 / 离线 ──
 function skillXpNeed(lv) { return Math.round(50 * Math.pow(lv, 1.8)); }
-function addSkillXp(p, skill, amount) {
-  const s = p.skills[skill]; if (!s) return;
-  s.xp += amount;
-  while (s.xp >= skillXpNeed(s.lv) && s.lv < 99) {
-    s.xp -= skillXpNeed(s.lv); s.lv++;
-  }
-}
 
 function gameRandom() {
   const result = GameRandom.next(state.rngState);
@@ -1331,7 +759,7 @@ function buildSimulationRuntime() {
     CombatProgress: stage3Bootstrap.CombatProgress,
     Techniques: stage3Bootstrap.Techniques
   };
-  if (useStage5Runtime) {
+  {
     return stage5Bootstrap.Stage5Rules.create(Object.assign(
       {
         Stage4Rules: stage4Bootstrap.Stage4Rules,
@@ -1342,27 +770,7 @@ function buildSimulationRuntime() {
       stage2RuntimeDeps
     ));
   }
-  if (useStage4Runtime) {
-    return stage4Bootstrap.Stage4Rules.create(Object.assign(
-      {
-        SocialInteractionContent:
-          stage4Bootstrap.SocialInteractionContent
-      },
-      combatDeps,
-      stage2RuntimeDeps
-    ));
-  }
-  if (useStage3CombatRuntime) {
-    return stage3Bootstrap.Stage3Rules.create(Object.assign(
-      {},
-      combatDeps,
-      stage2RuntimeDeps
-    ));
-  }
-  if (useStage3Runtime || useStage2Runtime) {
-    return stage2Bootstrap.Stage2Rules.create(stage2RuntimeDeps);
-  }
-  return stage2Bootstrap.GameRules.create(baseGameRulesConfig);
+
 }
 
 function refreshStage3CombatRuntime() {
@@ -1382,15 +790,13 @@ if (runtimeRoot) {
   runtimeRoot.refreshStage3CombatRuntime = refreshStage3CombatRuntime;
 }
 
-const stage2ProductionQuery = useStage2Runtime
-  ? stage2Bootstrap.Production.create({
+const stage2ProductionQuery = stage2Bootstrap.Production.create({
       RecipeContent: stage2Bootstrap.RecipeContent,
       Inventory: stage2Bootstrap.Inventory,
       SkillProgression: stage2Bootstrap.SkillProgression,
       GameRandom: stage2Bootstrap.GameRandom,
       Equipment: equipmentBootstrap.Equipment
-    })
-  : null;
+    });
 
 function resName(k) {
   return ({ yaocai: '药材', lingkuang: '灵矿', muliao: '木料', shicai: '食材', faqi: '法器', hujia: '护甲', shanshi: '膳食', fu: '符箓', caiqing: '才情',
@@ -1406,303 +812,10 @@ function parseGatherKey(key) {
   return { mode: 'gather', skill: a, entryId: b };
 }
 
-function repeatAction(key) {
-  return {
-    key,
-    mode: 'repeat',
-    count: 0,
-    done: 0,
-    elapsed: 0,
-    elapsedAnchorMs: null,
-    elapsedBaseSeconds: null,
-    stalled: false
-  };
-}
-
-function finiteAction(key, count) {
-  return {
-    key,
-    mode: 'finite',
-    count: Math.max(1, count | 0),
-    done: 0,
-    elapsed: 0,
-    elapsedAnchorMs: null,
-    elapsedBaseSeconds: null,
-    stalled: false
-  };
-}
-
-function actionHasRemaining(current) {
-  return !!current && (current.mode === 'repeat' || current.done < current.count);
-}
-
 // 设为当前动作（梅尔沃式·一次只做一件事）：替换旧动作，不后台排队
-function setCurrent(key, count) {
-  const result = commandStartAction({ key });
-  if (!result.ok && result.message) {
-    toast(
-      result.code === 'save_failed' &&
-      key.indexOf('gather:explore:') === 0
-        ? '探索开始保存失败，请重试'
-        : result.message
-    );
-  }
-  return result.ok;
-}
-
-function simulateModel(
-  model,
-  fromMs,
-  toMs,
-  source,
-  mainActionLimitSeconds,
-  options
-) {
-  const elapsedSeconds = Math.max(0, (toMs - fromMs) / 1000);
-  const monthCap = stage4Bootstrap &&
-    stage4Bootstrap.WorldMonth &&
-    Number.isFinite(stage4Bootstrap.WorldMonth.OFFLINE_MONTH_CAP)
-    ? stage4Bootstrap.WorldMonth.OFFLINE_MONTH_CAP
-    : 48;
-  const extra = options && typeof options === 'object' ? options : {};
-  const result = Simulation.advance(model, elapsedSeconds, {
-    source,
-    fromMs,
-    mainActionLimitSeconds,
-    offlineMonthCap: source === 'offline' ? monthCap : null,
-    timeBudgetMs: extra.timeBudgetMs,
-    mutateInPlace: extra.mutateInPlace === true,
-    rules: simulationRuntime.rules,
-    lanes: simulationRuntime.lanes
-  });
-  const advancedTo = result.done
-    ? toMs
-    : (
-      result.report && Number.isFinite(result.report.toMs)
-        ? result.report.toMs
-        : fromMs
-    );
-  result.state.processedThroughMs = advancedTo;
-  return result;
-}
 
 // 性能采样：URL 带 ?perf=1 时每 5s 打一次 advance/ui/frame 均值。
-const PerfStats = (function () {
-  let enabled = false;
-  try {
-    enabled = typeof location !== 'undefined' &&
-      /(?:\?|&)perf=1(?:&|$)/.test(String(location.search || ''));
-  } catch (error) {
-    enabled = false;
-  }
-  const buckets = {
-    advance: [],
-    ui: [],
-    frame: []
-  };
-  function sample(name, ms) {
-    if (!enabled) return;
-    const list = buckets[name];
-    if (!list) return;
-    const value = Number(ms);
-    if (!Number.isFinite(value) || value < 0) return;
-    list.push(value);
-    if (list.length > 180) list.shift();
-  }
-  function avg(list) {
-    if (!list.length) return 0;
-    let sum = 0;
-    for (let i = 0; i < list.length; i++) sum += list[i];
-    return sum / list.length;
-  }
-  function report() {
-    return {
-      advanceMs: Math.round(avg(buckets.advance) * 10) / 10,
-      uiMs: Math.round(avg(buckets.ui) * 10) / 10,
-      frameMs: Math.round(avg(buckets.frame) * 10) / 10,
-      samples: {
-        advance: buckets.advance.length,
-        ui: buckets.ui.length,
-        frame: buckets.frame.length
-      }
-    };
-  }
-  if (enabled && typeof setInterval === 'function') {
-    setInterval(function () {
-      console.log('[perf]', report());
-    }, 5000);
-  }
-  return {
-    enabled: enabled,
-    sample: sample,
-    report: report
-  };
-})();
 
-function recoverRuntimeFromLastSave(nowMs) {
-  try {
-    if (typeof SaveSystem === 'undefined' ||
-        !SaveSystem ||
-        typeof SaveSystem.load !== 'function') {
-      return false;
-    }
-    const now = Number.isFinite(nowMs) ? Math.max(0, Math.floor(nowMs)) : Date.now();
-    const loaded = SaveSystem.load(Platform, now);
-    const snapshot = loaded && loaded.snapshot;
-    if (!snapshot) return false;
-    const model = StateModel.normalize(snapshot, now);
-    if (!model || !model.player) return false;
-    applyModelToRuntime(model);
-    state._last = now;
-    return true;
-  } catch (error) {
-    console.error(
-      '[recoverRuntimeFromLastSave]',
-      error && error.stack ? error.stack : error
-    );
-    return false;
-  }
-}
-
-function advanceRuntime(fromMs, toMs, source, mainActionLimitSeconds) {
-  if (!Number.isFinite(fromMs) ||
-      !Number.isFinite(toMs)) {
-    return null;
-  }
-  const prevStatus = state.player && state.player.lifecycle
-    ? state.player.lifecycle.status
-    : null;
-  // 在线热路径：queryView（共享嵌套引用）+ Simulation mutateInPlace + apply inplace。
-  // 离线/重载仍走 fromRuntime，保证落盘边界干净。
-  const onlineInPlace = source === 'online' &&
-    typeof StateModel.queryView === 'function';
-  const model = onlineInPlace
-    ? StateModel.queryView(state /* runtime */, fromMs)
-    : StateModel.fromRuntime(state /* runtime */, fromMs);
-  let result = null;
-  const advanceStarted = PerfStats.enabled ? Date.now() : 0;
-  try {
-    result = simulateModel(
-      model,
-      fromMs,
-      toMs,
-      source,
-      mainActionLimitSeconds,
-      onlineInPlace ? { mutateInPlace: true } : null
-    );
-  } catch (error) {
-    console.error(
-      '[advanceRuntime]',
-      error && error.stack ? error.stack : error
-    );
-    // 原地推进失败后 runtime 可能半脏：尽量从最近成功存档回滚。
-    if (onlineInPlace) {
-      const recovered = recoverRuntimeFromLastSave(toMs);
-      if (!recovered && typeof setPersistenceIssue === 'function') {
-        setPersistenceIssue({
-          kind: 'repair',
-          message: '模拟异常，请重试存档或刷新页面',
-          now: toMs
-        });
-      }
-    }
-    if (PerfStats.enabled) {
-      PerfStats.sample('advance', Date.now() - advanceStarted);
-    }
-    return null;
-  }
-  // 在线：信任 Simulation 输出，跳过 apply 时的 Stage4 全量 normalize。
-  // 离线结算仍走完整 normalize，保证落盘前形态干净。
-  if (typeof StateModel.applyToRuntime === 'function') {
-    StateModel.applyToRuntime(
-      state /* runtime */,
-      result.state,
-      onlineInPlace
-        ? { trustedSimulation: true, inplace: true }
-        : (source === 'online' ? { trustedSimulation: true } : null)
-    );
-  } else {
-    StateModel.applyToRuntime(state /* runtime */, result.state);
-  }
-  invalidateQueryModelCache();
-  state._lastSimulationReport = result.report;
-  // 边缘触发：生命周期状态「进入安全缓冲」时弹一次提示（不每帧弹）
-  const newStatus = state.player && state.player.lifecycle
-    ? state.player.lifecycle.status
-    : null;
-  if (prevStatus !== 'safety_buffer' &&
-      newStatus === 'safety_buffer' &&
-      !state.showLifespanBuffer) {
-    state.showLifespanBuffer = true;
-  }
-  if (PerfStats.enabled) {
-    PerfStats.sample('advance', Date.now() - advanceStarted);
-  }
-  return result.report;
-}
-
-function getLastSimulationReport() {
-  return state._lastSimulationReport;
-}
-
-function advanceGameplay(fromMs, toMs, source, mainActionLimitSeconds) {
-  if (isPersistenceLocked()) return null;
-  const now = Number.isFinite(toMs) ? toMs : Date.now();
-  const rawHighWater = Number.isFinite(state.processedThroughMs)
-    ? state.processedThroughMs
-    : fromMs;
-  // 在线帧推进同样消毒坏水位线，避免 _last 正常但 processedThroughMs=0 时被 max 拉回纪元初。
-  const highWater = sanitizeTimeCursorMs(rawHighWater, now, now);
-  if (rawHighWater !== highWater) {
-    state.processedThroughMs = highWater;
-  }
-  const effectiveFrom = Math.max(
-    sanitizeTimeCursorMs(fromMs, now, highWater),
-    highWater
-  );
-  if (toMs <= effectiveFrom) return null;
-  const exploring = !!(
-    state.current &&
-    state.current.key.indexOf('gather:explore:') === 0
-  );
-  const pendingExplore = exploring
-    ? cloneRuntimeState(state.current)
-    : null;
-  const report = advanceRuntime(
-    effectiveFrom,
-    toMs,
-    source,
-    mainActionLimitSeconds
-  );
-  if (exploring &&
-      report &&
-      report.action.completed > 0 &&
-      !persistSafely(toMs)) {
-    if (state.current === null && pendingExplore) {
-      pendingExplore.done = Math.max(
-        1,
-        Number(pendingExplore.done) || 0,
-        Number(pendingExplore.count) || 1
-      );
-      pendingExplore.count = Math.max(
-        1,
-        Number(pendingExplore.count) || pendingExplore.done
-      );
-      pendingExplore.elapsed = 0;
-      pendingExplore.stalled = true;
-      state.current = pendingExplore;
-    } else if (state.current) {
-      state.current.stalled = true;
-    }
-    setPersistenceIssue({
-      kind: 'explore',
-      message: '探索结果保存失败，请重试',
-      successMessage: '探索结果已保存'
-    });
-  }
-  if (report) publishGainTipsFromReport(report);
-  return report;
-}
 // 突破率：基础概率 + 持有突破丹加成（每颗 +20%，封顶 95%）
 // 兼容性/测试占位：仅在「未加载 stage3 脚本」(useStage3Runtime=false) 时由 tryBreakthrough 旧分支使用。
 // 生产环境 useStage3Runtime=true，突破概率与门槛由权威模块 core/breakthrough.js 处理
@@ -1716,22 +829,13 @@ function breakthroughRate(p, st) {
   return Math.min(0.95, (cur.baseRate || 0) + danBonus);
 }
 // 突破成功后：刷新 realm/breakNeed/shouMax，并按新境界上限刷新寿元（续命）
-function applyRealm(p) {
-  const st = p.realmStage || 0;
-  const cur = REALM_TABLE[st] || REALM_TABLE[0];
-  p.realm = cur.name;
-  p.breakNeed = (REALM_TABLE[st + 1] || cur).need;
-  p.shouMax = cur.shou;
-  p.shouyuan = cur.shou;
-  p.lifespanAnchorMs = null;
-  p.lifespanBaseYears = null;
-}
+
 // 境界突破（§5 新规则）
 // 生产走 useStage3Runtime 分支 → commandAttemptBreakthrough → core/breakthrough.js（权威路径，已合规）。
 // 以下 else 分支为「未加载 stage3 脚本」时的兼容/测试占位（旧概率判定），请勿在生产依赖。
-function tryBreakthrough() {
+const tryBreakthrough = function tryBreakthrough() {
   if (isPersistenceLocked()) return false;
-  if (useStage3Runtime) {
+  {
     const authoritative = commandAttemptBreakthrough({
       pillItemId: null,
       quantity: 0
@@ -1744,338 +848,11 @@ function tryBreakthrough() {
       authoritative.data.result === 'success'
     );
   }
-  const p = state.player; if (!p) return;
-  const st = p.realmStage || 0; const cur = REALM_TABLE[st];
-  if (st >= REALM_TABLE.length - 1) { toast('已是最高境界'); return; }
-  if (p.xiwei < cur.need) { toast('修为不足，需 ' + cur.need); return; }
-  const playerCheckpoint = cloneRuntimeState(p);
-  const rngCheckpoint = state.rngState;
-  let resultMessage = '';
-  // 小阶：达标即自动突破，无风险
-  if (cur.tier === 'minor') {
-    p.xiwei = 0; p.realmStage = st + 1; applyRealm(p);
-    p.jingqi = Math.min(200, p.jingqi + 30);
-    resultMessage = '突破成功 → ' + REALM_TABLE[st + 1].name + '！';
-    if (!persistSafely()) {
-      state.player = playerCheckpoint;
-      state.rngState = rngCheckpoint;
-      setPersistenceIssue({ kind: 'save', message: '突破结果保存失败，请重试' });
-      return false;
-    }
-    toast(resultMessage);
-    return true;
-  }
-  // 大境界（兼容/测试占位路径）：生产已由 core/breakthrough.js 以「战斗进度门槛 + 概率」形式接管
-  // （门槛=击败首领/通关秘境，达成后 roll 概率）。该分支仅在未加载 stage3 脚本时生效。
-  if (cur.dan && (p.inventory.stacks[cur.dan] || 0) < 1) { toast('需' + (DAN_NAME[cur.dan] || '突破丹') + '×1'); return; }
-  const rate = breakthroughRate(p, st);
-  const ok = gameRandom() < rate;
-  // 注：生产路径的「渡劫」已通过 core/breakthrough.js 实现——先由战斗进度达成突破门槛(gate)，
-  // 再 roll 概率，胜=突破、败=修为散尽（门槛保留）。此处的 TODO 仅针对旧兼容分支，权威路径无须此占位。
-  if (ok) {
-    p.xiwei = 0;
-    if (cur.dan) p.inventory.stacks[cur.dan] -= 1;
-    p.realmStage = st + 1; applyRealm(p);
-    p.jingqi = Math.min(200, p.jingqi + 30);
-    resultMessage = '渡劫成功 → ' + REALM_TABLE[st + 1].name + '！';
-  } else {
-    p.xiwei = 0;   // 失败清空全部修为（丹不消耗，可再攒）
-    resultMessage = '渡劫失败，修为散尽';
-  }
-  if (!persistSafely()) {
-    state.player = playerCheckpoint;
-    state.rngState = rngCheckpoint;
-    setPersistenceIssue({ kind: 'save', message: '突破结果保存失败，请重试' });
-    return false;
-  }
-  toast(resultMessage);
-  return true;
-}
 
-function isPersistenceLocked() {
-  return !!state._persistenceIssue || !!state.settlingOffline;
-}
-
-function getPersistenceStatus() {
-  if (state.settlingOffline) {
-    return {
-      locked: true,
-      kind: 'settle',
-      message: '正在结算离线收益…',
-      error: null,
-      canRetry: false
-    };
-  }
-  const issue = state._persistenceIssue;
-  if (!issue) {
-    return {
-      locked: false,
-      kind: null,
-      message: '',
-      error: null,
-      canRetry: false
-    };
-  }
-  return {
-    locked: true,
-    kind: issue.kind,
-    message: issue.message,
-    error: issue.error || 'storage-write-failed',
-    canRetry: issue.canRetry !== false,
-    savedAt: issue.savedAt,
-    now: issue.now
-  };
-}
-
-function setPersistenceIssue(issue) {
-  persistenceRecovery.updateIssue(issue);
-  toast(state._persistenceIssue.message);
-}
-
-function clearPersistenceIssue() {
-  state._persistenceIssue = null;
-}
-
-function runtimeModelAt() {
-  // 命令/自动存档热路径：只深拷贝，不在此处 Stage4 全量 normalize。
-  // 完整 normalize 留给 persistModel → toSnapshotInput（存档边界）。
-  if (typeof StateModel.captureRuntime === 'function') {
-    return StateModel.captureRuntime(
-      state /* runtime */,
-      Number.isFinite(state.processedThroughMs)
-        ? state.processedThroughMs
-        : Date.now()
-    );
-  }
-  return StateModel.fromRuntime(
-    state /* runtime */,
-    Number.isFinite(state.processedThroughMs)
-      ? state.processedThroughMs
-      : Date.now()
-  );
-}
-
-const persistenceRecovery = (function () {
-  let held = null;
-
-  function summarizeCandidate(model) {
-    if (!model) return null;
-    return {
-      processedThroughMs: model.processedThroughMs,
-      rngState: model.rngState,
-      pendingReportCount: Array.isArray(model.pendingOfflineReports)
-        ? model.pendingOfflineReports.length
-        : 0
-    };
-  }
-
-  function publicIssue(descriptor) {
-    return {
-      kind: descriptor.kind || 'save',
-      message: descriptor.message || '保存失败，请重试',
-      error: descriptor.error || 'storage-write-failed',
-      savedAt: descriptor.savedAt,
-      now: descriptor.now,
-      successMessage: descriptor.successMessage || '',
-      onSuccess: descriptor.onSuccess || ''
-    };
-  }
-
-  function hold(descriptor) {
-    if (held) return false;
-    held = {
-      kind: descriptor.kind || 'save',
-      message: descriptor.message || '保存失败，请重试',
-      error: descriptor.error || 'storage-write-failed',
-      savedAt: descriptor.savedAt,
-      now: descriptor.now,
-      fromMs: descriptor.fromMs,
-      toMs: descriptor.toMs,
-      source: descriptor.source || null,
-      mainActionLimitSeconds: descriptor.mainActionLimitSeconds,
-      candidate: descriptor.candidate
-        ? StateModel.toSnapshotInput(descriptor.candidate)
-        : null,
-      baseModel: descriptor.baseModel
-        ? StateModel.toSnapshotInput(descriptor.baseModel)
-        : null,
-      candidateSummary: descriptor.candidateSummary
-        ? cloneRuntimeState(descriptor.candidateSummary)
-        : summarizeCandidate(descriptor.candidate),
-      successMessage: descriptor.successMessage || '',
-      onSuccess: descriptor.onSuccess || '',
-      resumeStartupAt: descriptor.resumeStartupAt
-    };
-    state._persistenceIssue = publicIssue(held);
-    return true;
-  }
-
-  function updateIssue(issue) {
-    if (!held) {
-      hold(Object.assign({
-        candidate: runtimeModelAt(),
-        now: state.processedThroughMs
-      }, issue || {}));
-      return;
-    }
-    const next = issue || {};
-    [
-      'kind',
-      'message',
-      'error',
-      'savedAt',
-      'now',
-      'successMessage',
-      'onSuccess'
-    ].forEach(function (key) {
-      if (next[key] !== undefined) held[key] = next[key];
-    });
-    state._persistenceIssue = publicIssue(held);
-  }
-
-  function offlineCandidate(descriptor) {
-    const base = StateModel.normalize(
-      descriptor.baseModel,
-      descriptor.fromMs
-    );
-    const result = simulateModel(
-      base,
-      descriptor.fromMs,
-      descriptor.toMs,
-      'offline',
-      descriptor.mainActionLimitSeconds
-    );
-    result.state.pendingOfflineReports = SimulationReport.addPending(
-      base.pendingOfflineReports,
-      result.report
-    );
-    return {
-      model: result.state /* simulated */,
-      report: result.report
-    };
-  }
-
-  function retry() {
-    if (!held) return true;
-    const descriptor = held;
-    let candidate = descriptor.candidate
-      ? StateModel.normalize(descriptor.candidate, descriptor.now)
-      : null;
-    let report = null;
-    if (descriptor.kind === 'offline' && descriptor.baseModel) {
-      const replay = offlineCandidate(descriptor);
-      candidate = replay.model;
-      report = replay.report;
-    }
-    if (!candidate) return false;
-    const saveAt = descriptor.kind === 'repair' &&
-      Number.isFinite(descriptor.savedAt)
-      ? descriptor.savedAt
-      : Number.isFinite(descriptor.now)
-        ? descriptor.now
-      : candidate.processedThroughMs;
-    const saved = persistModel(candidate, saveAt);
-    if (!saved) return false;
-
-    held = null;
-    clearPersistenceIssue();
-    applyModelToRuntime(saved, { trustedSimulation: true });
-    state._lastSimulationReport = report || state._lastSimulationReport;
-    state._last = Date.now();
-    state._hiddenAt = null;
-
-    if (descriptor.onSuccess === 'appearance') {
-      state.phase = 'game';
-      state.navIndex = NAV_HOME;
-      state.dirty = true;
-    }
-    if (descriptor.kind === 'repair' &&
-        Number.isFinite(descriptor.resumeStartupAt)) {
-      const repairedSnapshot = SaveSystem.load(
-        Platform,
-        descriptor.resumeStartupAt
-      ).snapshot;
-      return settleStartupOffline(
-        repairedSnapshot,
-        descriptor.resumeStartupAt
-      ).ok;
-    }
-    if (descriptor.successMessage) toast(descriptor.successMessage);
-    return true;
-  }
-
-  function testSnapshot() {
-    if (!held) return null;
-    return StateModel.readonly({
-      kind: held.kind,
-      message: held.message,
-      error: held.error,
-      savedAt: held.savedAt,
-      now: held.now,
-      fromMs: held.fromMs,
-      toMs: held.toMs,
-      source: held.source,
-      candidateSummary: held.candidateSummary
-    });
-  }
-
-  function isLocked() {
-    return !!held || !!state._persistenceIssue;
-  }
-
-  function message() {
-    return state._persistenceIssue && state._persistenceIssue.message
-      ? state._persistenceIssue.message
-      : '存档失败，请重试';
-  }
-
-  return Object.freeze({
-    hold,
-    updateIssue,
-    retry,
-    testSnapshot,
-    isLocked,
-    message
-  });
-})();
-
-function persistCurrentModel(now) {
-  if (isPersistenceLocked()) return false;
-  const watermark = now == null
-    ? Date.now()
-    : Math.max(0, Math.floor(Number(now) || 0));
-  const candidate = runtimeModelAt();
-  candidate.processedThroughMs = watermark; // 修复离线结算：保存时把结算水位线对齐到当前真实时间，避免刷新/关闭后把在线时段误算成离线
-  const saved = persistModel(candidate, watermark);
-  if (saved) {
-    // saved 已是 toSnapshotInput 规范化结果，写回时跳过二次 normalize。
-    applyModelToRuntime(saved, { trustedSimulation: true });
-    return true;
-  }
-  persistenceRecovery.hold({
-    kind: 'save',
-    message: '保存失败，请重试',
-    now: watermark,
-    candidate
-  });
-  return false;
-}
-
-function persist(now) {
-  return persistCurrentModel(now);
-}
+};
 
 function cloneRuntimeState(value) {
   return value == null ? value : JSON.parse(JSON.stringify(value));
-}
-
-function offlineDisplayResult(reports) {
-  const summary = SimulationReport.summarize(reports);
-  const result = {};
-  Object.keys(summary.action.byKey).forEach(function (key) {
-    result[key] = summary.action.byKey[key];
-  });
-  return Object.keys(result).length > 0 ? result : null;
 }
 
 // 查询模型缓存必须在 applyModelToRuntime 之前初始化（启动读档会立刻调用）。
@@ -2122,7 +899,7 @@ function stage2QueryModel() {
   return model;
 }
 
-function applyModelToRuntime(model, options) {
+const applyModelToRuntime = function applyModelToRuntime(model, options) {
   invalidateQueryModelCache();
   StateModel.applyToRuntime(state /* runtime */, model, options || null);
   state.parts = normalizeParts(
@@ -2136,543 +913,17 @@ function applyModelToRuntime(model, options) {
     typeof SimulationReport.isMeaningfulOfflineReports === 'function'
     ? SimulationReport.isMeaningfulOfflineReports(state.pendingOfflineReports)
     : state.pendingOfflineReports.length > 0;
-}
-
-function persistModel(model, nowMs) {
-  // 存档边界：唯一必做的全量 normalize。成功时返回规范化快照供写回 runtime。
-  try {
-    const snapshot = StateModel.toSnapshotInput(model);
-    if (SaveSystem.save(Platform, snapshot, nowMs) !== true) {
-      return null;
-    }
-    return snapshot;
-  } catch (error) {
-    return null;
-  }
-}
-
-function normalizeStartupModel(snapshot, now) {
-  const model = StateModel.normalize(snapshot, now);
-  if (!model.player) return model;
-  const player = cloneRuntimeState(model.player);
-  const rawPlayer = snapshot && snapshot.player;
-  if (rawPlayer &&
-      !Object.prototype.hasOwnProperty.call(rawPlayer, 'shouyuan')) {
-    delete player.shouyuan;
-  }
-  if (rawPlayer &&
-      !Object.prototype.hasOwnProperty.call(rawPlayer, 'shouMax')) {
-    delete player.shouMax;
-  }
-  model.player = ensurePlayer(player);
-  return model;
-}
+};
 
 // 离线结算最短间隔门槛：离线时长不足该值时，启动时不弹「离线结算」弹窗，
 // 避免用户快速刷新网页（只离开几秒/几十秒）也误弹一次收益弹窗。
 // 语义为「至少 1 分钟」：offlineSeconds >= 60 才结算，60 秒整也算触发。
-const MIN_OFFLINE_SETTLE_MS = 60000;
+
 // 离线寿元/被动结算允许的最大回看窗口：与离线收益上限同级（默认 48 小时），
 // 防止水位线损坏（如历史默认 0）时从纪元初一口气把寿元耗尽。
-const MAX_OFFLINE_LOOKBACK_MS = 172800 * 1000;
-function sanitizeTimeCursorMs(rawFromMs, nowMs, fallbackMs) {
-  const now = Math.max(0, Math.floor(Number(nowMs) || 0));
-  const fallback = Number.isFinite(fallbackMs) && fallbackMs > 0
-    ? fallbackMs
-    : now;
-  let from = Number.isFinite(rawFromMs) ? rawFromMs : fallback;
-  // 0 / 负数视为未初始化水位线，绝不能当「从 1970 年起算」去扣寿元。
-  if (!Number.isFinite(from) || from <= 0) {
-    from = fallback > 0 ? fallback : now;
-  }
-  from = Math.min(from, now);
-  const earliest = Math.max(0, now - MAX_OFFLINE_LOOKBACK_MS);
-  if (from < earliest) from = earliest;
-  return from;
-}
-function sanitizeOfflineFromMs(model, now) {
-  const savedAt = Number.isFinite(model && model.savedAt)
-    ? model.savedAt
-    : now;
-  return sanitizeTimeCursorMs(
-    model && model.processedThroughMs,
-    now,
-    savedAt
-  );
-}
-function kickEnsureCombatRuntime() {
-  if (typeof LazyContent !== 'undefined' &&
-      LazyContent &&
-      typeof LazyContent.ensureCombatRuntime === 'function') {
-    return LazyContent.ensureCombatRuntime();
-  }
-  if (typeof refreshStage3CombatRuntime === 'function') {
-    refreshStage3CombatRuntime();
-  }
-  return Promise.resolve(useStage3CombatRuntime);
-}
-
-function modelNeedsCombatRuntime(model) {
-  if (!model || typeof model !== 'object') return false;
-  const key = model.current && typeof model.current.key === 'string'
-    ? model.current.key
-    : '';
-  if (key.indexOf('combat:') === 0) return true;
-  const combat = model.systems && model.systems.combat;
-  if (!combat || typeof combat !== 'object') return false;
-  if (combat.session) return true;
-  if (combat.injury) return true;
-  const pending = combat.pendingRewards;
-  if (pending && typeof pending === 'object') {
-    if (Array.isArray(pending) && pending.length > 0) return true;
-    if (!Array.isArray(pending) && Object.keys(pending).length > 0) return true;
-  }
-  return false;
-}
-
-function snapshotNeedsCombatRuntime(snapshot) {
-  return modelNeedsCombatRuntime(snapshot);
-}
-
-function settleStartupOffline(snapshot, nowMs) {
-  const now = Math.max(0, Math.floor(Number(nowMs) || 0));
-  const model = normalizeStartupModel(snapshot, now);
-  // 仅真实存档故障才跳过；settlingOffline 锁不能挡住本函数本身。
-  if (state._persistenceIssue) {
-    return {
-      ok: false,
-      snapshot: cloneRuntimeState(snapshot),
-      state: model,
-      report: null,
-      newReports: []
-    };
-  }
-  const rawThrough = Number.isFinite(model.processedThroughMs)
-    ? model.processedThroughMs
-    : 0;
-  const clockRollback = rawThrough > now;
-  const from = sanitizeOfflineFromMs(model, now);
-  // 水位线曾损坏时写回合理值，避免下次启动再次从 0 结算
-  if (!clockRollback && rawThrough !== from) {
-    model.processedThroughMs = from;
-  }
-  const newReports = [];
-  let candidate = model;
-  let report = null;
-  let didPersist = false;
-
-  if (clockRollback) {
-    report = SimulationReport.create({
-      source: 'offline',
-      fromMs: now,
-      toMs: now,
-      requestedSeconds: 0,
-      actionKey: model.current ? model.current.key : null,
-      seedBefore: model.rngState
-    });
-    report.warnings.push('clock_rollback');
-    candidate = StateModel.normalize(model, now);
-    candidate.processedThroughMs = model.processedThroughMs;
-    if (SimulationReport.isMeaningfulOfflineReport(report)) {
-      candidate.pendingOfflineReports = SimulationReport.addPending(
-        model.pendingOfflineReports,
-        report
-      );
-      newReports.push(report);
-    } else {
-      candidate.pendingOfflineReports = model.pendingOfflineReports || [];
-    }
-    const savedRollback = persistModel(candidate, now);
-    if (!savedRollback) {
-      applyModelToRuntime(model);
-      persistenceRecovery.hold({
-        kind: 'offline',
-        message: '离线收益保存失败，请重试',
-        savedAt: now,
-        now,
-        fromMs: now,
-        toMs: now,
-        source: 'clock_rollback',
-        candidate
-      });
-      toast('离线收益保存失败，请重试');
-      return {
-        ok: false,
-        snapshot: cloneRuntimeState(snapshot),
-        state: model,
-        report,
-        newReports: []
-      };
-    }
-    candidate = savedRollback;
-    didPersist = true;
-  } else if (now - from >= MIN_OFFLINE_SETTLE_MS) {
-    const limit = model.systems &&
-      Number.isFinite(model.systems.offlineLimitSeconds)
-      ? model.systems.offlineLimitSeconds
-      : (model.offlineLimitSeconds || 43200);
-    const result = simulateModel(model, from, now, 'offline', limit);
-    report = result.report;
-    candidate = result.state;
-    if (SimulationReport.isMeaningfulOfflineReport(report)) {
-      candidate.pendingOfflineReports = SimulationReport.addPending(
-        model.pendingOfflineReports,
-        report
-      );
-      newReports.push(report);
-    } else {
-      candidate.pendingOfflineReports = model.pendingOfflineReports || [];
-    }
-    const savedOffline = persistModel(candidate, now);
-    if (!savedOffline) {
-      applyModelToRuntime(model);
-      persistenceRecovery.hold({
-        kind: 'offline',
-        message: '离线收益保存失败，请重试',
-        savedAt: from,
-        now,
-        fromMs: from,
-        toMs: now,
-        source: 'offline',
-        mainActionLimitSeconds: limit,
-        baseModel: model,
-        candidateSummary: {
-          processedThroughMs: result.state.processedThroughMs,
-          rngState: result.state.rngState,
-          pendingReportCount: (
-            result.state.pendingOfflineReports || []
-          ).length
-        }
-      });
-      toast('离线收益保存失败，请重试');
-      return {
-        ok: false,
-        snapshot: cloneRuntimeState(snapshot),
-        state: model,
-        report,
-        newReports: []
-      };
-    }
-    candidate = savedOffline;
-    didPersist = true;
-  }
-
-  applyModelToRuntime(
-    candidate,
-    didPersist ? { trustedSimulation: true } : null
-  );
-  state._lastSimulationReport = report;
-  state._offlineSec = Math.max(0, (now - from) / 1000);
-  state._offlineSettleProgress = null;
-  if (didPersist) {
-    const savedSnapshot = SaveSystem.load(Platform, now).snapshot;
-    return {
-      ok: true,
-      snapshot: savedSnapshot,
-      state: StateModel.normalize(savedSnapshot, now),
-      report,
-      newReports
-    };
-  }
-  // 未落盘时优先走 createSnapshot；测试 harness 缺 Stage4 时回退为候选快照。
-  try {
-    const savedSnapshot = SaveSystem.createSnapshot(
-      StateModel.toSnapshotInput(candidate),
-      now
-    );
-    return {
-      ok: true,
-      snapshot: savedSnapshot,
-      state: StateModel.normalize(savedSnapshot, now),
-      report,
-      newReports
-    };
-  } catch (error) {
-    return {
-      ok: true,
-      snapshot: StateModel.toSnapshotInput(candidate),
-      state: candidate,
-      report,
-      newReports
-    };
-  }
-}
-
-function offlineLimitFromModel(model) {
-  if (model && model.systems &&
-      Number.isFinite(model.systems.offlineLimitSeconds)) {
-    return model.systems.offlineLimitSeconds;
-  }
-  return model && Number.isFinite(model.offlineLimitSeconds)
-    ? model.offlineLimitSeconds
-    : 43200;
-}
-
-function formatOfflineSettleProgress(progress) {
-  if (!progress) return '正在结算离线收益，请稍候…';
-  const from = Number(progress.fromMs) || 0;
-  const to = Number(progress.toMs) || 0;
-  const current = Number(progress.currentMs) || from;
-  const total = Math.max(0, to - from);
-  if (!(total > 0)) return '正在结算离线收益，请稍候…';
-  const done = Math.max(0, Math.min(total, current - from));
-  const pct = Math.max(0, Math.min(100, Math.floor((done / total) * 100)));
-  return '正在结算离线收益… ' + pct + '%';
-}
-
-function finishChunkedOfflineSettle(job) {
-  const now = job.now;
-  const from = job.from;
-  let candidate = job.model;
-  const reports = Array.isArray(job.reports) ? job.reports : [];
-  const meaningful = reports.filter(SimulationReport.isMeaningfulOfflineReport);
-  const report = meaningful.length
-    ? meaningful[meaningful.length - 1]
-    : (reports.length ? reports[reports.length - 1] : null);
-  if (meaningful.length) {
-    let pending = job.basePending || [];
-    meaningful.forEach(function (item) {
-      pending = SimulationReport.addPending(pending, item);
-    });
-    candidate.pendingOfflineReports = pending;
-  } else {
-    candidate.pendingOfflineReports = job.basePending || [];
-  }
-  const savedOffline = persistModel(candidate, now);
-  if (!savedOffline) {
-    applyModelToRuntime(job.baseModel);
-    persistenceRecovery.hold({
-      kind: 'offline',
-      message: '离线收益保存失败，请重试',
-      savedAt: from,
-      now,
-      fromMs: from,
-      toMs: now,
-      source: 'offline',
-      mainActionLimitSeconds: job.limit,
-      baseModel: job.baseModel,
-      candidateSummary: {
-        processedThroughMs: candidate.processedThroughMs,
-        rngState: candidate.rngState,
-        pendingReportCount: (candidate.pendingOfflineReports || []).length
-      }
-    });
-    toast('离线收益保存失败，请重试');
-    state._offlineSettleJob = null;
-    state._offlineSettleProgress = null;
-    return false;
-  }
-  applyModelToRuntime(savedOffline, { trustedSimulation: true });
-  state._lastSimulationReport = report;
-  state._offlineSec = Math.max(0, (now - from) / 1000);
-  state._offlineSettleJob = null;
-  state._offlineSettleProgress = null;
-  return true;
-}
-
-function abortChunkedOfflineSettle(job, error) {
-  console.error(
-    '[offlineSettle]',
-    error && error.stack ? error.stack : error
-  );
-  try {
-    if (job && job.baseModel) {
-      applyModelToRuntime(job.baseModel);
-    }
-  } catch (restoreError) {
-    console.error(
-      '[offlineSettle] restore failed',
-      restoreError && restoreError.stack ? restoreError.stack : restoreError
-    );
-  }
-  state._offlineSettleJob = null;
-  state._offlineSettleProgress = null;
-  state.settlingOffline = false;
-  if (typeof toast === 'function') {
-    toast('离线结算失败，已恢复结算前状态');
-  }
-  return true;
-}
-
-function stepChunkedOfflineSettle() {
-  const job = state._offlineSettleJob;
-  if (!job) return true;
-  const cursor = job.cursorMs;
-  const now = job.now;
-  if (!(cursor < now)) {
-    return finishChunkedOfflineSettle(job);
-  }
-  // 每片最多推进一段游戏时间，并用墙钟预算打断，保证结算中弹窗可刷新。
-  const CHUNK_GAME_MS = 10 * 60 * 1000;
-  const TIME_BUDGET_MS = 32;
-  const sliceEnd = Math.min(now, cursor + CHUNK_GAME_MS);
-  let result = null;
-  try {
-    result = simulateModel(
-      job.model,
-      cursor,
-      sliceEnd,
-      'offline',
-      job.mainLimitLeft,
-      // job.model 已是独立工作副本；片间原地推进，避免每片双倍整树拷贝。
-      { timeBudgetMs: TIME_BUDGET_MS, mutateInPlace: true }
-    );
-  } catch (error) {
-    return abortChunkedOfflineSettle(job, error);
-  }
-  job.model = result.state;
-  let advancedTo = Number.isFinite(result.state.processedThroughMs)
-    ? result.state.processedThroughMs
-    : cursor;
-  // 单片零推进（极端卡顿）：去掉时间片预算强制跑完本片，避免跳过游戏逻辑。
-  if (advancedTo <= cursor && sliceEnd > cursor) {
-    let forced = null;
-    try {
-      forced = simulateModel(
-        job.model,
-        cursor,
-        sliceEnd,
-        'offline',
-        job.mainLimitLeft,
-        { mutateInPlace: true }
-      );
-    } catch (error) {
-      return abortChunkedOfflineSettle(job, error);
-    }
-    job.model = forced.state;
-    advancedTo = Number.isFinite(forced.state.processedThroughMs)
-      ? forced.state.processedThroughMs
-      : sliceEnd;
-    if (forced.report) {
-      job.reports.push(forced.report);
-      const used = Number(forced.report.mainActionSeconds) || 0;
-      job.mainLimitLeft = Math.max(0, job.mainLimitLeft - used);
-    }
-  } else if (result.report) {
-    job.reports.push(result.report);
-    const used = Number(result.report.mainActionSeconds) || 0;
-    job.mainLimitLeft = Math.max(0, job.mainLimitLeft - used);
-  }
-  job.cursorMs = Math.max(cursor, advancedTo);
-  state._offlineSettleProgress = {
-    fromMs: job.from,
-    currentMs: job.cursorMs,
-    toMs: job.now
-  };
-  // 结算中不必每片触发玩家立绘重合成。
-  if (job.cursorMs >= job.now) {
-    return finishChunkedOfflineSettle(job);
-  }
-  return false;
-}
-
-function startupNeedsOfflineSettle(snapshot, nowMs) {
-  const now = Math.max(0, Math.floor(Number(nowMs) || 0));
-  if (state._persistenceIssue) return false;
-  const model = normalizeStartupModel(snapshot, now);
-  if (!model.player) return false;
-  const rawThrough = Number.isFinite(model.processedThroughMs)
-    ? model.processedThroughMs
-    : 0;
-  if (rawThrough > now) return true;
-  const from = sanitizeOfflineFromMs(model, now);
-  return now - from >= MIN_OFFLINE_SETTLE_MS;
-}
 
 // 长离线结算可能数百毫秒～数十秒：先出游戏壳与「结算中」提示，再分帧追算，
 // 避免启动期长时间白屏。短间隔（<1 分钟）仍同步走完，无感知。
-function scheduleStartupOfflineSettle(snapshot, nowMs) {
-  const now = Math.max(0, Math.floor(Number(nowMs) || 0));
-  const harness = !!(runtimeRoot &&
-    runtimeRoot.__GAME_TEST_HARNESS_REQUEST__ === true);
-  // 测试桩常把 rAF/setTimeout 做成空函数；若仍走延迟路径，settlingOffline 会永久卡死。
-  if (harness || !startupNeedsOfflineSettle(snapshot, now)) {
-    settleStartupOffline(snapshot, now);
-    return;
-  }
-  const model = normalizeStartupModel(snapshot, now);
-  if (state._persistenceIssue || !model.player) {
-    settleStartupOffline(snapshot, now);
-    return;
-  }
-  const rawThrough = Number.isFinite(model.processedThroughMs)
-    ? model.processedThroughMs
-    : 0;
-  if (rawThrough > now) {
-    // 时钟回拨路径短且需立刻落盘，仍同步处理。
-    settleStartupOffline(snapshot, now);
-    return;
-  }
-  const from = sanitizeOfflineFromMs(model, now);
-  if (rawThrough !== from) {
-    model.processedThroughMs = from;
-  }
-  const limit = offlineLimitFromModel(model);
-  state.settlingOffline = true;
-  state._offlineSettleProgress = {
-    fromMs: from,
-    currentMs: from,
-    toMs: now
-  };
-  state._offlineSettleJob = {
-    model: model,
-    baseModel: cloneRuntimeState(model),
-    basePending: model.pendingOfflineReports || [],
-    from: from,
-    now: now,
-    cursorMs: from,
-    limit: limit,
-    mainLimitLeft: limit,
-    reports: []
-  };
-  state.dirty = true;
-
-  function runSettleSlice() {
-    try {
-      const done = stepChunkedOfflineSettle();
-      if (!done) {
-        if (typeof setTimeout === 'function') {
-          setTimeout(runSettleSlice, 0);
-        } else {
-          while (!stepChunkedOfflineSettle()) { /* sync fallback */ }
-          state.settlingOffline = false;
-          state.dirty = true;
-        }
-        return;
-      }
-    } catch (error) {
-      abortChunkedOfflineSettle(state._offlineSettleJob, error);
-    } finally {
-      if (!state._offlineSettleJob) {
-        state.settlingOffline = false;
-        state.dirty = true;
-      }
-    }
-  }
-
-  function afterPaint() {
-    if (typeof setTimeout === 'function') {
-      setTimeout(runSettleSlice, 0);
-    } else {
-      runSettleSlice();
-    }
-  }
-  if (typeof requestAnimationFrame === 'function') {
-    requestAnimationFrame(function () {
-      requestAnimationFrame(afterPaint);
-    });
-  } else {
-    afterPaint();
-  }
-}
-
-function persistSafely(now) {
-  try {
-    return persistCurrentModel(now) === true;
-  } catch (error) {
-    return false;
-  }
-}
 
 function commandResult(ok, code, changed, message, data) {
   return Object.freeze({
@@ -2980,301 +1231,51 @@ function safeInputFields(input, fields) {
   }
 }
 
-function commitModel(mutator, nowMs, recovery, options) {
-  if (persistenceRecovery.isLocked()) {
-    return commandResult(
-      false,
-      'persistence_locked',
-      false,
-      persistenceRecovery.message(),
-      null
-    );
-  }
-  const now = Number.isFinite(Number(nowMs))
-    ? Math.max(0, Math.floor(Number(nowMs)))
-    : Date.now();
-  const rawThrough = Number.isFinite(state.processedThroughMs)
-    ? state.processedThroughMs
-    : now;
-  // 与离线启动同一套消毒：水位线 0/损坏/过旧时，禁止在线 settle 从纪元初扣光寿元。
-  const settleFrom = sanitizeTimeCursorMs(rawThrough, now, now);
-  if (rawThrough !== settleFrom) {
-    state.processedThroughMs = settleFrom;
-  }
-  // 成熟闲置热路径：命令只深拷贝 runtime，不在点击时 Stage4 全量 normalize。
-  const base = typeof StateModel.captureRuntime === 'function'
-    ? StateModel.captureRuntime(state /* runtime */, settleFrom)
-    : StateModel.fromRuntime(state /* runtime */, settleFrom);
-  base.processedThroughMs = settleFrom;
-  let candidate = base;
-  let settledToTimestamp = false;
-  if (options &&
-      options.settleToTimestamp === true &&
-      now > settleFrom) {
-    candidate = simulateModel(
-      base,
-      settleFrom,
-      now,
-      'online',
-      null
-    ).state;
-    settledToTimestamp = true;
-  }
-  const result = typeof mutator === 'function'
-    ? mutator(candidate)
-    : null;
-  // 未发生补算时，失败命令直接返回；若已 settle，必须落盘补算结果，不能丢弃时间推进。
-  if (result &&
-      result.ok === false &&
-      result.changed === false &&
-      !settledToTimestamp) {
-    return result;
-  }
-  if (result && result.changed === false && !settledToTimestamp) {
-    return result;
-  }
-
-  let saved = null;
-  try {
-    saved = persistModel(candidate, now);
-  } catch (error) {
-    saved = null;
-  }
-  if (!saved) {
-    const descriptor = recovery || {};
-    persistenceRecovery.hold({
-      kind: descriptor.kind || 'save',
-      message: descriptor.message || '存档失败，请重试',
-      successMessage: descriptor.successMessage || '',
-      onSuccess: descriptor.onSuccess || '',
-      candidate,
-      now,
-      success: result && result.data || null
-    });
-    return commandResult(false, 'save_failed', false, '存档失败，请重试', {
-      retryable: true
-    });
-  }
-  applyModelToRuntime(saved, { trustedSimulation: true });
-  const newStatus = saved.player && saved.player.lifecycle
-    ? saved.player.lifecycle.status
-    : null;
-  if (settledToTimestamp &&
-      newStatus === 'safety_buffer' &&
-      !state.showLifespanBuffer) {
-    state.showLifespanBuffer = true;
-  }
-  if (result && result.ok === false) return result;
-  if (result && result.changed === false) return result;
-  return commandResult(
-    true,
-    'ok',
-    true,
-    result && result.message || null,
-    result && result.data || null
-  );
-}
-
-function acknowledgeOffline(reportIds) {
-  if (isPersistenceLocked()) {
-    return commandResult(false, 'persistence_locked', false, null, null);
-  }
-  const model = typeof StateModel.captureRuntime === 'function'
-    ? StateModel.captureRuntime(
-      state /* runtime */,
-      state.processedThroughMs
-    )
-    : StateModel.fromRuntime(
-      state /* runtime */,
-      state.processedThroughMs
-    );
-  const ids = new Set(reportIds || []);
-  const selected = model.pendingOfflineReports.filter(function (report) {
-    return ids.has(report.id);
-  });
-  if (!selected.length) {
-    return commandResult(true, 'no_change', false, null, null);
-  }
-
-  // 不在领取时额外 Stage4.normalize；落盘 toSnapshotInput 会做边界规范化。
-  const candidate = model;
-  candidate.reportArchive = SimulationReport.archive(
-    model.reportArchive,
-    selected,
-    50
-  );
-  candidate.pendingOfflineReports = model.pendingOfflineReports.filter(
-    function (report) {
-      return !ids.has(report.id);
-    }
-  );
-  const saveAt = candidate.processedThroughMs;
-  const saved = persistModel(candidate, saveAt);
-  if (!saved) {
-    persistenceRecovery.hold({
-      kind: 'closeOffline',
-      message: '保存失败，离线收益仍待领取',
-      successMessage: '离线收益已领取',
-      now: saveAt,
-      candidate
-    });
-    return commandResult(false, 'save_failed', false, null, null);
-  }
-  applyModelToRuntime(saved, { trustedSimulation: true });
-  return commandResult(true, 'acknowledged', true, null, {
-    reportIds: selected.map(function (report) { return report.id; })
-  });
-}
-
-function closeOffline() {
-  const model = typeof StateModel.captureRuntime === 'function'
-    ? StateModel.captureRuntime(
-      state /* runtime */,
-      state.processedThroughMs
-    )
-    : StateModel.fromRuntime(
-      state /* runtime */,
-      state.processedThroughMs
-    );
-  return acknowledgeOffline(
-    model.pendingOfflineReports.map(function (report) { return report.id; })
-  ).ok;
-}
-
-function retryPersistence() {
-  if (state._persistenceIssue &&
-      state._persistenceIssue.kind === 'future') {
-    return false;
-  }
-  return persistenceRecovery.retry();
-}
-
 // 常驻顶部状态栏 — 全屏顶层栏（§10 ① 三段式之一）
 // 横跨整个屏幕宽度（x=0, w=W），在左侧导航之上绘制，属于最高层 UI
 // 标准手游 HUD：[独立头像列] ‖ [上行:名字+资源] / [下行:境界标签+经验条+突破]
 // HUD 内容区固定高度（与 safeTop 无关），整体下移 safeTop 避让刘海
-const HUD_H = 72;
-const HUD_CONTENT_Y = () => safeTop;
-
-
 
 // 7. 游戏主界面内容区（洞府首页 / 其他占位）
-
 
 // 洞府首页：境界信息 + 快捷入口（§5 / §10⑤）
 // 动作进度条已移到对应技艺页的行为卡上（梅尔沃式），洞府不再显示
 // 立绘已移入顶栏左侧小头像，主内容区不再显示大图
 
-
 // 突破内容（§5 界面）：境界 + 寿元条 + 修为条 + 突破条件/概率清单 + 大突破按钮
 // bottomLimit：内容底限 Y（弹窗模式下传面板底边，避免按钮溢出）
 
-
 // 突破弹窗（替代独立『突破』页签）：点顶栏突破按钮弹出，半透明遮罩 + 居中面板
-
 
 // 轮回结算页（寿元耗尽）：全屏覆盖，点「入轮回」重开（保留外观）
 
-
 // 入轮回：重置角色档案（修为/境界/资源/寿元回初始），保留外观
-function enterLunhui() {
-  if (isPersistenceLocked()) return false;
-  const checkpoint = {
-    player: cloneRuntimeState(state.player),
-    current: cloneRuntimeState(state.current),
-    showLunhui: state.showLunhui,
-    navIndex: state.navIndex,
-    world: cloneRuntimeState(
-      state.systems && state.systems.world ? state.systems.world : null
-    )
-  };
-  state.player = defaultPlayer();
-  state.current = null;
-  state.showLunhui = false;
-  state.navIndex = NAV_HOME;
-  if (stage5Bootstrap && stage5Bootstrap.LegacyTransition &&
-      typeof stage5Bootstrap.LegacyTransition.clearPreviousLifeChronicle ===
-        'function') {
-    stage5Bootstrap.LegacyTransition.clearPreviousLifeChronicle(state);
-  } else if (state.systems && state.systems.world) {
-    state.systems.world.worldEvents = [];
-    state.systems.world.nextWorldEventId = 1;
-  }
-  if (!persistSafely()) {
-    state.player = checkpoint.player;
-    state.current = checkpoint.current;
-    state.showLunhui = checkpoint.showLunhui;
-    state.navIndex = checkpoint.navIndex;
-    if (checkpoint.world && state.systems) {
-      state.systems.world = checkpoint.world;
-    }
-    setPersistenceIssue({ kind: 'save', message: '轮回结果保存失败，请重试' });
-    return false;
-  }
-  toast('入轮回，重生于练气一层');
-  return true;
-}
 
 // 技艺页（梅尔沃式：标题 + 等级 + XP 条 + 描述 + 动作卡片网格）
 // 梅尔沃式行为卡：图标 + 名称 + 等级/耗时/经验 + 产出消耗 + 进行中进度条
 
-
-
-
 // 采集系竖向卡片（探索 / 资源点 / 钓点），与截图 UI 排版保持一致
-
 
 // ── 内容区滚动辅助 ──
 // 进入可滚动区块：裁剪到可视区、夹取偏移，返回当前偏移量（设计坐标 px）。
 // 调用方用 drawY = baseY - offset 摆放卡片并注册点击区，使点击坐标与视觉一致。
-function beginScroll(x, top, w, bottom, contentH) {
-  const visH = bottom - top;
-  contentMaxScroll = Math.max(0, contentH - visH);
-  if (contentScroll < 0) contentScroll = 0;
-  if (contentScroll > contentMaxScroll) contentScroll = contentMaxScroll;
-  contentArea = { top: top, bottom: bottom, x: x, w: w };
-  inScrollRegion = true;
-  ctx.save();
-  ctx.beginPath(); ctx.rect(x, top, w, visH); ctx.clip();
-  return contentScroll;
-}
-function endScroll() { inScrollRegion = false; ctx.restore(); }
-// 上/下「还有更多」淡紫提示箭头
 
+// 上/下「还有更多」淡紫提示箭头
 
 // 采集系技艺页（采矿/伐木/钓鱼/采药）：竖向卡片网格
 
-
 // 储物袋页（资源网格）
 
-
 // 离线收益结算面板（全屏覆盖）
-function fmtDur(sec) {
-  sec = Math.floor(sec); const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
-  if (h > 0) return h + ' 小时 ' + m + ' 分';
-  return m + ' 分 ' + (sec % 60) + ' 秒';
-}
 
 // 创建 / 编辑角色界面（全屏，无左侧导航；所有部位选择器同页铺开）
-
-
-
-
-
 
 // 用 Canvas 直接画实心三角箭头（不依赖字体字形 → 真机不会乱码）
 // dir: 'left' 尖朝左 / 'right' 尖朝右；half=垂直半高
 
-
 // 全部部位选择器同页铺开：左侧类型名 + 左右三角箭头切换（整体水平居中，手机触摸友好）
 
-
-
-
 // 通用占位页：标题卡（对齐洞府境界卡）+ 居中空状态提示（事件/商城等先用）
-
-
-
 
 // 8. 轻量 toast + 右下角收益飘字
 let toastMsg = '', toastUntil = 0;
@@ -3402,115 +1403,19 @@ function publishGainTipsFromReport(report) {
   }
 }
 
-
-function onlineAdvanceMinMs() {
-  // 在线推进已走 mutateInPlace；仍不必跟 rAF 60Hz 对齐。
-  // 战斗稍密，其余约 12Hz 足够。
-  const key = state.current && state.current.key;
-  if (typeof key === 'string' && key.indexOf('combat:') === 0) return 33;
-  return 80;
-}
-
-function advanceVisibleTo(nowMs) {
-  if (isPersistenceLocked() || state._hiddenAt != null) return false;
-  const now = Math.max(0, Math.floor(Number(nowMs) || 0));
-  if (state._last == null) state._last = now;
-  if (now < state._last) {
-    state._last = now;
-    return true;
-  }
-  if (now - state._last < onlineAdvanceMinMs()) return true;
-  advanceGameplay(state._last, now, 'online', null);
-  state._last = now;
-  return true;
-}
-
-function runRuntimeFrame(nowMs) {
-  const now = Math.max(0, Math.floor(Number(nowMs) || 0));
-  if (!advanceVisibleTo(now)) return false;
-  if (now >= state._nextAutosaveAt) {
-    state._nextAutosaveAt = now + 30000;
-    if (!persistCurrentModel(now)) return false;
-  }
-  return true;
-}
-
 // 后台定时器句柄：标签页最小化 / App 切后台时，浏览器会暂停 requestAnimationFrame，
 // 主循环不再推进 → 游戏时钟冻结 → 重伤恢复倒计时等「实时减益 / 冷却」会卡住不动。
 // 这里挂一个粗粒度（1s）后台定时器，按真实墙钟时间持续推进游戏时钟，
 // 让重伤恢复等实时状态在最小化期间照常生效。
 // 离线收益弹窗仍只在「完全重新加载页面」时触发（settleStartupOffline），
 // 后台期间推进的 processedThroughMs 会随自动存档落盘，重载时离线区间自然变小，不会重复结算。
-let hiddenTicker = null;
-function startHiddenTicker() {
-  if (hiddenTicker != null) return;
-  if (typeof setInterval !== 'function') return;
-  hiddenTicker = setInterval(function () { advanceHidden(Date.now()); }, 1000);
-}
-function stopHiddenTicker() {
-  if (hiddenTicker != null) {
-    if (typeof clearInterval === 'function') clearInterval(hiddenTicker);
-    hiddenTicker = null;
-  }
-}
+
 // 后台持续推动游戏时钟：跳过 _hiddenAt 守卫，直接走 advanceGameplay，
 // 让模拟管线（含 injuryRecoveryLane）按真实经过时间推进。
-function advanceHidden(nowMs) {
-  if (isPersistenceLocked() || state._hiddenAt == null) return;
-  const now = Math.max(0, Math.floor(Number(nowMs) || 0));
-  if (state._last == null) state._last = now;
-  if (now > state._last) {
-    advanceGameplay(state._last, now, 'online', null);
-    state._last = now;
-  }
-  if (now >= state._nextAutosaveAt) {
-    state._nextAutosaveAt = now + 30000;
-    persistCurrentModel(now);
-  }
-}
-
-function handleVisibilityChange(hidden, nowMs) {
-  const now = Math.max(0, Math.floor(Number(nowMs) || 0));
-  if (isPersistenceLocked()) return false;
-  if (hidden) {
-    if (state._hiddenAt != null) return true;
-    if (!advanceVisibleTo(now)) return false;
-    state._hiddenAt = now;
-    state._last = now;
-    if (!persistCurrentModel(now)) return false;
-    startHiddenTicker();
-    return true;
-  }
-
-  // 由后台回到前台：停止后台定时器；若后台定时器被系统杀掉，补算隐藏期间，
-  // 再把运行交还给 rAF 主循环（用同一套水位线消毒，避免一次扣光寿元）。
-  stopHiddenTicker();
-  state._hiddenAt = null;
-  const through = Number.isFinite(state.processedThroughMs)
-    ? state.processedThroughMs
-    : now;
-  if (now > through) {
-    advanceGameplay(through, now, 'online', null);
-  }
-  state._last = now;
-  state._nextAutosaveAt = now + 30000;
-  return true;
-}
-
-function flushLifecycle(nowMs) {
-  if (isPersistenceLocked()) return false;
-  if (state._hiddenAt != null) return true;
-  const now = Math.max(0, Math.floor(Number(nowMs) || 0));
-  if (!advanceVisibleTo(now)) return false;
-  return persistCurrentModel(now);
-}
 
 // 9. 主循环（rAF，无死循环）
-let fps = 0, frames = 0, fpsT = 0;
 function render() {
-  // 帧率统计
-  const now = Date.now(); frames++;
-  if (now - fpsT > 1000) { fps = Math.round(frames * 1000 / (now - fpsT)); frames = 0; fpsT = now; }
+  const now = Date.now();
   const frameStarted = PerfStats.enabled ? now : 0;
 
   // 主循环防护：任何一帧（引擎/合成/UI）抛异常都绝不允许中断 requestAnimationFrame，
@@ -3532,7 +1437,6 @@ function render() {
 
   try {
     if (state.dirty) composite();        // 仅变化时合成一次
-    regions = [];
     // 游戏态 UI 已全屏盖住主 canvas（立绘在头像小画布），跳过每帧清屏填天空。
     if (!(uiDriven && gamePhase)) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -3576,145 +1480,8 @@ function render() {
 }
 
 // 10. 交互逻辑
-let regions = [];
-let touchStartPt = null, touchMoved = false;
-let navDragStart = null;          // 导航拖动起点（在导航区按下时记录）
 
-Platform.onTouchStart((res) => {
-  const t = res.touches[0]; if (!t) return;
-  console.log('[touchStart]', t.clientX, t.clientY, 'touches=', res.touches.length);
-  const v = Platform.view;
-  const lx = (t.clientX - v.offsetX) / v.scale, ly = (t.clientY - v.offsetY) / v.scale; // 原始屏坐标 → 设计坐标(420×820)
-  touchStartPt = { x: lx, y: ly };
-  touchMoved = false;
-  // 按在左侧导航区（x<78 且 y>70）→ 准备拖动导航
-  if (lx < 78 && ly > 70) { navDragStart = { y: ly, scroll: navScroll }; }
-  // 按在右侧内容区且当前页可滚动 → 准备拖动内容列表
-  else if (contentMaxScroll > 0 && lx >= contentArea.x && lx <= contentArea.x + contentArea.w
-           && ly > contentArea.top && ly < contentArea.bottom) {
-    contentDragStart = { y: ly, scroll: contentScroll };
-  }
-});
-
-Platform.onTouchMove((res) => {
-  const t = res.touches[0]; if (!t || !touchStartPt) return;
-  const v = Platform.view;
-  const ly = (t.clientY - v.offsetY) / v.scale;                       // 设计坐标
-  if (Math.abs(ly - touchStartPt.y) > 6) touchMoved = true;
-  // 导航拖动：上下拖 → 列表跟着滚
-  if (navDragStart) {
-    navScroll = navDragStart.scroll + (navDragStart.y - ly);
-  }
-  // 内容区拖动：上下拖 → 卡片列表跟着滚
-  else if (contentDragStart) {
-    contentScroll = contentDragStart.scroll + (contentDragStart.y - ly);
-  }
-});
-
-Platform.onTouchEnd((res) => {
-  const t = res.changedTouches[0] || res.touches[0];
-  if (!t || !touchStartPt) return;
-  console.log('[touchEnd]', t.clientX, t.clientY, 'moved=', touchMoved);
-  const v = Platform.view;
-  const lx = (t.clientX - v.offsetX) / v.scale, ly = (t.clientY - v.offsetY) / v.scale;   // 设计坐标
-  if (!touchMoved) handleTap(lx, ly);
-  touchStartPt = null;
-  navDragStart = null;
-  contentDragStart = null;
-});
-
-function handleTap(px, py) {
-  console.log('[handleTap]', px, py, 'regions=', regions.length);
-  for (const r of regions) {
-    if (px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h) {
-      console.log('[HIT]', r.name, 'rect=', r);
-      onHit(r.name); return;
-    }
-  }
-  console.log('[MISS] no region matched at', px, py);
-}
-
-function onHit(name) {
-  if (name === 'btn_break') { state.showBreak = true; return; }                 // 顶栏突破按钮 → 弹出突破弹窗（替代独立页签）
-  if (name === 'btn_break_close') { state.showBreak = false; return; }          // 弹窗关闭（×）
-  if (name === 'btn_break_confirm') { if (tryBreakthrough()) state.showBreak = false; return; }  // 执行突破并关闭弹窗
-  if (name === 'btn_lunhui') { enterLunhui(); return; }                         // 轮回页 → 重开
-  if (name.indexOf('res_') === 0) { const k = name.slice(4); const p = ensurePlayer(state.player); toast(k + '：' + (p[k] || 0)); return; }
-  if (name.indexOf('act_') === 0) { setCurrent(name.slice(4)); return; }
-  // 采集系：探索按钮
-  if (name.indexOf('gather_explore_') === 0) {
-    const skill = name.slice('gather_explore_'.length);
-    setCurrent('gather:explore:' + skill);
-    return;
-  }
-  // 采集系：条目卡片（gather_<skill>_<entryId>）
-  if (name.indexOf('gather_') === 0) {
-    const rest = name.slice('gather_'.length);
-    const skill = rest.split('_')[0];
-    const entryId = rest.slice(skill.length + 1);
-    setCurrent('gather:' + skill + ':' + entryId);
-    return;
-  }
-  if (name === 'close_offline') { closeOffline(); return; }
-  if (name === 'rand') { randomize(); return; }
-  if (name === 'confirm_create') { confirmCreate(); return; }
-  if (name === 'save_back') { commitAppearanceEdit(); return; }
-  if (name.indexOf('sel_prev_') === 0) { stepPart(name.slice(9), -1); return; }
-  if (name.indexOf('sel_next_') === 0) { stepPart(name.slice(9), 1); return; }
-  if (name.indexOf('nav_') === 0) {
-    const i = parseInt(name.slice(4), 10);
-    if (NAV[i] === '设置') { state.phase = 'edit'; state.dirty = true; }  // 设置页 → 编辑形象
-    else { state.navIndex = i; contentScroll = 0; }                       // 切页重置内容滚动偏移
-    return;
-  }
-}
-
-// 序号步进：按传入部件类别，±1 调整序号（到头循环）
-function stepPart(cat, d) {
-  if (isPersistenceLocked()) return false;
-  if (cat === 'hair_style') {
-    if (!HairRules) return false;
-    const next = HairRules.stepStyle(state.gender, state.parts, d);
-    state.parts.hair_hou = next.hair_hou;
-    state.parts.hair_qian = next.hair_qian;
-    state.dirty = true;
-    return true;
-  }
-  if (cat === 'hair_hou' || cat === 'hair_qian') {
-    return stepPart('hair_style', d);
-  }
-  const list = NIE[state.gender][cat];
-  if (!Array.isArray(list)) return false;
-  const n = list.length;
-  if (n <= 0) return false;
-  let i = state.parts[cat] + d;
-  if (i < 0) i = n - 1;
-  if (i >= n) i = 0;
-  state.parts[cat] = i;
-  state.dirty = true;
-  return true;
-}
-function randomize() {
-  if (isPersistenceLocked()) return false;
-  for (const c of CATS) {
-    if (c === 'hair_hou' || c === 'hair_qian') continue;
-    const list = NIE[state.gender][c];
-    const n = Array.isArray(list) ? list.length : 0;
-    state.parts[c] = n > 0 ? Math.floor(gameRandom() * n) : 0;
-  }
-  if (HairRules) {
-    const styled = HairRules.applyStyleIndex(
-      state.gender,
-      state.parts,
-      HairRules.randomStyleIndex(state.gender, Math.floor(gameRandom() * 1e9))
-    );
-    state.parts.hair_hou = styled.hair_hou;
-    state.parts.hair_qian = styled.hair_qian;
-  }
-  state.dirty = true;
-  return true;
-}
-function save() {
+const save = function save() {
   if (isPersistenceLocked()) return false;
   if (!persistSafely()) {
     setPersistenceIssue({
@@ -3726,180 +1493,155 @@ function save() {
   }
   toast('已保存');
   return true;
-}
-
-function commitAppearanceEdit() {
-  if (isPersistenceLocked()) return false;
-  if (!persistSafely()) {
-    setPersistenceIssue({
-      kind: 'save',
-      message: '形象保存失败，请重试',
-      successMessage: '形象已更新',
-      onSuccess: 'appearance'
-    });
-    return false;
-  }
-  state.phase = 'game';
-  state.navIndex = NAV_HOME;
-  state.dirty = true;
-  toast('形象已更新');
-  return true;
-}
+};
 
 // 首次创建角色：落档外观 + 创建标记 + 角色档案，然后进入主游戏
-function confirmCreate() {
-  if (isPersistenceLocked()) return false;
-  const player = defaultPlayer();
-  state.player = player;
-  state.created = true;
-  state.phase = 'game';
-  state.navIndex = NAV_HOME;
-  state.dirty = true;
-  if (typeof LazyContent !== 'undefined' && LazyContent) {
-    if (typeof LazyContent.ensureUiPages === 'function') {
-      LazyContent.ensureUiPages().catch(function () { /* ignore */ });
-    }
-    if (typeof LazyContent.ensureGameStyles === 'function') {
-      LazyContent.ensureGameStyles().catch(function () { /* ignore */ });
-    }
-  }
-  if (!persistSafely()) {
-    setPersistenceIssue({
-      kind: 'save',
-      message: '角色创建保存失败，请重试',
-      successMessage: '角色创建成功，开始修行'
-    });
-    return false;
-  }
-  toast('角色创建成功，开始修行');
-  return true;
-}
 
 // 11. 启动（屏幕适配由 platform.js 统一管理：宽度优先 + 动态高度）
 //    Platform.view.scale / logicalH / offsetX / offsetY 由 resize() 自动计算。
 //    此处只读 Platform.view 拿参数，并执行读档/状态初始化。
 const DW = 420, DH = 820;
-Platform.getSystemInfoAsync({
-  success(res) {
-    var v = Platform.view;
-    dpr = v.dpr || res.pixelRatio || 1;
-    safeTop = v.safeTop || (res.safeArea ? res.safeArea.top : 0);
-    S = v.scale || 1;                        // 等比缩放（platform.js 已算好）
-    W = DW; H = v.logicalH || DH;            // 逻辑宽度固定 420，高度随屏幕动态
-    scale = 1;                               // 字体由 transform 缩放，不双重缩放
+const bootGame = function bootGame() {
+  Platform.getSystemInfoAsync({
+    success(res) {
+      var v = Platform.view;
+      dpr = v.dpr || res.pixelRatio || 1;
+      safeTop = v.safeTop || (res.safeArea ? res.safeArea.top : 0);
+      S = v.scale || 1;                        // 等比缩放（platform.js 已算好）
+      W = DW; H = v.logicalH || DH;            // 逻辑宽度固定 420，高度随屏幕动态
+      scale = 1;                               // 字体由 transform 缩放，不双重缩放
 
-    function beginStartupAfterContent() {
-      // VM harnesses drive models themselves; applying an empty save would wipe them.
-      if (runtimeRoot && runtimeRoot.__GAME_TEST_HARNESS_REQUEST__ === true) {
-        return;
-      }
-      try {
-        const now = Date.now();
-        const loaded = SaveSystem.load(Platform, now);
-        const save = loaded.snapshot;
-        const combatWarm = snapshotNeedsCombatRuntime(save) &&
-          typeof LazyContent !== 'undefined' &&
-          LazyContent &&
-          typeof LazyContent.ensureCombatRuntime === 'function'
-          ? LazyContent.ensureCombatRuntime()
-          : Promise.resolve();
-        combatWarm.then(function () {
-          finishStartupWithSave(loaded, now);
-        }, function () {
-          finishStartupWithSave(loaded, now);
-        });
-      } catch (error) {
-        // Harnesses without full Stage4/Save topology still boot game.js.
-        if (typeof console !== 'undefined' && console.warn) {
-          console.warn('[startup] skipped:', error && error.message);
-        }
+      let startupRenderStarted = false;
+      function startStartupRender() {
+        if (startupRenderStarted) return;
+        startupRenderStarted = true;
         requestAnimationFrame(render);
       }
-    }
-
-    function finishStartupWithSave(loaded, now) {
-      const save = loaded.snapshot;
-      const model = normalizeStartupModel(save, now);
-      applyModelToRuntime(model);
-      const playerModel = model.player
-        ? cloneRuntimeState(model.player)
-        : null;
-      if (playerModel &&
-          save.player &&
-          !Object.prototype.hasOwnProperty.call(save.player, 'shouyuan')) {
-        delete playerModel.shouyuan;
-      }
-      if (playerModel &&
-          save.player &&
-          !Object.prototype.hasOwnProperty.call(save.player, 'shouMax')) {
-        delete playerModel.shouMax;
-      }
-      state.player = playerModel ? ensurePlayer(playerModel) : null;
-      state.phase = state.created && state.player ? 'game' : 'create';
-      state.navIndex = NAV_HOME;
-      state.gender = 'g';   // 玩家角色恒为女性；男性仅供 NPC 自动生成
-
-      if (loaded.writeProtected) {
+      function holdStartupContent(error) {
         state._persistenceIssue = {
-          kind: 'future',
-          message: '存档版本高于当前游戏，已进入只读保护',
-          error: 'future-schema',
-          canRetry: false
+          kind: 'content', message: '游戏数据加载失败，请检查网络后重试',
+          error: String(error && error.message || error), canRetry: true
         };
-      } else if (loaded.needsRepair) {
-        if (!persistModel(model, save.savedAt)) {
-          persistenceRecovery.hold({
-            kind: 'repair',
-            message: '存档修复保存失败，请重试',
-            savedAt: save.savedAt,
-            now,
-            candidate: model,
-            resumeStartupAt: now
-          });
+        state._startupRetry = beginStartupContent;
+        startStartupRender();
+      }
+      function beginStartupAfterContent() {
+        try {
+          refreshStage3CombatRuntime();
+          const now = Date.now();
+          const loaded = SaveSystem.load(Platform, now);
+          if (snapshotNeedsCombatRuntime(loaded.snapshot) &&
+              typeof LazyContent !== 'undefined' && LazyContent &&
+              typeof LazyContent.ensureCombatRuntime === 'function') {
+            LazyContent.ensureCombatRuntime().then(function () {
+              finishStartupWithSave(loaded, now);
+            }, holdStartupContent);
+          } else {
+            finishStartupWithSave(loaded, now);
+          }
+        } catch (error) {
+          holdStartupContent(error);
+        }
+      }
+      function beginStartupContent() {
+        // Only the explicit Node harness drives its own model and clock.
+        if (runtimeRoot && runtimeRoot.window !== runtimeRoot &&
+            runtimeRoot.__GAME_TEST_HARNESS_REQUEST__ === true) return;
+        state._persistenceIssue = {
+          kind: 'content', message: '正在加载游戏数据…', canRetry: false
+        };
+        state._startupRetry = null;
+        const ready = typeof LazyContent !== 'undefined' && LazyContent &&
+          typeof LazyContent.ensureHerblore === 'function'
+          ? LazyContent.ensureHerblore() : null;
+        if (ready) ready.then(beginStartupAfterContent, holdStartupContent);
+        else beginStartupAfterContent();
+      }
+
+      function finishStartupWithSave(loaded, now) {
+        state._startupRetry = null;
+        if (state._persistenceIssue && state._persistenceIssue.kind === 'content') {
+          state._persistenceIssue = null;
+        }
+        const save = loaded.snapshot;
+        const model = normalizeStartupModel(save, now);
+        applyModelToRuntime(model);
+        const playerModel = model.player
+          ? cloneRuntimeState(model.player)
+          : null;
+        if (playerModel &&
+            save.player &&
+            !Object.prototype.hasOwnProperty.call(save.player, 'shouyuan')) {
+          delete playerModel.shouyuan;
+        }
+        if (playerModel &&
+            save.player &&
+            !Object.prototype.hasOwnProperty.call(save.player, 'shouMax')) {
+          delete playerModel.shouMax;
+        }
+        state.player = playerModel ? ensurePlayer(playerModel) : null;
+        state.phase = state.created && state.player ? 'game' : 'create';
+        state.navIndex = NAV_HOME;
+        state.gender = 'g';   // 玩家角色恒为女性；男性仅供 NPC 自动生成
+
+        if (loaded.writeProtected) {
+          state._persistenceIssue = {
+            kind: 'future',
+            message: '存档版本高于当前游戏，已进入只读保护',
+            error: 'future-schema',
+            canRetry: false
+          };
+        } else if (loaded.needsRepair) {
+          if (!persistModel(model, save.savedAt)) {
+            persistenceRecovery.hold({
+              kind: 'repair',
+              message: '存档修复保存失败，请重试',
+              savedAt: save.savedAt,
+              now,
+              candidate: model,
+              resumeStartupAt: now
+            });
+          } else {
+            scheduleStartupOfflineSettle(
+              SaveSystem.load(Platform, now).snapshot,
+              now
+            );
+          }
         } else {
-          scheduleStartupOfflineSettle(
-            SaveSystem.load(Platform, now).snapshot,
-            now
-          );
+          scheduleStartupOfflineSettle(save, now);
         }
-      } else {
-        scheduleStartupOfflineSettle(save, now);
+
+        state._last = now;
+        state._hiddenAt = null;
+        state._nextAutosaveAt = now + 30000;
+        window.addEventListener('pagehide', () => flushLifecycle(Date.now()));
+        window.addEventListener('beforeunload', () => flushLifecycle(Date.now()));
+        document.addEventListener('visibilitychange', () => {
+          handleVisibilityChange(!!document.hidden, Date.now());
+        });
+        state.dirty = true;
+        // 折中态：仅预创建广告对象（mock 环境下为本地假广告），不展示、不发奖。
+        // 任何环节缺失都不报错，绝不影响主流程。
+        if (window.AdManager && window.AdManager.init) {
+          try { window.AdManager.init(); } catch (e) { /* 广告桥接异常不阻塞游戏 */ }
+        }
+        // 已有存档进游戏：后台预取导航页 UI / 游戏样式，与首帧并行。
+        if (state.phase === 'game' &&
+            typeof LazyContent !== 'undefined' && LazyContent) {
+          if (typeof LazyContent.ensureUiPages === 'function') {
+            LazyContent.ensureUiPages().catch(function () { /* 页模块失败不阻塞启动 */ });
+          }
+          if (typeof LazyContent.ensureGameStyles === 'function') {
+            LazyContent.ensureGameStyles().catch(function () { /* 样式失败不阻塞启动 */ });
+          }
+        }
+        startStartupRender();
       }
 
-      state._last = now;
-      state._hiddenAt = null;
-      state._nextAutosaveAt = now + 30000;
-      window.addEventListener('pagehide', () => flushLifecycle(Date.now()));
-      window.addEventListener('beforeunload', () => flushLifecycle(Date.now()));
-      document.addEventListener('visibilitychange', () => {
-        handleVisibilityChange(!!document.hidden, Date.now());
-      });
-      state.dirty = true;
-      // 折中态：仅预创建广告对象（mock 环境下为本地假广告），不展示、不发奖。
-      // 任何环节缺失都不报错，绝不影响主流程。
-      if (window.AdManager && window.AdManager.init) {
-        try { window.AdManager.init(); } catch (e) { /* 广告桥接异常不阻塞游戏 */ }
-      }
-      // 已有存档进游戏：后台预取导航页 UI / 游戏样式，与首帧并行。
-      if (state.phase === 'game' &&
-          typeof LazyContent !== 'undefined' && LazyContent) {
-        if (typeof LazyContent.ensureUiPages === 'function') {
-          LazyContent.ensureUiPages().catch(function () { /* 页模块失败不阻塞启动 */ });
-        }
-        if (typeof LazyContent.ensureGameStyles === 'function') {
-          LazyContent.ensureGameStyles().catch(function () { /* 样式失败不阻塞启动 */ });
-        }
-      }
-      requestAnimationFrame(render);
+      beginStartupContent();
     }
-
-    const herbloreReady = (typeof LazyContent !== 'undefined' &&
-      LazyContent && typeof LazyContent.ensureHerblore === 'function')
-      ? LazyContent.ensureHerblore()
-      : Promise.resolve();
-    herbloreReady.then(beginStartupAfterContent, beginStartupAfterContent);
-  }
-});
+  });
+};
 
 // ── 暴露给 ui.js（DOM 界面控制器）的接口 ──
 // 集中一处，避免 UI 层散写游戏内部变量。UI 只通过 GameAPI 调游戏逻辑。
@@ -3913,7 +1655,7 @@ function getTopInfo() {
   const st = p.realmStage || 0;
   const cur = REALM_TABLE[st] || REALM_TABLE[0];
   let calendarLabel = '';
-  if (useStage4Runtime && stage4Bootstrap && stage4Bootstrap.WorldMonth &&
+  if (stage4Bootstrap && stage4Bootstrap.WorldMonth &&
       typeof stage4Bootstrap.WorldMonth.calendarLabel === 'function' &&
       typeof stage4Bootstrap.WorldMonth.ensureCalendar === 'function') {
     try {
@@ -3979,14 +1721,14 @@ function getHomeInfo() {
     } else {
       // 非战斗：stage2 模式走运行时实时取时长；非 stage2 回退旧 ACTIONS 表。
       let duration = 0;
-      if (useStage2Runtime) {
+      {
         duration = stage2RuntimeActionDuration(stage2QueryModel(), cur.key);
       }
       if (!duration &&
           typeof ACTIONS !== 'undefined' && ACTIONS[cur.key] && ACTIONS[cur.key].time) {
         duration = ACTIONS[cur.key].time;
       }
-      const elapsed = useStage2Runtime ? stage2Elapsed(cur) : (cur.elapsed || 0);
+      const elapsed = stage2Elapsed(cur);
       if (duration > 0) progress = Math.min(1, elapsed / duration);
     }
   }
@@ -4002,7 +1744,7 @@ function getHomeInfo() {
             cur.key,
             null,
             null,
-            useStage2Runtime ? stage2QueryModel : null
+            stage2QueryModel
           ),
           stalled: !!cur.stalled,
           progress: progress,
@@ -4013,28 +1755,6 @@ function getHomeInfo() {
 }
 
 // 储物袋：固定资源 + 采集系细粒度物品（数量>0 才显示）
-function getInventoryList() {
-  const p = getPlayer();
-  const stacks = p.inventory.stacks;
-  const list = [
-    { k: 'xiwei', n: '修为', v: p.xiwei }, { k: 'jingqi', n: '精气', v: p.jingqi },
-    { k: 'lingshi', n: '灵石', v: p.lingshi }, { k: 'shengwang', n: '声望', v: p.shengwang },
-    { k: 'yaocai', n: '药材', v: stacks.yaocai || 0 }, { k: 'lingkuang', n: '灵矿', v: stacks.lingkuang || 0 },
-    { k: 'muliao', n: '木料', v: stacks.muliao || 0 }, { k: 'shicai', n: '食材', v: stacks.shicai || 0 },
-    { k: 'caiqing', n: '才情', v: stacks.caiqing || 0 }, { k: 'faqi', n: '法器', v: stacks.faqi || 0 },
-    { k: 'hujia', n: '护甲', v: stacks.hujia || 0 }, { k: 'shanshi', n: '膳食', v: stacks.shanshi || 0 },
-    { k: 'fu', n: '符箓', v: stacks.fu || 0 }, { k: 'tupo', n: '筑基丹', v: stacks.tupo || 0 },
-    { k: 'heal', n: '疗伤丹', v: stacks.heal || 0 }, { k: 'jindan', n: '金丹丹', v: stacks.jindan || 0 },
-    { k: 'yuanying', n: '元婴丹', v: stacks.yuanying || 0 }, { k: 'huashen', n: '化神丹', v: stacks.huashen || 0 }
-  ];
-  const fixed = new Set(list.map(entry => entry.k));
-  for (const item in stacks) {
-    if (!fixed.has(item) && stacks[item] > 0) {
-      list.push({ k: item, n: ITEM_NAMES[item] || item, v: stacks[item] });
-    }
-  }
-  return list;
-}
 
 // 突破弹窗：罗列条件 + 概率 + 可否突破（等价逻辑见 getBreakInfo）
 function getBreakInfo() {
@@ -4061,73 +1781,20 @@ function getBreakInfo() {
 }
 
 // 技艺页动作卡信息（含实时进度）
-function getActionCardInfo(key) {
-  const a = ACTIONS[key]; if (!a) return null;
-  const p = getPlayer();
-  const sk = p.skills[a.skill] || { lv: 1, xp: 0 };
-  const lv = sk.lv;
-  const locked = a.needLv && lv < a.needLv;
-  const active = !!state.current && state.current.key === key;
-  let progress = 0;
-  if (active && state.current) progress = Math.min(1, state.current.elapsed / (a.time || 1));
-  return { key, name: a.name, icon: a.icon || '·', skill: a.skill, lv, needLv: a.needLv || 0, time: a.time, xp: a.xp, out: a.out || '', locked, active, stalled: active && !!state.current.stalled, progress };
-}
-
-function getSkillPageInfo(navName) {
-  const sp = SKILL_PAGES[navName]; if (!sp || sp.type !== 'skill') return null;
-  const p = getPlayer();
-  const s = p.skills[sp.skill] || { lv: 1, xp: 0 };
-  const need = skillXpNeed(s.lv);
-  return { title: sp.title, skill: sp.skill, desc: sp.desc, lv: s.lv, xp: s.xp, xpNeed: need, actions: sp.actions.map(getActionCardInfo) };
-}
 
 // 采集系条目卡（探索卡 / 资源点卡）信息
-function gatherEntryCard(skill, e, p) {
-  const active = !!state.current && state.current.key === 'gather:' + skill + ':' + e.id;
-  let progress = 0;
-  if (active && state.current) {
-    const eff = effGatherTime(skill, e.id, p);   // 进度条用有效耗时（精通减时）
-    progress = Math.min(1, state.current.elapsed / eff);
-  }
-  let left = 0, cap = 0;
-  if (skill === 'fishing') {
-    const stocks = state.systems.gathering.fishStocks;
-    left = Object.prototype.hasOwnProperty.call(stocks, e.id)
-      ? stocks[e.id]
-      : FISH_MAX;
-    cap = FISH_MAX;                    // 库存上限
-  } else {
-    const spot = state.systems.gathering.spots[skill];
-    left = (spot && spot.id === e.id) ? spot.left : 0;
-    cap = (spot && spot.id === e.id) ? spot.cap : 0;
-  }
-  const drops = (e.drops || []).map(d => ({ item: d.item, q: d.q || 1 }));
-  return { type: 'entry', id: e.id, name: e.name, unlockLv: e.unlockLv, time: e.time, xp: e.xp, drops, left, cap, active, progress, stalled: active && !!state.current.stalled };
-}
-
-function getGatherPageInfo(navName) {
-  const sp = SKILL_PAGES[navName]; if (!sp || sp.type !== 'gather') return null;
-  const skill = sp.skill;
-  const p = getPlayer();
-  const s = p.skills[GATHER_SKILL_KEY[skill]] || { lv: 1, xp: 0 };
-  const need = skillXpNeed(s.lv);
-  const data = GATHERING_DATA[skill];
-  const cards = [];
-  if (data.explore) cards.push({ type: 'explore', id: 'explore', name: data.explore.name, active: !!state.current && state.current.key === 'gather:explore:' + skill, progress: 0 });
-  if (skill === 'fishing') {
-    for (const e of data.entries) cards.push(gatherEntryCard(skill, e, p));
-  } else {
-    const spot = state.systems.gathering.spots[skill];
-    if (spot) { const e = data.entries.find(x => x.id === spot.id); if (e) cards.push(gatherEntryCard(skill, e, p)); }
-  }
-  return { title: sp.title, skill, desc: sp.desc, lv: s.lv, xp: s.xp, xpNeed: need, cards, noSpotHint: (skill !== 'fishing' && !state.systems.gathering.spots[skill]) };
-}
 
 function readonlyQuery(viewModel) {
-  // UI 查询热路径：各 query* 应返回当帧临时 view。
-  // 不再 deepFreeze(cloneJson(...))——那会在每帧/切页时拖垮主线程。
-  // 需要真正隔离快照时用 StateModel.readonly。
-  return viewModel;
+  // Detach only this DTO, never the full simulation model. Queries may contain
+  // selected nested fields; none may expose writable runtime references.
+  if (viewModel == null) return viewModel;
+  const view = JSON.parse(JSON.stringify(viewModel));
+  function freeze(value) {
+    if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
+    Object.keys(value).forEach(function (key) { freeze(value[key]); });
+    return Object.freeze(value);
+  }
+  return freeze(view);
 }
 
 function stage2Progress(player, skillId) {
@@ -4462,7 +2129,7 @@ function actionDisplayName(key, model, report, getModel) {
     };
     return commandNames[commandKey] || '即时操作';
   }
-  if (useStage4Runtime && key.indexOf('social:') === 0) {
+  if (key.indexOf('social:') === 0) {
     const socialAction = stage4Bootstrap.Social.parseActionKey(key);
     const socialModel = model;
     const person = socialAction && socialModel &&
@@ -4478,7 +2145,7 @@ function actionDisplayName(key, model, report, getModel) {
       person && person.identity ? person.identity.name : '对方'
     );
   }
-  if (useStage3Runtime && key.indexOf('combat:') === 0) {
+  if (key.indexOf('combat:') === 0) {
     const parts = key.split(':');
     if (parts[1] === 'region' && parts.length === 4) {
       const region = stage3Bootstrap.CombatContent.getRegion(parts[2]);
@@ -4494,16 +2161,16 @@ function actionDisplayName(key, model, report, getModel) {
     }
     return '战斗';
   }
-  if (useStage2Runtime && key.indexOf('produce:') === 0) {
+  if (key.indexOf('produce:') === 0) {
     const recipe = stage2Bootstrap.RecipeContent.get(key.slice(8));
     return recipe ? recipe.name : '制作';
   }
-  if (useStage2Runtime && key.indexOf('fish:') === 0) {
+  if (key.indexOf('fish:') === 0) {
     const spot =
       stage2Bootstrap.GatheringContent.getFishingSpot(key.slice(5));
     return spot ? spot.name : '钓鱼';
   }
-  if (useStage2Runtime && key.indexOf('beast:') === 0) {
+  if (key.indexOf('beast:') === 0) {
     if (!model && typeof getModel === 'function') model = getModel();
     const parts = key.split(':');
     const mode = parts[1];
@@ -4539,7 +2206,7 @@ function actionDisplayName(key, model, report, getModel) {
   }
   if (key.indexOf('gather:') === 0) {
     const stage2Parts = key.split(':');
-    if (useStage2Runtime && stage2Parts[1] === 'collect') {
+    if (stage2Parts[1] === 'collect') {
       const stage2Entry =
         stage2Bootstrap.GatheringContent.getEntry(
           stage2Parts[2],
@@ -4547,7 +2214,7 @@ function actionDisplayName(key, model, report, getModel) {
         );
       return stage2Entry ? stage2Entry.name : '采集';
     }
-    if (useStage2Runtime && stage2Parts[1] === 'explore') {
+    if (stage2Parts[1] === 'explore') {
       const family =
         stage2Bootstrap.GatheringContent.GATHERING[stage2Parts[2]];
       return family && family.explore ? family.explore.name : '探索';
@@ -4756,3 +2423,61 @@ function offlineSummaryView(reports, model) {
     display: combatTelemetryDisplay(summary.combat, summary.techniques)
   };
 }
+
+// Module wiring is deferred until every script has registered its factory.
+let normalizeParts, appearanceIndices, appearanceCounts, composite, randomNieParts, drawCharacterAppearance, drawCharacter;
+let isPersistenceLocked, getPersistenceStatus, setPersistenceIssue, persistenceRecovery, persistCurrentModel, persist, persistModel, persistSafely, commitModel, acknowledgeOffline, closeOffline, retryPersistence;
+let simulateModel, PerfStats, advanceRuntime, getLastSimulationReport, advanceGameplay, normalizeStartupModel, sanitizeTimeCursorMs, kickEnsureCombatRuntime, snapshotNeedsCombatRuntime, settleStartupOffline, formatOfflineSettleProgress, scheduleStartupOfflineSettle, runRuntimeFrame, stepCatchup, advanceHidden, handleVisibilityChange, flushLifecycle;
+const initializeGameServices = function initializeGameServices() {
+  ({ normalizeParts, appearanceIndices, appearanceCounts, composite, randomNieParts, drawCharacterAppearance, drawCharacter } = GameAppearance.create({
+    get ASSET_BASE() { return typeof ASSET_BASE === 'undefined' ? undefined : ASSET_BASE; },
+    get CATS() { return typeof CATS === 'undefined' ? undefined : CATS; },
+    get HairRules() { return typeof HairRules === 'undefined' ? undefined : HairRules; },
+    get NIE() { return typeof NIE === 'undefined' ? undefined : NIE; },
+    get Platform() { return typeof Platform === 'undefined' ? undefined : Platform; },
+    get XiuxianUi() { return typeof XiuxianUi === 'undefined' ? undefined : XiuxianUi; },
+    get encodeURIComponent() { return typeof encodeURIComponent === 'undefined' ? undefined : encodeURIComponent; },
+    get state() { return typeof state === 'undefined' ? undefined : state; }
+  }));
+  ({ isPersistenceLocked, getPersistenceStatus, setPersistenceIssue, persistenceRecovery, persistCurrentModel, persist, persistModel, persistSafely, commitModel, acknowledgeOffline, closeOffline, retryPersistence } = GamePersist.create({
+    get NAV_HOME() { return typeof NAV_HOME === 'undefined' ? undefined : NAV_HOME; },
+    get Platform() { return typeof Platform === 'undefined' ? undefined : Platform; },
+    get SaveSystem() { return typeof SaveSystem === 'undefined' ? undefined : SaveSystem; },
+    get SimulationReport() { return typeof SimulationReport === 'undefined' ? undefined : SimulationReport; },
+    get StateModel() { return typeof StateModel === 'undefined' ? undefined : StateModel; },
+    get applyModelToRuntime() { return typeof applyModelToRuntime === 'undefined' ? undefined : applyModelToRuntime; },
+    get cloneRuntimeState() { return typeof cloneRuntimeState === 'undefined' ? undefined : cloneRuntimeState; },
+    get commandResult() { return typeof commandResult === 'undefined' ? undefined : commandResult; },
+    get sanitizeTimeCursorMs() { return typeof sanitizeTimeCursorMs === 'undefined' ? undefined : sanitizeTimeCursorMs; },
+    get settleStartupOffline() { return typeof settleStartupOffline === 'undefined' ? undefined : settleStartupOffline; },
+    get simulateModel() { return typeof simulateModel === 'undefined' ? undefined : simulateModel; },
+    get state() { return typeof state === 'undefined' ? undefined : state; },
+    get toast() { return typeof toast === 'undefined' ? undefined : toast; }
+  }));
+  ({ simulateModel, PerfStats, advanceRuntime, getLastSimulationReport, advanceGameplay, normalizeStartupModel, sanitizeTimeCursorMs, kickEnsureCombatRuntime, snapshotNeedsCombatRuntime, settleStartupOffline, formatOfflineSettleProgress, scheduleStartupOfflineSettle, runRuntimeFrame, stepCatchup, advanceHidden, handleVisibilityChange, flushLifecycle } = GameRuntime.create({
+    get LazyContent() { return typeof LazyContent === 'undefined' ? undefined : LazyContent; },
+    get Platform() { return typeof Platform === 'undefined' ? undefined : Platform; },
+    get SaveSystem() { return typeof SaveSystem === 'undefined' ? undefined : SaveSystem; },
+    get Simulation() { return typeof Simulation === 'undefined' ? undefined : Simulation; },
+    get SimulationReport() { return typeof SimulationReport === 'undefined' ? undefined : SimulationReport; },
+    get StateModel() { return typeof StateModel === 'undefined' ? undefined : StateModel; },
+    get applyModelToRuntime() { return typeof applyModelToRuntime === 'undefined' ? undefined : applyModelToRuntime; },
+    get cloneRuntimeState() { return typeof cloneRuntimeState === 'undefined' ? undefined : cloneRuntimeState; },
+    get ensurePlayer() { return typeof ensurePlayer === 'undefined' ? undefined : ensurePlayer; },
+    get invalidateQueryModelCache() { return typeof invalidateQueryModelCache === 'undefined' ? undefined : invalidateQueryModelCache; },
+    get isPersistenceLocked() { return typeof isPersistenceLocked === 'undefined' ? undefined : isPersistenceLocked; },
+    get persistCurrentModel() { return typeof persistCurrentModel === 'undefined' ? undefined : persistCurrentModel; },
+    get persistModel() { return typeof persistModel === 'undefined' ? undefined : persistModel; },
+    get persistSafely() { return typeof persistSafely === 'undefined' ? undefined : persistSafely; },
+    get persistenceRecovery() { return typeof persistenceRecovery === 'undefined' ? undefined : persistenceRecovery; },
+    get publishGainTipsFromReport() { return typeof publishGainTipsFromReport === 'undefined' ? undefined : publishGainTipsFromReport; },
+    get refreshStage3CombatRuntime() { return typeof refreshStage3CombatRuntime === 'undefined' ? undefined : refreshStage3CombatRuntime; },
+    get runtimeRoot() { return typeof runtimeRoot === 'undefined' ? undefined : runtimeRoot; },
+    get setPersistenceIssue() { return typeof setPersistenceIssue === 'undefined' ? undefined : setPersistenceIssue; },
+    get simulationRuntime() { return typeof simulationRuntime === 'undefined' ? undefined : simulationRuntime; },
+    get stage4Bootstrap() { return typeof stage4Bootstrap === 'undefined' ? undefined : stage4Bootstrap; },
+    get state() { return typeof state === 'undefined' ? undefined : state; },
+    get toast() { return typeof toast === 'undefined' ? undefined : toast; },
+    get useStage3CombatRuntime() { return typeof useStage3CombatRuntime === 'undefined' ? undefined : useStage3CombatRuntime; }
+  }));
+};

@@ -478,6 +478,7 @@
       'advance',
       'deps.Farm'
     );
+    const farmAdvancePlots = dataValue(safeDeps.Farm, 'advancePlots');
     const recordFormationCrafted = requireFunction(
       safeDeps.Formations,
       'recordCrafted',
@@ -1311,7 +1312,8 @@
         duration,
         helpers.nowMs()
       );
-      if (!isOfflineSource(helpers) || !(duration > 0)) return first;
+      if (!isOfflineSource(helpers) || !(duration > 0) ||
+          !['gather-collect', 'fish', 'produce'].includes(descriptor.kind)) return first;
       // 已到期必须立刻 complete；否则大批量边界会被更短的 lane 抢走，主行动空转。
       if (!(first > 0)) return 0;
       let extra = OFFLINE_ACTION_BATCH - 1;
@@ -1323,7 +1325,15 @@
         const left = Math.max(0, current.count - current.done);
         extra = Math.min(extra, Math.max(0, left - 1));
       }
-      return first + extra * duration;
+      const horizon = Math.max(0, Math.min(
+        first + extra * duration,
+        finiteNumber(helpers.remainingSeconds, Infinity),
+        finiteNumber(helpers.mainRemainingSeconds, Infinity),
+        finiteNumber(helpers.nextLaneBoundarySeconds, Infinity)
+      ));
+      if (horizon < first) return first;
+      const additional = Math.min(extra, Math.floor((horizon - first) / duration));
+      return first + additional * duration;
     }
 
     function completeActionOnce(state, descriptor, helpers) {
@@ -1625,13 +1635,13 @@
       elapse(state, seconds, helpers) {
         const scheduledResolution =
           fishRecoveryLane.nextBoundary(state) <= seconds;
-        const result = gathering.advanceFishStocks(
-          state,
-          seconds,
-          fishBonuses(state)
-        );
+        const inPlace = typeof gathering.advanceFishStocksInPlace === 'function';
+        const result = inPlace
+          ? gathering.advanceFishStocksInPlace(
+            state.systems.gathering, seconds, fishBonuses(state))
+          : gathering.advanceFishStocks(state, seconds, fishBonuses(state));
         if (!result || result.ok !== true) return;
-        replaceRecord(state, result.state);
+        if (!inPlace) replaceRecord(state, result.state);
         const recovered = result.recovered;
         if (isRecord(recovered) && Object.keys(recovered).length > 0) {
           if (scheduledResolution) {
@@ -1697,9 +1707,12 @@
       elapse(state, seconds, helpers) {
         const scheduledResolution =
           farmGrowthLane.nextBoundary(state) <= seconds;
-        const result = farmAdvance(state, seconds);
-        if (!result || !isRecord(result.state)) return;
-        replaceRecord(state, result.state);
+        const inPlace = typeof farmAdvancePlots === 'function';
+        const result = inPlace
+          ? { completed: farmAdvancePlots(farmPlots(state), seconds) }
+          : farmAdvance(state, seconds);
+        if (!result || (!inPlace && !isRecord(result.state))) return;
+        if (!inPlace) replaceRecord(state, result.state);
         if (Array.isArray(result.completed) &&
             result.completed.length > 0) {
           if (scheduledResolution) {

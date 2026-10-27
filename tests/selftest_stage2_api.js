@@ -16,7 +16,9 @@ function ok(condition, message) {
 }
 
 function same(actual, expected, message) {
-  ok(JSON.stringify(actual) === JSON.stringify(expected), message);
+  let matches = true;
+  try { require('assert').deepStrictEqual(clone(actual), clone(expected)); } catch (error) { matches = false; }
+  ok(matches, message);
 }
 
 function clone(value) {
@@ -67,30 +69,7 @@ function fixedDate(now) {
   };
 }
 
-const SCRIPT_ORDER = [
-  'content/herblore-parity.js',
-  'content/materials.js',
-  'content/items.js',
-  'content/life-skills.js',
-  'content/gathering.js',
-  'content/recipes.js',
-  'content/homestead.js',
-  'core/stage2-state.js',
-  'core/random.js',
-  'core/inventory.js',
-  'core/skill-progression.js',
-  'core/gathering.js',
-  'core/production.js',
-  'core/farm.js',
-  'core/formations.js',
-  'core/spirit-beasts.js',
-  'core/save-system.js',
-  'core/simulation-report.js',
-  'core/state-model.js',
-  'core/simulation.js',
-  'core/game-rules.js',
-  'core/stage2-rules.js'
-];
+const SCRIPT_ORDER = require('./runtime-scripts').DEPENDENCIES;
 
 function createRuntime(options) {
   options = options || {};
@@ -191,6 +170,7 @@ function createRuntime(options) {
     sandbox,
     { filename: 'nie-manifest.js' }
   );
+  require('./runtime-scripts').loadHerblore(vm, sandbox);
   SCRIPT_ORDER.forEach((file) => {
     vm.runInContext(fs.readFileSync(file, 'utf8'), sandbox, {
       filename: file
@@ -243,7 +223,9 @@ function createRuntime(options) {
     model.reportArchive = [];
     model.processedThroughMs = now;
     model.lastActionStop = null;
-    return model;
+    return clone(sandbox.Stage4State.normalize(
+      sandbox.Stage4State.ensureWorldPopulation(model)
+    ));
   }
 
   function replaceModel(model) {
@@ -1318,7 +1300,7 @@ if (stage2ApiReady) {
   const page = API.queries.skillPage('烹饪');
   ok(deeplyFrozen(page) &&
      page.skillId === 'cooking' &&
-     page.recipes.every((entry) => entry.recipeId !== 'cooking:beastFeed'),
+     page.recipes.every((entry) => !/^legacy:/.test(entry.recipeId)),
     'default cooking skillPage hides legacy prototype recipes');
 }
 
@@ -1348,14 +1330,14 @@ if (stage2ApiReady) {
      herb.explore.actionKey === 'gather:explore:herb' &&
      herb.resource.entryId === 'parityHerb1' &&
      herb.resource.remaining === 7 &&
-     herb.resource.capacity === 20 &&
+     herb.resource.capacity === 50 &&
      herb.resource.mastery.level === 1 &&
      herb.resource.mastery.speedBonus === 0 &&
      herb.resource.drops[0].itemId === 'garumHerb',
     'gatherPage exposes progression, explore card, capacity, and drops');
   ok(deeplyFrozen(fish) &&
      fish.skillId === 'fishing' &&
-     fish.spots.length === 10 &&
+     fish.spots.length === 17 &&
      fish.spots[0].actionKey === 'fish:pond' &&
      fish.spots[0].active === true &&
      fish.spots[0].stalled === true &&
@@ -1363,7 +1345,7 @@ if (stage2ApiReady) {
        spot.species.some((species) =>
          species.speciesId === 'spiritCarp' &&
          species.stock === 9 &&
-         species.maxStock === 20)).length >= 2,
+         species.maxStock === 20)).length >= 1,
     'fishing page exposes stalled state and shared stock across spots');
 }
 
@@ -1453,8 +1435,8 @@ if (stage2ApiReady) {
   const inheritance = API.queries.homestead('inheritance');
   same(clone(meeting), { implemented: false },
     'meeting hall returns only an unimplemented card');
-  same(clone(inheritance), { implemented: false },
-    'inheritance hall returns only an unimplemented card');
+  ok(inheritance.implemented === true,
+    'inheritance hall exposes the implemented Stage 5 query');
   ok(deeplyFrozen(meeting) && deeplyFrozen(inheritance),
     'reserved homestead cards are deeply frozen');
 

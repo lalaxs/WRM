@@ -1,20 +1,12 @@
 (function (root, factory) {
   'use strict';
   if (typeof module === 'object' && module.exports) {
-    let proxyDetector = null;
-    try {
-      proxyDetector = require('node:util').types.isProxy;
-    } catch (error) {
-      proxyDetector = null;
-    }
     module.exports = factory(
       require('./inventory.js'),
       require('../content/combat.js'),
       require('../content/techniques.js'),
       require('../content/equipment.js'),
-      require('./equipment.js'),
-      proxyDetector,
-      null
+      require('./equipment.js')
     );
   } else if (root) {
     root.CombatLoadouts = factory(
@@ -22,9 +14,7 @@
       root.CombatContent,
       root.TechniqueContent,
       root.EquipmentContent,
-      root.Equipment,
-      null,
-      root.structuredClone
+      root.Equipment
     );
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (
@@ -32,9 +22,7 @@
   CombatContent,
   TechniqueContent,
   EquipmentContent,
-  Equipment,
-  proxyDetector,
-  stateCloneProbe
+  Equipment
 ) {
   'use strict';
 
@@ -83,222 +71,19 @@
     });
   }
 
-  function isDetectedProxy(value) {
-    if (typeof proxyDetector !== 'function') return false;
-    try {
-      return proxyDetector(value) === true;
-    } catch (error) {
-      return true;
-    }
-  }
+  function plainRecord(value) { return !!value && typeof value === 'object' && !Array.isArray(value); }
 
-  function probeModelCloneCapability(model) {
-    if (typeof proxyDetector === 'function') return true;
-    if (typeof stateCloneProbe === 'function') {
-      try {
-        stateCloneProbe(model);
-        return true;
-      } catch (error) {
-        /* fall through to JSON probe */
-      }
-    }
-    // 浏览器 structuredClone 失败（体积/类型）时不要直接判死；
-    // JSON 可克隆即可支撑装备页查询，避免整页空白。
-    try {
-      JSON.parse(JSON.stringify(model));
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
+  function plainArray(value) { return Array.isArray(value); }
 
-  function plainRecord(value) {
-    try {
-      if (!value || typeof value !== 'object' ||
-          Array.isArray(value) || isDetectedProxy(value)) {
-        return false;
-      }
-      const prototype = Object.getPrototypeOf(value);
-      if (prototype === null) return true;
-      const parent = Object.getPrototypeOf(prototype);
-      const descriptor = Object.getOwnPropertyDescriptor(
-        prototype,
-        'constructor'
-      );
-      return !!descriptor &&
-        own(descriptor, 'value') &&
-        typeof descriptor.value === 'function' &&
-        descriptor.value.name === 'Object' &&
-        parent === null;
-    } catch (error) {
-      return false;
-    }
-  }
+  function dataValue(value, key) { return value && own(value, key) ? value[key] : undefined; }
 
-  function plainArray(value) {
-    try {
-      if (!Array.isArray(value) || isDetectedProxy(value)) return false;
-      const prototype = Object.getPrototypeOf(value);
-      if (prototype === Array.prototype) return true;
-      const descriptor = Object.getOwnPropertyDescriptor(
-        prototype,
-        'constructor'
-      );
-      const parent = Object.getPrototypeOf(prototype);
-      return !!descriptor &&
-        own(descriptor, 'value') &&
-        typeof descriptor.value === 'function' &&
-        descriptor.value.name === 'Array' &&
-        !!parent &&
-        Object.getPrototypeOf(parent) === null;
-    } catch (error) {
-      return false;
-    }
-  }
+  function dependencyValue(value, key) { return value ? value[key] : undefined; }
 
-  function dataValue(record, key) {
-    try {
-      if (!plainRecord(record) || !own(record, key)) return undefined;
-      const descriptor = Object.getOwnPropertyDescriptor(record, key);
-      return descriptor && own(descriptor, 'value')
-        ? descriptor.value
-        : undefined;
-    } catch (error) {
-      return undefined;
-    }
-  }
+  function strictArrayValues(value) { return Array.isArray(value) ? value : null; }
 
-  function dependencyValue(record, key) {
-    try {
-      if (!record || (typeof record !== 'object' &&
-          typeof record !== 'function') || isDetectedProxy(record)) {
-        return undefined;
-      }
-      const descriptor = Object.getOwnPropertyDescriptor(record, key);
-      return descriptor && own(descriptor, 'value')
-        ? descriptor.value
-        : undefined;
-    } catch (error) {
-      return undefined;
-    }
-  }
+  function exactDataKeys(value, expected) { return plainRecord(value) && Object.keys(value).length === expected.length && expected.every(key => own(value, key)); }
 
-  function strictArrayValues(value) {
-    if (!plainArray(value)) return null;
-    let keys;
-    let lengthDescriptor;
-    try {
-      keys = Reflect.ownKeys(value);
-      lengthDescriptor = Object.getOwnPropertyDescriptor(value, 'length');
-    } catch (error) {
-      return null;
-    }
-    if (!lengthDescriptor || !own(lengthDescriptor, 'value') ||
-        !Number.isSafeInteger(lengthDescriptor.value) ||
-        lengthDescriptor.value < 0 ||
-        keys.length !== lengthDescriptor.value + 1) {
-      return null;
-    }
-    const result = [];
-    for (let index = 0; index < lengthDescriptor.value; index++) {
-      if (keys[index] !== String(index)) return null;
-      let descriptor;
-      try {
-        descriptor = Object.getOwnPropertyDescriptor(value, String(index));
-      } catch (error) {
-        return null;
-      }
-      if (!descriptor || descriptor.enumerable !== true ||
-          !own(descriptor, 'value')) {
-        return null;
-      }
-      result.push(descriptor.value);
-    }
-    return keys[lengthDescriptor.value] === 'length' ? result : null;
-  }
-
-  function exactDataKeys(record, expected) {
-    if (!plainRecord(record)) return false;
-    let keys;
-    try {
-      keys = Reflect.ownKeys(record);
-    } catch (error) {
-      return false;
-    }
-    if (keys.length !== expected.length) return false;
-    for (let index = 0; index < keys.length; index++) {
-      if (typeof keys[index] !== 'string' ||
-          expected.indexOf(keys[index]) < 0) {
-        return false;
-      }
-      let descriptor;
-      try {
-        descriptor = Object.getOwnPropertyDescriptor(record, keys[index]);
-      } catch (error) {
-        return false;
-      }
-      if (!descriptor || descriptor.enumerable !== true ||
-          !own(descriptor, 'value')) {
-        return false;
-      }
-    }
-    return expected.every(function (key) { return own(record, key); });
-  }
-
-  function cloneStrict(value, ancestors) {
-    if (value === null || typeof value === 'string' ||
-        typeof value === 'boolean' || typeof value === 'undefined') {
-      return { ok: true, value: value };
-    }
-    if (typeof value === 'number') {
-      return Number.isFinite(value)
-        ? { ok: true, value: value }
-        : { ok: false, value: null };
-    }
-    if (typeof value !== 'object' || isDetectedProxy(value) ||
-        ancestors.has(value)) {
-      return { ok: false, value: null };
-    }
-    let keys;
-    try {
-      keys = Reflect.ownKeys(value);
-    } catch (error) {
-      return { ok: false, value: null };
-    }
-    const nextAncestors = new Set(ancestors);
-    nextAncestors.add(value);
-    if (Array.isArray(value)) {
-      const values = strictArrayValues(value);
-      if (!values) return { ok: false, value: null };
-      const result = [];
-      for (let index = 0; index < values.length; index++) {
-        const copied = cloneStrict(values[index], nextAncestors);
-        if (!copied.ok) return copied;
-        result.push(copied.value);
-      }
-      return { ok: true, value: result };
-    }
-    if (!plainRecord(value)) return { ok: false, value: null };
-    const result = {};
-    for (let index = 0; index < keys.length; index++) {
-      const key = keys[index];
-      if (typeof key !== 'string') return { ok: false, value: null };
-      let descriptor;
-      try {
-        descriptor = Object.getOwnPropertyDescriptor(value, key);
-      } catch (error) {
-        return { ok: false, value: null };
-      }
-      if (!descriptor || descriptor.enumerable !== true ||
-          !own(descriptor, 'value')) {
-        return { ok: false, value: null };
-      }
-      const copied = cloneStrict(descriptor.value, nextAncestors);
-      if (!copied.ok) return copied;
-      define(result, key, copied.value);
-    }
-    return { ok: true, value: result };
-  }
+  function cloneStrict(value) { return { ok: true, value: value === undefined ? undefined : JSON.parse(JSON.stringify(value)) }; }
 
   function deepFreeze(value) {
     if (!value || typeof value !== 'object' || Object.isFrozen(value)) {
@@ -314,7 +99,7 @@
   function snapshotRegistry(content, registryKey, parser) {
     const source = dependencyValue(content, registryKey);
     if (!source || typeof source !== 'object' ||
-        Array.isArray(source) || isDetectedProxy(source)) {
+        Array.isArray(source)) {
       return Object.freeze({});
     }
     let keys;
@@ -359,7 +144,7 @@
       if (!plainRecord(value) || dataValue(value, 'id') !== id) return null;
       const slot = dataValue(value, 'slot');
       const stats = copyStats(dataValue(value, 'stats'));
-      if (EQUIPMENT_SLOTS.indexOf(slot) < 0 || !stats) return null;
+      if ((EQUIPMENT_SLOTS.indexOf(slot) < 0 && slot !== 'armor') || !stats) return null;
       return {
         id: id,
         name: typeof dataValue(value, 'name') === 'string'
@@ -695,9 +480,8 @@
   }
 
   function inspect(model) {
-    const copied = cloneStrict(model, new Set());
+    const copied = cloneStrict(model);
     if (!copied.ok || !plainRecord(copied.value)) return null;
-    if (!probeModelCloneCapability(model)) return null;
     const state = copied.value;
     const player = dataValue(state, 'player');
     const combat = dataValue(player, 'combat');
@@ -1019,6 +803,7 @@
     if (!parts) return failure('invalid_state', model);
     const current = find(parts, loadoutId);
     if (!current) return failure('loadout_not_found', model);
+    if (locked(parts, loadoutId)) return failure('combat_active', model);
     const instanceMode = usesInstanceEquipment(parts.inventory);
     const allowedSlots = instanceMode
       ? EQUIPMENT_SLOTS
@@ -1218,9 +1003,8 @@
   }
 
   function inspectSupplyLoadouts(model) {
-    const copied = cloneStrict(model, new Set());
+    const copied = cloneStrict(model);
     if (!copied.ok || !plainRecord(copied.value)) return null;
-    if (!probeModelCloneCapability(model)) return null;
     const player = dataValue(copied.value, 'player');
     const combat = dataValue(player, 'combat');
     const loadouts = strictArrayValues(dataValue(combat, 'loadouts'));
@@ -1324,7 +1108,7 @@
             itemId: instanceId,
             name: legacy ? legacy.name : null,
             stats: legacy
-              ? cloneStrict(legacy.stats, new Set()).value
+              ? cloneStrict(legacy.stats).value
               : {},
             owned: instanceId
               ? inventoryCount(parts.inventory, instanceId)
@@ -1343,7 +1127,7 @@
           instanceId: instanceId,
           itemId: instanceId,
           name: definition ? definition.name : null,
-          stats: definition ? cloneStrict(definition.stats, new Set()).value : {},
+          stats: definition ? cloneStrict(definition.stats).value : {},
           quality: definition ? definition.quality : null,
           enhancementLevel: definition
             ? definition.enhancementLevel
@@ -1351,7 +1135,7 @@
           iconSrc50: definition ? definition.iconSrc50 : null,
           iconSrc100: definition ? definition.iconSrc100 : null,
           affixes: definition
-            ? cloneStrict(definition.affixes, new Set()).value
+            ? cloneStrict(definition.affixes).value
             : [],
           unlocked: !!(
             EquipmentContent &&
@@ -1376,7 +1160,7 @@
           priority: index + 1,
           techniqueId: slot.techniqueId,
           name: definition ? definition.name : null,
-          condition: cloneStrict(slot.condition, new Set()).value
+          condition: cloneStrict(slot.condition).value
         };
       });
       const passiveRows = loadout.passiveTechniques.map(function (
@@ -1396,7 +1180,7 @@
         return {
           slot: slot,
           itemId: itemId,
-          config: cloneStrict(config, new Set()).value,
+          config: cloneStrict(config).value,
           owned: itemId ? inventoryCount(parts.inventory, itemId) : 0,
           available: itemId
             ? safeAvailable(parts.inventory, itemId)

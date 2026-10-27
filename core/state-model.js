@@ -682,21 +682,9 @@
   // 完整 normalize 只在存档边界（toSnapshotInput）与读档/离线结算做。
   function captureRuntime(runtime, nowMs) {
     const view = queryView(runtime, nowMs);
-    return {
-      modelVersion: view.modelVersion,
-      created: view.created,
-      appearance: { parts: cloneRecord(view.appearance.parts) },
-      player: cloneJson(view.player, null),
-      current: cloneJson(view.current, null),
-      rngState: view.rngState,
-      offlineLimitSeconds: view.offlineLimitSeconds,
-      systems: cloneJson(view.systems, {}),
-      pendingOfflineReports: cloneArray(view.pendingOfflineReports),
-      reportArchive: cloneArray(view.reportArchive),
-      processedThroughMs: view.processedThroughMs,
-      lastActionStop: cloneJson(view.lastActionStop, null),
-      savedAt: view.savedAt
-    };
+    // Runtime data has crossed the load/command boundaries already. One native
+    // JSON clone isolates a transaction without repeated descriptor walks.
+    return JSON.parse(JSON.stringify(view));
   }
 
   function applyToRuntime(runtime, model, options) {

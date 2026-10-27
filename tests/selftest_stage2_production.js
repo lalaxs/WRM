@@ -30,7 +30,7 @@ function noThrow(run, message) {
 
 const RecipeContent = require('../content/recipes.js');
 const RecipeFixtures =
-  require('./selftest_stage2_content_fixtures.js').recipes;
+  require('./production-fixtures.js').recipes;
 const Inventory = require('../core/inventory.js');
 const SkillProgression = require('../core/skill-progression.js');
 const GameRandom = require('../core/random.js');

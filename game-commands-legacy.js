@@ -34,7 +34,7 @@ function stage5Failure(code) {
 }
 
 function commandProposeLineageRitual(input) {
-  if (!useStage5Runtime) return stage5Failure('unknown_partner');
+
   const npcId = input && typeof input.partnerNpcId === 'string'
     ? input.partnerNpcId
     : null;
@@ -63,7 +63,7 @@ function commandProposeLineageRitual(input) {
 }
 
 function commandSetInheritancePlan(input) {
-  if (!useStage5Runtime) return stage5Failure('invalid_plan');
+
   const now = Date.now();
   return commitModel(function (candidate) {
     const domain = stage5Bootstrap.InheritanceHall.setPlan(
@@ -80,7 +80,7 @@ function commandSetInheritancePlan(input) {
 }
 
 function commandBeginLegacyTransition(input) {
-  if (!useStage5Runtime) return stage5Failure('invalid_cause');
+
   const cause = input && typeof input.cause === 'string'
     ? input.cause
     : null;
@@ -117,7 +117,7 @@ function commandBeginLegacyTransition(input) {
 }
 
 function commandChooseLegacyRoute(input) {
-  if (!useStage5Runtime) return stage5Failure('invalid_route');
+
   const route = input && input.route;
   const heirNpcId = input && input.heirNpcId;
   return commitModel(function (candidate) {
@@ -136,7 +136,7 @@ function commandChooseLegacyRoute(input) {
 }
 
 function commandUpdateNewIdentityDraft(input) {
-  if (!useStage5Runtime) return stage5Failure('invalid_draft');
+
   return commitModel(function (candidate) {
     const domain = stage5Bootstrap.LegacyTransition.updateDraft(
       candidate,
@@ -152,7 +152,7 @@ function commandUpdateNewIdentityDraft(input) {
 }
 
 function commandConfirmLegacyTransition() {
-  if (!useStage5Runtime) return stage5Failure('route_required');
+
   const now = Date.now();
   const response = commitModel(function (candidate) {
     const domain = stage5Bootstrap.LegacyTransition.confirm(
@@ -186,7 +186,7 @@ function commandConfirmLegacyTransition() {
 }
 
 function commandCancelLegacyTransition() {
-  if (!useStage5Runtime) return stage5Failure('no_pending_transition');
+
   return commitModel(function (candidate) {
     const domain = stage5Bootstrap.LegacyTransition.cancel(candidate);
     if (!domain.ok) return stage5Failure(domain.code);

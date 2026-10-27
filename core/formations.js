@@ -1,28 +1,19 @@
 (function (root, factory) {
   'use strict';
   if (typeof module === 'object' && module.exports) {
-    let proxyDetector = null;
-    try {
-      proxyDetector = require('node:util').types.isProxy;
-    } catch (error) {
-      proxyDetector = null;
-    }
     module.exports = factory(
       require('../content/homestead.js'),
-      require('./inventory.js'),
-      proxyDetector
+      require('./inventory.js')
     );
   } else if (root) {
     root.Formations = factory(
       root.HomesteadContent,
-      root.Inventory,
-      null
+      root.Inventory
     );
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (
   HomesteadContent,
-  Inventory,
-  proxyDetector
+  Inventory
 ) {
   'use strict';
 
@@ -55,125 +46,20 @@
     });
   }
 
-  function isDetectedProxy(value) {
-    if (typeof proxyDetector !== 'function') return false;
-    try {
-      return proxyDetector(value) === true;
-    } catch (error) {
-      return true;
-    }
-  }
+  function plainRecord(value) { return !!value && typeof value === 'object' && !Array.isArray(value); }
 
-  function plainRecord(value) {
-    try {
-      if (!value || typeof value !== 'object' ||
-          Array.isArray(value) || isDetectedProxy(value)) {
-        return false;
-      }
-      const prototype = Object.getPrototypeOf(value);
-      if (prototype === null) return true;
-      if (Object.getPrototypeOf(prototype) !== null) return false;
-      const descriptor = Object.getOwnPropertyDescriptor(
-        prototype,
-        'constructor'
-      );
-      return !!descriptor &&
-        own(descriptor, 'value') &&
-        typeof descriptor.value === 'function' &&
-        descriptor.value.name === 'Object';
-    } catch (error) {
-      return false;
-    }
-  }
+  function dataValue(value, key) { return value && own(value, key) ? value[key] : undefined; }
 
-  function dataValue(record, key) {
-    try {
-      if (!plainRecord(record) || !own(record, key)) return undefined;
-      const descriptor = Object.getOwnPropertyDescriptor(record, key);
-      return descriptor && own(descriptor, 'value')
-        ? descriptor.value
-        : undefined;
-    } catch (error) {
-      return undefined;
-    }
-  }
+  function dependencyDataValue(value, key) { return value ? value[key] : undefined; }
 
-  function dependencyDataValue(record, key) {
-    try {
-      if (!record || (typeof record !== 'object' &&
-          typeof record !== 'function') || isDetectedProxy(record)) {
-        return undefined;
-      }
-      const descriptor = Object.getOwnPropertyDescriptor(record, key);
-      return descriptor && own(descriptor, 'value')
-        ? descriptor.value
-        : undefined;
-    } catch (error) {
-      return undefined;
-    }
-  }
+  function plainArray(value) { return Array.isArray(value); }
 
-  function plainArray(value) {
-    try {
-      if (!Array.isArray(value) || isDetectedProxy(value)) return false;
-      const prototype = Object.getPrototypeOf(value);
-      if (prototype === Array.prototype) return true;
-      const descriptor = Object.getOwnPropertyDescriptor(
-        prototype,
-        'constructor'
-      );
-      const parent = Object.getPrototypeOf(prototype);
-      return !!descriptor &&
-        own(descriptor, 'value') &&
-        typeof descriptor.value === 'function' &&
-        descriptor.value.name === 'Array' &&
-        !!parent &&
-        Object.getPrototypeOf(parent) === null;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  function strictArrayValues(value) {
-    if (!plainArray(value)) return null;
-    let keys;
-    let prototype;
-    let lengthDescriptor;
-    try {
-      keys = Reflect.ownKeys(value);
-      prototype = Object.getPrototypeOf(value);
-      lengthDescriptor = Object.getOwnPropertyDescriptor(value, 'length');
-    } catch (error) {
-      return null;
-    }
-    if (!lengthDescriptor || !own(lengthDescriptor, 'value') ||
-        !Number.isSafeInteger(lengthDescriptor.value) ||
-        lengthDescriptor.value < 0 ||
-        keys.length !== lengthDescriptor.value + 1) {
-      return null;
-    }
-    const result = [];
-    for (let index = 0; index < lengthDescriptor.value; index++) {
-      if (keys[index] !== String(index)) return null;
-      let descriptor;
-      try {
-        descriptor = Object.getOwnPropertyDescriptor(value, String(index));
-      } catch (error) {
-        return null;
-      }
-      if (!descriptor || descriptor.enumerable !== true ||
-          !own(descriptor, 'value')) {
-        return null;
-      }
-      result.push(descriptor.value);
-    }
-    return keys[lengthDescriptor.value] === 'length' ? result : null;
-  }
+  function strictArrayValues(value) { return Array.isArray(value) ? value : null; }
 
   function snapshotDefinitions(content) {
     const raw = dependencyDataValue(content, 'FORMATIONS');
     if (!raw || typeof raw !== 'object' ||
-        Array.isArray(raw) || isDetectedProxy(raw)) {
+        Array.isArray(raw)) {
       return Object.freeze({ order: Object.freeze([]), byId: Object.freeze({}) });
     }
     let keys;
@@ -241,100 +127,9 @@
   const bindInventory = dependencyDataValue(Inventory, 'bind');
   const unbindInventory = dependencyDataValue(Inventory, 'unbind');
 
-  function cloneStrict(value, ancestors) {
-    if (value === null || typeof value === 'string' ||
-        typeof value === 'boolean' || typeof value === 'undefined') {
-      return { ok: true, value: value };
-    }
-    if (typeof value === 'number') {
-      return Number.isFinite(value)
-        ? { ok: true, value: value }
-        : { ok: false, value: null };
-    }
-    if (typeof value !== 'object' || isDetectedProxy(value) ||
-        ancestors.has(value)) {
-      return { ok: false, value: null };
-    }
+  function cloneStrict(value) { return { ok: true, value: value === undefined ? undefined : JSON.parse(JSON.stringify(value)) }; }
 
-    let prototype;
-    let keys;
-    try {
-      prototype = Object.getPrototypeOf(value);
-      keys = Reflect.ownKeys(value);
-    } catch (error) {
-      return { ok: false, value: null };
-    }
-    const nextAncestors = new Set(ancestors);
-    nextAncestors.add(value);
-    if (Array.isArray(value)) {
-      if (!plainArray(value)) return { ok: false, value: null };
-      const values = strictArrayValues(value);
-      if (!values) return { ok: false, value: null };
-      const result = [];
-      for (let index = 0; index < values.length; index++) {
-        const copied = cloneStrict(values[index], nextAncestors);
-        if (!copied.ok) return copied;
-        result.push(copied.value);
-      }
-      return { ok: true, value: result };
-    }
-    if (!plainRecord(value)) {
-      return { ok: false, value: null };
-    }
-    const result = {};
-    for (let index = 0; index < keys.length; index++) {
-      const key = keys[index];
-      if (typeof key !== 'string') return { ok: false, value: null };
-      let descriptor;
-      try {
-        descriptor = Object.getOwnPropertyDescriptor(value, key);
-      } catch (error) {
-        return { ok: false, value: null };
-      }
-      if (!descriptor || descriptor.enumerable !== true ||
-          !own(descriptor, 'value')) {
-        return { ok: false, value: null };
-      }
-      const copied = cloneStrict(descriptor.value, nextAncestors);
-      if (!copied.ok) return copied;
-      define(result, key, copied.value);
-    }
-    return { ok: true, value: result };
-  }
-
-  function cloneModel(model) {
-    if (!plainRecord(model)) return { ok: false, value: null };
-    let keys;
-    try {
-      keys = Reflect.ownKeys(model);
-    } catch (error) {
-      return { ok: false, value: null };
-    }
-    const result = {};
-    const ancestors = new Set([model]);
-    for (let index = 0; index < keys.length; index++) {
-      const key = keys[index];
-      if (typeof key !== 'string') return { ok: false, value: null };
-      let descriptor;
-      try {
-        descriptor = Object.getOwnPropertyDescriptor(model, key);
-      } catch (error) {
-        return { ok: false, value: null };
-      }
-      if (!descriptor || descriptor.enumerable !== true ||
-          !own(descriptor, 'value')) {
-        return { ok: false, value: null };
-      }
-      if (ACTION_KEYS.indexOf(key) >= 0) {
-        define(result, key, descriptor.value);
-        continue;
-      }
-      const copied = cloneStrict(descriptor.value, ancestors);
-      if (!copied.ok) return copied;
-      define(result, key, copied.value);
-    }
-    return { ok: true, value: result };
-  }
+  function cloneModel(model) { return plainRecord(model) ? cloneStrict(model) : { ok: false }; }
 
   function formationState(model) {
     const systems = dataValue(model, 'systems');
@@ -628,7 +423,7 @@
     const current = safeFormationParts(model);
     const sourceInventory = inventoryState(model);
     const copiedInventory = sourceInventory
-      ? cloneStrict(sourceInventory, new Set())
+      ? cloneStrict(sourceInventory)
       : { ok: false, value: null };
     const inventory = copiedInventory.ok ? copiedInventory.value : null;
     const consistent = formationInventoryConsistent(current, inventory);

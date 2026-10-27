@@ -158,6 +158,9 @@ ok(thunderResult.rngState === afterStatusChance.seed,
   'status chance advances deterministic rng state');
 
 const bindingEffect = clone(TechniqueContent.get('bindingTalisman').effect);
+// Explicit legacy status fixture: production content now uses a plain slow.
+bindingEffect.status.id = 'binding';
+bindingEffect.status.attackIntervalTicks = 2;
 const bindingResult = TeamCombatEngine.advanceTick(sessionFor([
   unit('ally-player', 'ally', {
     attack: 20,

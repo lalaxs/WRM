@@ -106,7 +106,7 @@ ok(typeof defaultRules.advanceFishStocks === 'function',
 ok(Object.isFrozen(defaultRules),
   'extended gathering rules remain frozen');
 exact(Object.keys(defaultRules).sort(), [
-  'advanceFishStocks', 'collect', 'explore', 'fish'
+  'advanceFishStocks', 'advanceFishStocksInPlace', 'collect', 'explore', 'fish'
 ], 'fishing methods are ordinary discoverable factory API keys');
 
 // Preflight failures are detached, deterministic, and consume no RNG.

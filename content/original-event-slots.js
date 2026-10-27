@@ -1,7 +1,7 @@
 /*
  * original-event-slots.js —— 原版事件插槽配方（对标 doevent temp 参数序）
- * 由 tools/_build_event_slots.js 生成；手写覆盖见该脚本 OVERRIDES。
- * 仅构建中间产物：再经 tools/_build_event_templates.js 编译为 event-templates。
+ * 由 scripts/build-event-slots.js 生成；手写覆盖见该脚本 OVERRIDES。
+ * 仅构建中间产物：再经 scripts/build-event-templates.js 编译为 event-templates。
  * 游戏运行时不加载。
  *
  * token：

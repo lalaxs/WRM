@@ -22,7 +22,7 @@
     if (effect.type === 'shield') return ['shield'];
     if (effect.type === 'aoeAttack') return ['damage'];
     if (effect.type === 'purge') return ['cleanse'];
-    if (effect.type === 'guard') return ['guard'];
+    if (effect.type === 'guard') return ['protect'];
     if (effect.type === 'beastAttack') return ['damage'];
     if (effect.type === 'partyDamageBuff') return ['buff'];
     if (effect.supplyHealingBonus) return ['buff', 'heal'];

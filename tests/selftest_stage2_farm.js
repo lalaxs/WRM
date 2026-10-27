@@ -27,8 +27,8 @@ const Farm = require('../core/farm.js');
 ok(globalThis.Farm === beforeGlobal,
   'CommonJS loading does not attach a browser global');
 ok(Object.isFrozen(Farm), 'Farm API is frozen');
-exact(Object.keys(Farm), ['plant', 'advance', 'harvest', 'query'],
-  'Farm exposes only the four pure operations');
+exact(Object.keys(Farm), ['plant', 'advance', 'advancePlots', 'harvest', 'query'],
+  'Farm exposes detached operations and a plot-only runtime operation');
 
 function freshModel() {
   const model = Stage2State.createDefaults();
@@ -664,7 +664,7 @@ const source = fs.readFileSync('./core/farm.js', 'utf8');
   vm.runInContext(source, sandbox, { filename: 'core/farm.js' });
   ok(sandbox.Farm && Object.isFrozen(sandbox.Farm),
     'browser loading exposes one frozen Farm API');
-  exact(Object.keys(sandbox.Farm), ['plant', 'advance', 'harvest', 'query'],
+  exact(Object.keys(sandbox.Farm), ['plant', 'advance', 'advancePlots', 'harvest', 'query'],
     'browser Farm global has the exact public surface');
 }
 

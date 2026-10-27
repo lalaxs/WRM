@@ -12,6 +12,7 @@
   let uiPagesPromise = null;
   let combatRuntimePromise = null;
   let gameStylesPromise = null;
+  const scriptPromises = Object.create(null);
   const Runtime = (root && root.RuntimeModules) ||
     (typeof RuntimeModules !== 'undefined' ? RuntimeModules : null) ||
     (typeof require === 'function'
@@ -142,6 +143,9 @@
   }
 
   function assetUrl(relativePath) {
+    const mapped = root && root.__H5_ASSETS__ &&
+      root.__H5_ASSETS__[relativePath.split('?')[0]];
+    if (mapped) relativePath = mapped;
     if (moduleBaseUrl) {
       try {
         return new URL('../' + relativePath, moduleBaseUrl).href;
@@ -151,25 +155,53 @@
   }
 
   function loadScript(src, marker) {
-    return new Promise(function (resolve, reject) {
+    if (scriptPromises[src]) return scriptPromises[src];
+    const promise = new Promise(function (resolve, reject) {
       if (typeof document === 'undefined') {
         reject(new Error('document unavailable for script load'));
         return;
       }
       const attr = marker || ('data-lazy-src');
-      const existing = document.querySelector(
+      let existing = document.querySelector(
         'script[' + attr + '="' + src + '"]'
       ) || (marker === 'data-lazy-herblore'
         ? document.querySelector('script[data-lazy-herblore="1"]')
         : null);
+      if (existing && existing.getAttribute('data-lazy-failed') === '1') {
+        if (existing.parentNode) existing.parentNode.removeChild(existing);
+        existing = null;
+      }
+      let settled = false;
+      let timeout = null;
+      function finish(error, node) {
+        if (settled) return;
+        settled = true;
+        if (timeout != null && typeof clearTimeout === 'function') clearTimeout(timeout);
+        if (error) {
+          node.setAttribute('data-lazy-failed', '1');
+          if (node.parentNode) node.parentNode.removeChild(node);
+          reject(error);
+        } else {
+          node.setAttribute('data-lazy-loaded', '1');
+          resolve();
+        }
+      }
+      function watch(node) {
+        if (typeof setTimeout === 'function') {
+          timeout = setTimeout(function () {
+            finish(new Error('Timed out loading ' + src), node);
+          }, 15000);
+        }
+      }
       if (existing) {
         if (existing.getAttribute('data-lazy-loaded') === '1') {
           resolve();
           return;
         }
-        existing.addEventListener('load', function () { resolve(); });
+        watch(existing);
+        existing.addEventListener('load', function () { finish(null, existing); });
         existing.addEventListener('error', function () {
-          reject(new Error('Failed to load ' + src));
+          finish(new Error('Failed to load ' + src), existing);
         });
         return;
       }
@@ -182,13 +214,27 @@
         script.setAttribute(attr, src);
       }
       script.onload = function () {
-        script.setAttribute('data-lazy-loaded', '1');
-        resolve();
+        finish(null, script);
       };
       script.onerror = function () {
-        reject(new Error('Failed to load ' + src));
+        finish(new Error('Failed to load ' + src), script);
       };
+      watch(script);
       (document.head || document.documentElement).appendChild(script);
+    });
+    scriptPromises[src] = promise.catch(function (error) {
+      delete scriptPromises[src];
+      throw error;
+    });
+    return scriptPromises[src];
+  }
+
+  function loadScriptWithRetry(src, attempt) {
+    return loadScript(src, 'data-lazy-src').catch(function (error) {
+      if (attempt >= 2 || typeof setTimeout !== 'function') throw error;
+      return new Promise(function (resolve) {
+        setTimeout(resolve, 250 * Math.pow(2, attempt));
+      }).then(function () { return loadScriptWithRetry(src, attempt + 1); });
     });
   }
 
@@ -196,7 +242,7 @@
     let chain = Promise.resolve();
     urls.forEach(function (url) {
       chain = chain.then(function () {
-        return loadScript(url, 'data-lazy-src');
+        return loadScriptWithRetry(url, 0);
       });
     });
     return chain;
@@ -233,12 +279,16 @@
       return uiPagesPromise;
     }
     const urls = UI_PAGE_SCRIPTS.map(function (rel) {
-      const bust = rel.indexOf('ui-social') >= 0 ? '?v=20260816-month1' : '';
+      const mapped = root && root.__H5_ASSETS__ && root.__H5_ASSETS__[rel];
+      const bust = !mapped && rel.indexOf('ui-social') >= 0 ? '?v=20260816-month1' : '';
       return assetUrl(rel) + bust;
     });
-    uiPagesPromise = loadScriptSequence(urls).then(function () {
+    uiPagesPromise = loadScriptSequence(Array.from(new Set(urls))).then(function () {
       markUiPagesReady();
       return true;
+    }).catch(function (error) {
+      uiPagesPromise = null;
+      throw error;
     });
     return uiPagesPromise;
   }
@@ -308,7 +358,7 @@
     const urls = COMBAT_RUNTIME_SCRIPTS.map(function (rel) {
       return assetUrl(rel);
     });
-    combatRuntimePromise = loadScriptSequence(urls).then(function () {
+    combatRuntimePromise = loadScriptSequence(Array.from(new Set(urls))).then(function () {
       callCombatRuntimeRefresh();
       if (!combatRuntimeAlreadyPresent()) {
         throw new Error('Combat runtime globals missing after script load');
@@ -354,6 +404,7 @@
       link.onload = function () { resolve(true); };
       link.onerror = function () {
         gameStylesPromise = null;
+        if (link.parentNode) link.parentNode.removeChild(link);
         reject(new Error('Failed to load styles-game.css'));
       };
       (document.head || document.documentElement).appendChild(link);
@@ -419,6 +470,10 @@
       }
     });
 
+    herblorePromise = herblorePromise.catch(function (error) {
+      herblorePromise = null;
+      throw error;
+    });
     return herblorePromise;
   }
 
